@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Diagnostics;
+using OpsBoard.Api.Errors;
+using OpsBoard.Application;
 using OpsBoard.Infrastructure;
 using OpsBoard.Infrastructure.Persistence.Seed;
 
@@ -23,6 +26,7 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -52,7 +56,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseExceptionHandler();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is not null)
+        {
+            await ExceptionMapping.WriteProblemAsync(context, feature.Error);
+        }
+    });
+});
 app.UseStatusCodePages();
 app.UseCors("Frontend");
 app.UseHttpsRedirection();
