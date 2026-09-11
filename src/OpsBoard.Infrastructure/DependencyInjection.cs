@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpsBoard.Infrastructure.Persistence;
 
 namespace OpsBoard.Infrastructure;
 
@@ -9,8 +11,12 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // EF Core + PostgreSQL registration arrives in Phase 2.
-        _ = configuration;
+        var connectionString = configuration.GetConnectionString("OpsBoard")
+            ?? throw new InvalidOperationException("ConnectionStrings:OpsBoard is required.");
+
+        services.AddDbContext<OpsBoardDbContext>(options =>
+            options.UseNpgsql(connectionString));
+
         return services;
     }
 }
