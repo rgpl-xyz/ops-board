@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IIncidentData, IncidentData>();
         services.AddScoped<IIncidentReadData, IncidentReadData>();
         services.AddScoped<IncidentService>();
+        services.AddScoped<IncidentResponseService>();
         services.AddScoped<DemoSeedRunner>();
 
         return services;
