@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: opsboard-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-opsboard}
+      POSTGRES_USER: ${POSTGRES_USER:-opsboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opsboard}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - opsboard_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-opsboard} -d ${POSTGRES_DB:-opsboard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # API and frontend images arrive in later phases.
+  # Local Phase 1 workflow: docker compose up postgres, then run API + Angular locally.
+
+volumes:
+  opsboard_pgdata:

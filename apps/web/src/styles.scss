@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light;
+  --ob-bg: #f3f1ec;
+  --ob-surface: #fbfaf7;
+  --ob-ink: #1c1b19;
+  --ob-muted: #5c574f;
+  --ob-accent: #0f5c4c;
+  --ob-banner: #1f2a24;
+  --ob-banner-ink: #e7efe9;
+  --ob-border: #d9d3c7;
+  --ob-focus: #0b6e4f;
+  --ob-font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --ob-font-display: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--ob-font-sans);
+  background: var(--ob-bg);
+  color: var(--ob-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ob-focus);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--ob-accent);
+}

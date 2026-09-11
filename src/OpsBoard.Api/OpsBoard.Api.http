@@ -1,0 +1,4 @@
+@host = http://localhost:5233
+
+### Health
+GET {{host}}/api/health

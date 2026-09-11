@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+bin/
+obj/
+**/bin/
+**/obj/
+out/
+*.user
+*.suo
+.vs/
+.idea/
+*.swp
+*~
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+**/appsettings.*.local.json
+!.env.example
+
+# Logs / coverage
+*.log
+npm-debug.log*
+coverage/
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Angular / tooling
+.angular/
+apps/web/.angular/
+*.tsbuildinfo
+
+# Docker volumes / local data
+.docker-data/
+postgres-data/
+
+# Playwright / Cypress
+test-results/
+playwright-report/
+cypress/videos/
+cypress/screenshots/
+
+# IDE / misc
+*.DotSettings.user
