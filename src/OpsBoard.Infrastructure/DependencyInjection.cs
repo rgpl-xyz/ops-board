@@ -26,6 +26,9 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, DemoCurrentUser>();
         services.AddScoped<ILookupData, LookupData>();
         services.AddScoped<IServiceData, ServiceData>();
+        services.AddScoped<LookupService>();
+        services.AddScoped<ServiceService>();
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<DemoSeedRunner>();
 
         return services;
