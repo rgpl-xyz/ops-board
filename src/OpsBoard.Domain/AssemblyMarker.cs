@@ -1,6 +1,6 @@
 namespace OpsBoard.Domain;
 
 /// <summary>
-/// Marker for assembly scanning. Domain entities land in Phase 2.
+/// Marker for assembly scanning.
 /// </summary>
 public static class AssemblyMarker;
