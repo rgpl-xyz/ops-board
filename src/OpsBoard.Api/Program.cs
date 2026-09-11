@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging;
 using OpsBoard.Infrastructure;
+using OpsBoard.Infrastructure.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,26 @@ builder.Services.AddCors(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+if (args.Contains("--seed-demo"))
+{
+    if (!app.Environment.IsDevelopment())
+    {
+        throw new InvalidOperationException("Demo seed requires Development environment.");
+    }
+
+    if (bool.TryParse(app.Configuration["Demo:Enabled"], out var demoEnabled) && !demoEnabled)
+    {
+        throw new InvalidOperationException("Demo seed requires Demo:Enabled.");
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
+    logger.LogInformation("Running demo seed command.");
+    var runner = scope.ServiceProvider.GetRequiredService<DemoSeedRunner>();
+    await runner.RunAsync(CancellationToken.None);
+    return;
+}
 
 if (app.Environment.IsDevelopment())
 {
