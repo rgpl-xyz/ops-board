@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<LookupService>();
         services.AddScoped<ServiceService>();
         services.AddScoped<IIncidentData, IncidentData>();
+        services.AddScoped<IIncidentReadData, IncidentReadData>();
         services.AddScoped<IncidentService>();
         services.AddScoped<DemoSeedRunner>();
 
