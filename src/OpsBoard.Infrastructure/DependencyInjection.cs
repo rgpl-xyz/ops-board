@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpsBoard.Infrastructure.Persistence;
 using OpsBoard.Application.Identity;
 using OpsBoard.Application.Lookups;
 using OpsBoard.Application.Services;
-using OpsBoard.Infrastructure.Lookups;
-using OpsBoard.Infrastructure.Services;
 using OpsBoard.Infrastructure.Identity;
+using OpsBoard.Infrastructure.Lookups;
+using OpsBoard.Infrastructure.Persistence;
 using OpsBoard.Infrastructure.Persistence.Seed;
+using OpsBoard.Infrastructure.Services;
 
 namespace OpsBoard.Infrastructure;
 
@@ -23,12 +23,13 @@ public static class DependencyInjection
 
         services.AddDbContext<OpsBoardDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICurrentUser, DemoCurrentUser>();
         services.AddScoped<ILookupData, LookupData>();
         services.AddScoped<IServiceData, ServiceData>();
         services.AddScoped<LookupService>();
         services.AddScoped<ServiceService>();
-        services.AddSingleton(TimeProvider.System);
         services.AddScoped<DemoSeedRunner>();
 
         return services;

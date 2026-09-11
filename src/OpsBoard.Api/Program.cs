@@ -1,5 +1,8 @@
-using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Logging;
+using OpsBoard.Api.Endpoints;
 using OpsBoard.Api.Errors;
 using OpsBoard.Application;
 using OpsBoard.Infrastructure;
@@ -10,6 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -79,6 +87,8 @@ app.MapGet("/api/health", () => Results.Ok(new
     utc = DateTime.UtcNow
 }))
 .WithName("GetHealth");
+
+app.MapDomainEndpoints();
 
 app.Run();
 
