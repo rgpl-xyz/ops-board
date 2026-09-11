@@ -3,6 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpsBoard.Infrastructure.Persistence;
 using OpsBoard.Application.Identity;
+using OpsBoard.Application.Lookups;
+using OpsBoard.Application.Services;
+using OpsBoard.Infrastructure.Lookups;
+using OpsBoard.Infrastructure.Services;
 using OpsBoard.Infrastructure.Identity;
 using OpsBoard.Infrastructure.Persistence.Seed;
 
@@ -20,6 +24,8 @@ public static class DependencyInjection
         services.AddDbContext<OpsBoardDbContext>(options =>
             options.UseNpgsql(connectionString));
         services.AddScoped<ICurrentUser, DemoCurrentUser>();
+        services.AddScoped<ILookupData, LookupData>();
+        services.AddScoped<IServiceData, ServiceData>();
         services.AddScoped<DemoSeedRunner>();
 
         return services;
