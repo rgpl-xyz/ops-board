@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpsBoard.Application.Identity;
 using OpsBoard.Application.Lookups;
+using OpsBoard.Application.Incidents;
 using OpsBoard.Application.Services;
+using OpsBoard.Infrastructure.Incidents;
 using OpsBoard.Infrastructure.Identity;
 using OpsBoard.Infrastructure.Lookups;
 using OpsBoard.Infrastructure.Persistence;
@@ -30,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IServiceData, ServiceData>();
         services.AddScoped<LookupService>();
         services.AddScoped<ServiceService>();
+        services.AddScoped<IIncidentData, IncidentData>();
         services.AddScoped<DemoSeedRunner>();
 
         return services;
