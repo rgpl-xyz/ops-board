@@ -1,4 +1,5 @@
 using OpsBoard.Application.Common;
+using OpsBoard.Application.Incidents;
 using OpsBoard.Application.Lookups;
 using OpsBoard.Application.Services;
 using OpsBoard.Domain.Enums;
@@ -54,6 +55,74 @@ public static class DomainEndpoints
 
         app.MapPut("/api/services/{id:guid}", async (Guid id, UpdateServiceRequest request, ServiceService services, CancellationToken ct) =>
             Results.Ok(await services.UpdateAsync(id, request, ct)));
+
+        app.MapGet("/api/incidents", async (
+            int? page,
+            int? pageSize,
+            Guid? serviceId,
+            Guid? teamId,
+            IncidentSeverity? severity,
+            IncidentStatus? status,
+            string? search,
+            string? sort,
+            string? direction,
+            IncidentService incidents,
+            CancellationToken ct) =>
+        {
+            var query = new IncidentQuery(
+                page ?? 1,
+                pageSize ?? 25,
+                serviceId,
+                teamId,
+                severity,
+                status,
+                search,
+                sort ?? "createdAt",
+                direction ?? "desc");
+            return Results.Ok(await incidents.ListAsync(query, ct));
+        });
+
+        app.MapGet("/api/incidents/{id:guid}", async (Guid id, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.GetAsync(id, ct)));
+
+        app.MapPost("/api/incidents", async (CreateIncidentRequest request, IncidentService incidents, CancellationToken ct) =>
+        {
+            var created = await incidents.CreateAsync(request, ct);
+            return Results.Created($"/api/incidents/{created.Id}", created);
+        });
+
+        app.MapPut("/api/incidents/{id:guid}", async (Guid id, UpdateIncidentRequest request, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.UpdateDetailsAsync(id, request, ct)));
+
+        app.MapPatch("/api/incidents/{id:guid}/severity", async (Guid id, SeverityRequest request, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.ChangeSeverityAsync(id, request, ct)));
+
+        app.MapPatch("/api/incidents/{id:guid}/status", async (Guid id, StatusRequest request, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.ChangeActiveStatusAsync(id, request, ct)));
+
+        app.MapPost("/api/incidents/{id:guid}/resolve", async (Guid id, VersionRequest request, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.ResolveAsync(id, request, ct)));
+
+        app.MapPost("/api/incidents/{id:guid}/reopen", async (Guid id, VersionRequest request, IncidentService incidents, CancellationToken ct) =>
+            Results.Ok(await incidents.ReopenAsync(id, request, ct)));
+
+        app.MapPost("/api/incidents/{id:guid}/responders/join", async (Guid id, LifecycleVersionRequest request, IncidentResponseService responders, CancellationToken ct) =>
+            Results.Ok(await responders.JoinAsync(id, request, ct)));
+
+        app.MapPost("/api/incidents/{id:guid}/responders/leave", async (Guid id, LifecycleVersionRequest request, IncidentResponseService responders, CancellationToken ct) =>
+            Results.Ok(await responders.LeaveAsync(id, request, ct)));
+
+        app.MapGet("/api/incidents/{id:guid}/responders", async (Guid id, int? limit, Guid? after, IncidentResponseService responders, CancellationToken ct) =>
+            Results.Ok(await responders.ListRespondersAsync(id, new ContinuationQuery(limit ?? 100, after), ct)));
+
+        app.MapPost("/api/incidents/{id:guid}/updates", async (Guid id, WrittenUpdateRequest request, IncidentResponseService responders, CancellationToken ct) =>
+        {
+            var created = await responders.AddUpdateAsync(id, request, ct);
+            return Results.Created($"/api/incidents/{id}/timeline", created);
+        });
+
+        app.MapGet("/api/incidents/{id:guid}/timeline", async (Guid id, int? page, int? pageSize, IncidentResponseService responders, CancellationToken ct) =>
+            Results.Ok(await responders.ListTimelineAsync(id, new PageQuery(page ?? 1, pageSize ?? 25), ct)));
 
         return app;
     }
