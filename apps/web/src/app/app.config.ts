@@ -10,6 +10,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 
 import { routes } from './app.routes';
+import { shouldRetryQuery } from './data-access/query/query-retry';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,7 +23,7 @@ export const appConfig: ApplicationConfig = {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
-            retry: 1,
+            retry: shouldRetryQuery,
           },
         },
       }),
