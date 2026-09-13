@@ -6,10 +6,12 @@ import {
 
 import type {
   CreateIncidentRequest,
+  LifecycleVersionRequest,
   SeverityRequest,
   StatusRequest,
   UpdateIncidentRequest,
   VersionRequest,
+  WrittenUpdateRequest,
 } from '../contracts/incidents';
 import { isConcurrencyConflict } from '../errors/is-problem';
 import type { OpsBoardProblem } from '../errors/problem';
@@ -17,6 +19,10 @@ import { IncidentsApi } from '../http/incidents.api';
 import {
   applyIncidentDetailWriteSuccess,
   invalidateIncidentConcurrency,
+  invalidateIncidentLists,
+  invalidateIncidentRespondersPrefix,
+  invalidateIncidentTimelinePrefix,
+  patchIncidentRevisionsIfCached,
 } from './cache-matrix';
 
 export function createIncidentMutation() {
@@ -139,6 +145,78 @@ export function reopenIncidentMutation() {
       applyIncidentDetailWriteSuccess(queryClient, detail, {
         invalidateTimeline: true,
       });
+    },
+    onError: (error, variables) => {
+      if (isConcurrencyConflict(error)) {
+        invalidateIncidentConcurrency(queryClient, variables.id);
+      }
+    },
+  });
+}
+
+export function joinIncidentMutation() {
+  const api = inject(IncidentsApi);
+  const queryClient = inject(QueryClient);
+  return mutationOptions<
+    Awaited<ReturnType<IncidentsApi['join']>>,
+    OpsBoardProblem,
+    { id: string; body: LifecycleVersionRequest }
+  >({
+    mutationFn: ({ id, body }) => api.join(id, body),
+    retry: false,
+    onSuccess: (mutation) => {
+      // Never write ResponseMutationDto into detail cache.
+      patchIncidentRevisionsIfCached(queryClient, mutation);
+      invalidateIncidentLists(queryClient);
+      invalidateIncidentRespondersPrefix(queryClient, mutation.incidentId);
+      invalidateIncidentTimelinePrefix(queryClient, mutation.incidentId);
+    },
+    onError: (error, variables) => {
+      if (isConcurrencyConflict(error)) {
+        invalidateIncidentConcurrency(queryClient, variables.id);
+      }
+    },
+  });
+}
+
+export function leaveIncidentMutation() {
+  const api = inject(IncidentsApi);
+  const queryClient = inject(QueryClient);
+  return mutationOptions<
+    Awaited<ReturnType<IncidentsApi['leave']>>,
+    OpsBoardProblem,
+    { id: string; body: LifecycleVersionRequest }
+  >({
+    mutationFn: ({ id, body }) => api.leave(id, body),
+    retry: false,
+    onSuccess: (mutation) => {
+      patchIncidentRevisionsIfCached(queryClient, mutation);
+      invalidateIncidentLists(queryClient);
+      invalidateIncidentRespondersPrefix(queryClient, mutation.incidentId);
+      invalidateIncidentTimelinePrefix(queryClient, mutation.incidentId);
+    },
+    onError: (error, variables) => {
+      if (isConcurrencyConflict(error)) {
+        invalidateIncidentConcurrency(queryClient, variables.id);
+      }
+    },
+  });
+}
+
+export function addIncidentUpdateMutation() {
+  const api = inject(IncidentsApi);
+  const queryClient = inject(QueryClient);
+  return mutationOptions<
+    Awaited<ReturnType<IncidentsApi['addUpdate']>>,
+    OpsBoardProblem,
+    { id: string; body: WrittenUpdateRequest }
+  >({
+    mutationFn: ({ id, body }) => api.addUpdate(id, body),
+    retry: false,
+    onSuccess: (mutation) => {
+      patchIncidentRevisionsIfCached(queryClient, mutation);
+      invalidateIncidentLists(queryClient);
+      invalidateIncidentTimelinePrefix(queryClient, mutation.incidentId);
     },
     onError: (error, variables) => {
       if (isConcurrencyConflict(error)) {
