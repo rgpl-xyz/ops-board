@@ -1,0 +1,87 @@
+@if (!id()) {
+  <ob-callout variant="error">Missing incident id.</ob-callout>
+} @else {
+  @if (detail.isPending()) {
+    <ob-callout variant="loading">Loading incident…</ob-callout>
+  } @else if (detail.isError()) {
+    <ob-callout variant="error">Could not load incident.</ob-callout>
+  } @else if (detail.data(); as incident) {
+    <ob-page-header [title]="incident.title">
+      <a actions routerLink="/incidents" class="back">Incidents</a>
+    </ob-page-header>
+
+    <div class="layout">
+      <section class="panel" aria-labelledby="summary-h">
+        <h2 id="summary-h">Summary</h2>
+        <dl class="meta">
+          <dt>Severity</dt>
+          <dd><ob-severity-badge [severity]="incident.severity" /></dd>
+          <dt>Status</dt>
+          <dd><ob-status-badge [status]="incident.status" /></dd>
+          <dt>Service</dt>
+          <dd>{{ incident.serviceName }}</dd>
+          <dt>Team</dt>
+          <dd>{{ incident.teamName }}</dd>
+          <dt>Updated</dt>
+          <dd>{{ incident.updatedAt }}</dd>
+        </dl>
+        <p>{{ incident.description }}</p>
+      </section>
+
+      <section class="panel" aria-labelledby="resp-h">
+        <h2 id="resp-h">Responders</h2>
+        @if (responders.isPending()) {
+          <ob-callout variant="loading">Loading responders…</ob-callout>
+        } @else if (responders.isError()) {
+          <ob-callout variant="error">Could not load responders.</ob-callout>
+        } @else if ((responders.data()?.items.length ?? 0) === 0) {
+          <ob-callout variant="empty">No responders yet.</ob-callout>
+        } @else {
+          <ul class="responders">
+            @for (r of responders.data()!.items; track r.userId) {
+              <li>
+                <span>{{ r.displayName }}</span>
+                <span class="muted">{{ r.joinedAt }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="panel" aria-labelledby="tl-h">
+        <h2 id="tl-h">Timeline</h2>
+        @if (timeline.isPending()) {
+          <ob-callout variant="loading">Loading timeline…</ob-callout>
+        } @else if (timeline.isError()) {
+          <ob-callout variant="error">Could not load timeline.</ob-callout>
+        } @else if ((timeline.data()?.items.length ?? 0) === 0) {
+          <ob-callout variant="empty">No timeline entries.</ob-callout>
+        } @else {
+          <ol class="timeline">
+            @for (entry of timeline.data()!.items; track entry.id) {
+              <li>
+                @if (entry.kind === 'writtenUpdate') {
+                  <div class="kind kind--written">Written update</div>
+                } @else {
+                  <div class="kind">System · {{ entry.type }}</div>
+                }
+                <strong>{{ entry.actorDisplayName }}</strong>
+                <span class="muted"> · {{ entry.occurredAt }}</span>
+                @if (entry.body) {
+                  <div>{{ entry.body }}</div>
+                }
+              </li>
+            }
+          </ol>
+          <ob-pagination
+            [page]="timeline.data()!.page"
+            [totalPages]="timeline.data()!.totalPages"
+            [totalCount]="timeline.data()!.totalCount"
+            (previous)="onTimelinePage(-1)"
+            (next)="onTimelinePage(1)"
+          />
+        }
+      </section>
+    </div>
+  }
+}
