@@ -1,0 +1,64 @@
+<ob-page-header title="Create incident" eyebrow="Incidents / new" />
+
+@if (!canCreate() && currentUser.isSuccess()) {
+  <ob-callout variant="forbidden">You cannot create incidents.</ob-callout>
+} @else {
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (formError()) {
+      <ob-callout variant="error">{{ formError() }}</ob-callout>
+    }
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" formControlName="title" />
+      @if (form.controls.title.errors?.['server']; as msg) {
+        <p class="field__error" role="alert">{{ msg }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" formControlName="description" rows="5"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="serviceId">Service</label>
+      @if (services.isError()) {
+        <ob-callout variant="error">Could not load services.</ob-callout>
+      } @else {
+        <select
+          id="serviceId"
+          formControlName="serviceId"
+          [disabled]="services.isPending()"
+        >
+          <option value="">
+            {{ services.isPending() ? 'Loading…' : 'Select a service…' }}
+          </option>
+          @for (svc of services.data()?.items ?? []; track svc.id) {
+            <option [value]="svc.id">{{ svc.name }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div class="field">
+      <label for="severity">Severity</label>
+      <select id="severity" formControlName="severity">
+        @for (s of severities; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="actions">
+      <button
+        type="submit"
+        class="btn btn--primary"
+        [disabled]="createMut.isPending() || !canCreate()"
+      >
+        Create
+      </button>
+      <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+}
