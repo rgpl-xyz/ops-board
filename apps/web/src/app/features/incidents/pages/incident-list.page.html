@@ -1,0 +1,143 @@
+<ob-page-header title="Incidents">
+  @if (canCreate()) {
+    <a actions class="btn btn--primary" routerLink="/incidents/new"
+      >Create incident</a
+    >
+  }
+</ob-page-header>
+
+<form class="filters" aria-label="Incident filters">
+  <label>
+    Status
+    <select
+      [ngModel]="listQuery().status ?? ''"
+      (ngModelChange)="
+        commitFilter({ status: $event || null })
+      "
+      name="status"
+    >
+      <option value="">Any</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Severity
+    <select
+      [ngModel]="listQuery().severity ?? ''"
+      (ngModelChange)="
+        commitFilter({ severity: $event || null })
+      "
+      name="severity"
+    >
+      <option value="">Any</option>
+      @for (s of severities; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Service
+    @if (services.isError()) {
+      <ob-callout variant="error">Could not load services.</ob-callout>
+    } @else {
+      <select
+        [ngModel]="listQuery().serviceId ?? ''"
+        (ngModelChange)="
+          commitFilter({ serviceId: $event || null })
+        "
+        name="serviceId"
+        [disabled]="services.isPending()"
+      >
+        <option value="">{{ services.isPending() ? 'Loading…' : 'Any' }}</option>
+        @for (svc of services.data()?.items ?? []; track svc.id) {
+          <option [value]="svc.id">{{ svc.name }}</option>
+        }
+      </select>
+    }
+  </label>
+  <label>
+    Team
+    @if (teams.isError()) {
+      <ob-callout variant="error">Could not load teams.</ob-callout>
+    } @else {
+      <select
+        [ngModel]="listQuery().teamId ?? ''"
+        (ngModelChange)="commitFilter({ teamId: $event || null })"
+        name="teamId"
+        [disabled]="teams.isPending()"
+      >
+        <option value="">{{ teams.isPending() ? 'Loading…' : 'Any' }}</option>
+        @for (team of teams.data()?.items ?? []; track team.id) {
+          <option [value]="team.id">{{ team.name }}</option>
+        }
+      </select>
+    }
+  </label>
+  <label>
+    Search
+    <input
+      type="search"
+      name="search"
+      [ngModel]="searchDraft()"
+      (ngModelChange)="searchDraft.set($event)"
+      placeholder="Title contains…"
+    />
+  </label>
+  <label>
+    Sort
+    <select
+      [ngModel]="listQuery().sort ?? 'createdAt'"
+      (ngModelChange)="commitFilter({ sort: $event })"
+      name="sort"
+    >
+      <option value="createdAt">Created</option>
+      <option value="severity">Severity</option>
+      <option value="status">Status</option>
+    </select>
+  </label>
+</form>
+
+@if (incidents.isPending()) {
+  <ob-callout variant="loading">Loading incidents…</ob-callout>
+} @else if (incidents.isError()) {
+  <ob-callout variant="error">Could not load incidents.</ob-callout>
+} @else if ((incidents.data()?.items.length ?? 0) === 0) {
+  <ob-callout variant="empty">No incidents match these filters.</ob-callout>
+} @else {
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Title</th>
+        <th scope="col">Severity</th>
+        <th scope="col">Status</th>
+        <th scope="col">Service</th>
+        <th scope="col">Team</th>
+        <th scope="col">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of incidents.data()!.items; track row.id) {
+        <tr>
+          <td>
+            <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
+          </td>
+          <td><ob-severity-badge [severity]="row.severity" /></td>
+          <td><ob-status-badge [status]="row.status" /></td>
+          <td>{{ row.serviceName }}</td>
+          <td>{{ row.teamName }}</td>
+          <td>{{ row.updatedAt }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <ob-pagination
+    [page]="incidents.data()!.page"
+    [totalPages]="incidents.data()!.totalPages"
+    [totalCount]="incidents.data()!.totalCount"
+    (previous)="onPage(-1)"
+    (next)="onPage(1)"
+  />
+}

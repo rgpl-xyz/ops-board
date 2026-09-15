@@ -1,0 +1,82 @@
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.55rem;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--ob-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filters input,
+.filters select {
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ob-ink);
+  border: 1px solid var(--ob-border);
+  background: #fff;
+  padding: 0.35rem 0.4rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--ob-border);
+  vertical-align: top;
+}
+
+.table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ob-muted);
+  background: #f4f1ea;
+}
+
+.table a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  padding: 0.4rem 0.7rem;
+  font: inherit;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}
