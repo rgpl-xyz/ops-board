@@ -1,0 +1,93 @@
+@if (!id()) {
+  <ob-callout variant="error">Missing service id.</ob-callout>
+} @else if (detail.isPending()) {
+  <ob-callout variant="loading">Loading service…</ob-callout>
+} @else if (detail.isError()) {
+  <ob-callout variant="error">Could not load service.</ob-callout>
+} @else if (detail.data(); as service) {
+  <ob-page-header [title]="service.name">
+    <a actions routerLink="/services" class="back">Services</a>
+    <a
+      actions
+      class="btn"
+      [routerLink]="['/incidents']"
+      [queryParams]="{ serviceId: service.id }"
+      >View incidents for this service</a
+    >
+  </ob-page-header>
+
+  <section class="panel" aria-labelledby="summary-h">
+    <h2 id="summary-h">Summary</h2>
+    <dl class="meta">
+      <dt>Health</dt>
+      <dd><ob-health-badge [health]="service.health" /></dd>
+      <dt>Team</dt>
+      <dd>{{ service.teamName }}</dd>
+      <dt>Updated</dt>
+      <dd>{{ service.updatedAt }}</dd>
+    </dl>
+    <p>{{ service.description }}</p>
+  </section>
+
+  @if (canEdit()) {
+    <section class="panel" aria-labelledby="edit-h">
+      <h2 id="edit-h">Update service</h2>
+      @if (conflictOpen()) {
+        <ob-callout variant="conflict">
+          This service changed since you loaded it. Your save was not applied.
+          The form now shows the latest server data. Review the fields, then
+          dismiss and submit again if your change is still needed.
+          <div class="actions">
+            <button
+              type="button"
+              class="btn btn--primary"
+              (click)="dismissConflict()"
+            >
+              Dismiss and continue editing
+            </button>
+          </div>
+        </ob-callout>
+      }
+      @if (editError()) {
+        <ob-callout variant="error">{{ editError() }}</ob-callout>
+      }
+      <form class="form" [formGroup]="editForm" (ngSubmit)="save()">
+        <div class="field">
+          <label for="svc-name">Name</label>
+          <input id="svc-name" formControlName="name" />
+        </div>
+        <div class="field">
+          <label for="svc-desc">Description</label>
+          <textarea id="svc-desc" formControlName="description" rows="4"></textarea>
+        </div>
+        <div class="field">
+          <label for="svc-team">Team</label>
+          @if (teams.isError()) {
+            <ob-callout variant="error">Could not load teams.</ob-callout>
+          } @else {
+            <select id="svc-team" formControlName="teamId">
+              @for (team of teams.data()?.items ?? []; track team.id) {
+                <option [value]="team.id">{{ team.name }}</option>
+              }
+            </select>
+          }
+        </div>
+        <div class="field">
+          <label for="svc-health">Health</label>
+          <select id="svc-health" formControlName="health">
+            @for (h of healths; track h) {
+              <option [value]="h">{{ h }}</option>
+            }
+          </select>
+        </div>
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="updateMut.isPending() || conflictOpen()"
+        >
+          Save service
+        </button>
+      </form>
+    </section>
+  }
+}
