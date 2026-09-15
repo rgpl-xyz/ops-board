@@ -2,21 +2,39 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   Injector,
   runInInjectionContext,
   signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import {
+  injectMutation,
+  injectQuery,
+  QueryClient,
+} from '@tanstack/angular-query-experimental';
 import { map } from 'rxjs';
 
 import {
+  currentUserQuery,
   incidentQuery,
   incidentRespondersQuery,
   incidentTimelineQuery,
+  isConcurrencyConflict,
+  isValidationFailed,
+  servicesQuery,
+  updateIncidentMutation,
+  type IncidentDetailDto,
 } from '../../../data-access';
+import { canEditIncidentDetails } from '../utils/incident-actions';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
@@ -28,6 +46,7 @@ import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component'
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
+    ReactiveFormsModule,
     CalloutComponent,
     PageHeaderComponent,
     PaginationComponent,
@@ -40,6 +59,8 @@ import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component'
 export class IncidentDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
+  private readonly queryClient = inject(QueryClient);
+  private readonly fb = inject(FormBuilder);
 
   protected readonly id = toSignal(
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
@@ -47,6 +68,8 @@ export class IncidentDetailPage {
   );
 
   protected readonly timelinePage = signal(1);
+  readonly conflictOpen = signal(false);
+  protected readonly editError = signal<string | null>(null);
 
   private readonly detailOptions = computed(() => {
     const id = this.id();
@@ -78,6 +101,17 @@ export class IncidentDetailPage {
       }),
     );
   });
+
+  private readonly servicesOptions = runInInjectionContext(this.injector, () =>
+    servicesQuery({ pageSize: 100, sort: 'name' }),
+  );
+  private readonly currentUserOptions = runInInjectionContext(
+    this.injector,
+    () => currentUserQuery(),
+  );
+  private readonly updateOptions = runInInjectionContext(this.injector, () =>
+    updateIncidentMutation(),
+  );
 
   protected readonly detail = injectQuery(() => {
     const options = this.detailOptions();
@@ -120,11 +154,107 @@ export class IncidentDetailPage {
     );
   });
 
+  protected readonly services = injectQuery(() => this.servicesOptions);
+  protected readonly currentUser = injectQuery(() => this.currentUserOptions);
+  protected readonly updateMut = injectMutation(() => this.updateOptions);
+
+  readonly editForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.maxLength(200)]],
+    description: ['', [Validators.required, Validators.maxLength(10000)]],
+    serviceId: ['', Validators.required],
+  });
+
+  protected readonly canEdit = computed(() => {
+    const user = this.currentUser.data();
+    return user ? canEditIncidentDetails(user.role) : false;
+  });
+
+  private lastBoundVersion = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const incident = this.detail.data();
+      if (!incident) {
+        return;
+      }
+      const version = String(incident.version);
+      untracked(() => {
+        if (this.lastBoundVersion() === version) {
+          return;
+        }
+        this.lastBoundVersion.set(version);
+        this.editForm.reset({
+          title: incident.title,
+          description: incident.description,
+          serviceId: incident.serviceId,
+        });
+      });
+    });
+  }
+
   onTimelinePage(delta: -1 | 1): void {
     this.timelinePage.update((p) => Math.max(1, p + delta));
   }
 
   resetTimelinePage(): void {
     this.timelinePage.set(1);
+  }
+
+  dismissConflict(): void {
+    this.conflictOpen.set(false);
+  }
+
+  async saveDetails(): Promise<void> {
+    this.editError.set(null);
+    if (this.conflictOpen() || this.editForm.invalid || !this.canEdit()) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+    const id = this.id();
+    if (!id) {
+      return;
+    }
+    // Prefer QueryClient cache so submit tokens stay current even when the
+    // injectQuery signal has not flushed yet after conflict recovery.
+    const options = runInInjectionContext(this.injector, () =>
+      incidentQuery(id),
+    );
+    const incident =
+      this.queryClient.getQueryData<IncidentDetailDto>(options.queryKey) ??
+      this.detail.data();
+    if (!incident) {
+      return;
+    }
+    const value = this.editForm.getRawValue();
+    try {
+      await this.updateMut.mutateAsync({
+        id,
+        body: {
+          ...value,
+          expectedVersion: incident.version,
+        },
+      });
+      this.editForm.markAsPristine();
+    } catch (error) {
+      if (isConcurrencyConflict(error)) {
+        this.conflictOpen.set(true);
+        const fresh = await this.queryClient.fetchQuery({
+          ...options,
+          staleTime: 0,
+        });
+        this.lastBoundVersion.set(String(fresh.version));
+        this.editForm.reset({
+          title: fresh.title,
+          description: fresh.description,
+          serviceId: fresh.serviceId,
+        });
+        return;
+      }
+      if (isValidationFailed(error)) {
+        this.editError.set(error.detail || error.title || 'Validation failed');
+        return;
+      }
+      this.editError.set('Could not save incident details.');
+    }
   }
 }

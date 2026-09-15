@@ -26,6 +26,59 @@
           <dd>{{ incident.updatedAt }}</dd>
         </dl>
         <p>{{ incident.description }}</p>
+
+        @if (canEdit()) {
+          <h2>Edit details</h2>
+          @if (conflictOpen()) {
+            <ob-callout variant="conflict">
+              This incident changed since you loaded it. Your save was not
+              applied. The form now shows the latest server data. Review the
+              fields, then dismiss and submit again if your change is still
+              needed.
+              <div class="actions">
+                <button type="button" class="btn btn--primary" (click)="dismissConflict()">
+                  Dismiss and continue editing
+                </button>
+              </div>
+            </ob-callout>
+          }
+          @if (editError()) {
+            <ob-callout variant="error">{{ editError() }}</ob-callout>
+          }
+          <form class="form" [formGroup]="editForm" (ngSubmit)="saveDetails()">
+            <div class="field">
+              <label for="edit-title">Title</label>
+              <input id="edit-title" formControlName="title" />
+            </div>
+            <div class="field">
+              <label for="edit-description">Description</label>
+              <textarea
+                id="edit-description"
+                formControlName="description"
+                rows="4"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="edit-service">Service</label>
+              @if (services.isError()) {
+                <ob-callout variant="error">Could not load services.</ob-callout>
+              } @else {
+                <select id="edit-service" formControlName="serviceId">
+                  @for (svc of services.data()?.items ?? []; track svc.id) {
+                    <option [value]="svc.id">{{ svc.name }}</option>
+                  }
+                </select>
+              }
+            </div>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              [disabled]="updateMut.isPending() || conflictOpen()"
+            >
+              Save details
+            </button>
+          </form>
+        }
       </section>
 
       <section class="panel" aria-labelledby="resp-h">
