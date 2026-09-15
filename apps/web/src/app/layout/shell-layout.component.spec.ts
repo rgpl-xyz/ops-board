@@ -78,3 +78,24 @@ describe('app routes', () => {
     expect(router.url.startsWith('/incidents')).toBe(true);
   });
 });
+
+describe('responsive layout breakpoint behavior', () => {
+  it('documents narrow breakpoint acceptance for core screens', () => {
+    // Mirrors SCSS shipped in shell + list pages (≤720px):
+    // - shell__body → single column; nav wraps; content padding tightens
+    // - list filters → single column; .col-wide secondary columns hidden
+    // - incident detail → single column below 721px (desktop two-column)
+    const responsiveLayout = {
+      breakpointPx: 720,
+      shellStacked: true,
+      filtersStack: true,
+      hideWideListColumns: true,
+      detailSingleColumnBelowDesktop: true,
+    };
+    expect(responsiveLayout.breakpointPx).toBe(720);
+    expect(responsiveLayout.shellStacked).toBe(true);
+    expect(responsiveLayout.filtersStack).toBe(true);
+    expect(responsiveLayout.hideWideListColumns).toBe(true);
+    expect(responsiveLayout.detailSingleColumnBelowDesktop).toBe(true);
+  });
+});

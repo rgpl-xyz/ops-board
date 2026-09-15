@@ -69,6 +69,7 @@
 .shell__content {
   padding: 1.25rem 1.5rem 2rem;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 @media (max-width: 720px) {
@@ -95,5 +96,9 @@
     margin-top: 0.35rem;
     border-top: 0;
     padding-top: 0;
+  }
+
+  .shell__content {
+    padding: 1rem 0.85rem 1.5rem;
   }
 }

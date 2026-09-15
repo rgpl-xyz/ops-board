@@ -112,9 +112,9 @@
         <th scope="col">Title</th>
         <th scope="col">Severity</th>
         <th scope="col">Status</th>
-        <th scope="col">Service</th>
-        <th scope="col">Team</th>
-        <th scope="col">Updated</th>
+        <th scope="col" class="col-wide">Service</th>
+        <th scope="col" class="col-wide">Team</th>
+        <th scope="col" class="col-wide">Updated</th>
       </tr>
     </thead>
     <tbody>
@@ -125,9 +125,9 @@
           </td>
           <td><ob-severity-badge [severity]="row.severity" /></td>
           <td><ob-status-badge [status]="row.status" /></td>
-          <td>{{ row.serviceName }}</td>
-          <td>{{ row.teamName }}</td>
-          <td>{{ row.updatedAt }}</td>
+          <td class="col-wide">{{ row.serviceName }}</td>
+          <td class="col-wide">{{ row.teamName }}</td>
+          <td class="col-wide">{{ row.updatedAt }}</td>
         </tr>
       }
     </tbody>

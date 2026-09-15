@@ -68,8 +68,8 @@
       <tr>
         <th scope="col">Name</th>
         <th scope="col">Health</th>
-        <th scope="col">Team</th>
-        <th scope="col">Updated</th>
+        <th scope="col" class="col-wide">Team</th>
+        <th scope="col" class="col-wide">Updated</th>
       </tr>
     </thead>
     <tbody>
@@ -79,8 +79,8 @@
             <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
           </td>
           <td><ob-health-badge [health]="row.health" /></td>
-          <td>{{ row.teamName }}</td>
-          <td>{{ row.updatedAt }}</td>
+          <td class="col-wide">{{ row.teamName }}</td>
+          <td class="col-wide">{{ row.updatedAt }}</td>
         </tr>
       }
     </tbody>
