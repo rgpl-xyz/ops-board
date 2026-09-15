@@ -25,6 +25,11 @@ export type {
   TimelineEntryType,
   UserRole,
 } from './contracts/enums';
+export {
+  INCIDENT_SEVERITIES,
+  INCIDENT_STATUSES,
+  SERVICE_HEALTHS,
+} from './contracts/enums';
 export type { CurrentUserDto, OrganizationDto } from './contracts/identity';
 export type {
   CreateIncidentRequest,

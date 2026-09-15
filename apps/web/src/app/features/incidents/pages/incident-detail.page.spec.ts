@@ -38,10 +38,18 @@ function detailDto(overrides: Record<string, unknown> = {}) {
 
 describe('IncidentDetailPage', () => {
   const updateMock = vi.fn();
+  const changeSeverity = vi.fn();
+  const changeStatus = vi.fn();
+  const resolve = vi.fn();
+  const reopen = vi.fn();
   const getById = vi.fn();
 
   beforeEach(async () => {
     updateMock.mockReset();
+    changeSeverity.mockReset();
+    changeStatus.mockReset();
+    resolve.mockReset();
+    reopen.mockReset();
     getById.mockReset();
     getById.mockResolvedValue(detailDto());
 
@@ -66,6 +74,10 @@ describe('IncidentDetailPage', () => {
           useValue: {
             getById,
             update: updateMock,
+            changeSeverity,
+            changeStatus,
+            resolve,
+            reopen,
             listResponders: async () => ({
               items: [
                 {
@@ -246,5 +258,60 @@ describe('IncidentDetailPage', () => {
     expect(updateMock.mock.calls[1]?.[1]?.expectedVersion).toEqual(
       asRevisionString('9'),
     );
+  });
+
+  it('applies severity with Query token and offers resolve while active', async () => {
+    changeSeverity.mockResolvedValue(
+      detailDto({ severity: 'High', version: asRevisionString('4') }),
+    );
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Apply severity');
+    });
+    expect(fixture.nativeElement.textContent).toContain('Resolve…');
+    expect(fixture.nativeElement.textContent).not.toContain('Reopen…');
+
+    fixture.componentInstance.severityDraft.set('High');
+    await fixture.componentInstance.applySeverity();
+    expect(changeSeverity).toHaveBeenCalledWith('i1', {
+      severity: 'High',
+      expectedVersion: asRevisionString('2'),
+    });
+  });
+
+  it('resolves with confirm path using expectedVersion and resets timeline page', async () => {
+    resolve.mockResolvedValue(
+      detailDto({ status: 'Resolved', version: asRevisionString('5') }),
+    );
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+    await vi.waitFor(() =>
+      expect(fixture.nativeElement.textContent).toContain('Resolve…'),
+    );
+
+    fixture.componentInstance.timelinePage.set(2);
+    await fixture.componentInstance.resolveIncident();
+    expect(resolve).toHaveBeenCalledWith('i1', {
+      expectedVersion: asRevisionString('2'),
+    });
+    expect(fixture.componentInstance.timelinePage()).toBe(1);
+  });
+
+  it('shows reopen when Resolved and hides active-only controls', async () => {
+    getById.mockResolvedValue(
+      detailDto({ status: 'Resolved', severity: 'Medium' }),
+    );
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Reopen…');
+    });
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Apply severity');
+    expect(text).not.toContain('Apply status');
+    expect(text).not.toContain('Resolve…');
   });
 });

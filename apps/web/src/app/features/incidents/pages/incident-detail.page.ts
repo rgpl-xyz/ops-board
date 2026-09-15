@@ -8,6 +8,7 @@ import {
   runInInjectionContext,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -24,22 +25,41 @@ import {
 import { map } from 'rxjs';
 
 import {
+  changeSeverityMutation,
+  changeStatusMutation,
   currentUserQuery,
+  INCIDENT_SEVERITIES,
   incidentQuery,
   incidentRespondersQuery,
   incidentTimelineQuery,
   isConcurrencyConflict,
+  isForbidden,
+  isLifecycleConflict,
   isValidationFailed,
+  reopenIncidentMutation,
+  resolveIncidentMutation,
   servicesQuery,
   updateIncidentMutation,
   type IncidentDetailDto,
+  type IncidentSeverity,
+  type IncidentStatus,
 } from '../../../data-access';
-import { canEditIncidentDetails } from '../utils/incident-actions';
+import {
+  ACTIVE_STATUS_OPTIONS,
+  canChangeActiveStatus,
+  canChangeSeverity,
+  canEditIncidentDetails,
+  canReopen,
+  canResolve,
+} from '../utils/incident-actions';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
+import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
+
+type ConfirmKind = 'resolve' | 'reopen';
 
 @Component({
   selector: 'ob-incident-detail-page',
@@ -48,6 +68,7 @@ import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component'
     RouterLink,
     ReactiveFormsModule,
     CalloutComponent,
+    ConfirmDialogComponent,
     PageHeaderComponent,
     PaginationComponent,
     SeverityBadgeComponent,
@@ -62,14 +83,24 @@ export class IncidentDetailPage {
   private readonly queryClient = inject(QueryClient);
   private readonly fb = inject(FormBuilder);
 
+  private readonly confirmDialog =
+    viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
+
   protected readonly id = toSignal(
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
     { initialValue: '' },
   );
 
-  protected readonly timelinePage = signal(1);
+  readonly timelinePage = signal(1);
   readonly conflictOpen = signal(false);
   protected readonly editError = signal<string | null>(null);
+  protected readonly lifecycleError = signal<string | null>(null);
+  readonly severityDraft = signal<IncidentSeverity>('Low');
+  protected readonly statusDraft = signal<IncidentStatus>('Investigating');
+  protected readonly confirmKind = signal<ConfirmKind | null>(null);
+
+  protected readonly severities = INCIDENT_SEVERITIES;
+  protected readonly activeStatusOptions = ACTIVE_STATUS_OPTIONS;
 
   private readonly detailOptions = computed(() => {
     const id = this.id();
@@ -111,6 +142,18 @@ export class IncidentDetailPage {
   );
   private readonly updateOptions = runInInjectionContext(this.injector, () =>
     updateIncidentMutation(),
+  );
+  private readonly severityOptions = runInInjectionContext(this.injector, () =>
+    changeSeverityMutation(),
+  );
+  private readonly statusOptions = runInInjectionContext(this.injector, () =>
+    changeStatusMutation(),
+  );
+  private readonly resolveOptions = runInInjectionContext(this.injector, () =>
+    resolveIncidentMutation(),
+  );
+  private readonly reopenOptions = runInInjectionContext(this.injector, () =>
+    reopenIncidentMutation(),
   );
 
   protected readonly detail = injectQuery(() => {
@@ -157,6 +200,10 @@ export class IncidentDetailPage {
   protected readonly services = injectQuery(() => this.servicesOptions);
   protected readonly currentUser = injectQuery(() => this.currentUserOptions);
   protected readonly updateMut = injectMutation(() => this.updateOptions);
+  protected readonly severityMut = injectMutation(() => this.severityOptions);
+  protected readonly statusMut = injectMutation(() => this.statusOptions);
+  protected readonly resolveMut = injectMutation(() => this.resolveOptions);
+  protected readonly reopenMut = injectMutation(() => this.reopenOptions);
 
   readonly editForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -168,6 +215,53 @@ export class IncidentDetailPage {
     const user = this.currentUser.data();
     return user ? canEditIncidentDetails(user.role) : false;
   });
+
+  protected readonly showSeverity = computed(() => {
+    const user = this.currentUser.data();
+    return user ? canChangeSeverity(user.role) : false;
+  });
+
+  protected readonly showStatus = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident
+      ? canChangeActiveStatus(user.role, incident.status)
+      : false;
+  });
+
+  protected readonly showResolve = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident ? canResolve(user.role, incident.status) : false;
+  });
+
+  protected readonly showReopen = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident ? canReopen(user.role, incident.status) : false;
+  });
+
+  protected readonly lifecyclePending = computed(
+    () =>
+      this.severityMut.isPending() ||
+      this.statusMut.isPending() ||
+      this.resolveMut.isPending() ||
+      this.reopenMut.isPending(),
+  );
+
+  protected readonly confirmTitle = computed(() =>
+    this.confirmKind() === 'reopen' ? 'Reopen this incident?' : 'Resolve this incident?',
+  );
+
+  protected readonly confirmBody = computed(() =>
+    this.confirmKind() === 'reopen'
+      ? 'The incident returns to Investigating and responders can collaborate again.'
+      : 'This records resolution time and ends active collaboration intent.',
+  );
+
+  protected readonly confirmLabel = computed(() =>
+    this.confirmKind() === 'reopen' ? 'Confirm reopen' : 'Confirm resolve',
+  );
 
   private lastBoundVersion = signal<string | null>(null);
 
@@ -188,6 +282,10 @@ export class IncidentDetailPage {
           description: incident.description,
           serviceId: incident.serviceId,
         });
+        this.severityDraft.set(incident.severity);
+        this.statusDraft.set(
+          incident.status === 'Resolved' ? 'Investigating' : incident.status,
+        );
       });
     });
   }
@@ -204,6 +302,42 @@ export class IncidentDetailPage {
     this.conflictOpen.set(false);
   }
 
+  onSeverityDraft(value: string): void {
+    this.severityDraft.set(value as IncidentSeverity);
+  }
+
+  onStatusDraft(value: string): void {
+    this.statusDraft.set(value as IncidentStatus);
+  }
+
+  openResolveConfirm(event: Event): void {
+    this.confirmKind.set('resolve');
+    const target =
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.confirmDialog().open(target);
+  }
+
+  openReopenConfirm(event: Event): void {
+    this.confirmKind.set('reopen');
+    const target =
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.confirmDialog().open(target);
+  }
+
+  onLifecycleConfirmed(): void {
+    const kind = this.confirmKind();
+    this.confirmKind.set(null);
+    if (kind === 'resolve') {
+      void this.resolveIncident();
+    } else if (kind === 'reopen') {
+      void this.reopenIncident();
+    }
+  }
+
+  onLifecycleCancelled(): void {
+    this.confirmKind.set(null);
+  }
+
   async saveDetails(): Promise<void> {
     this.editError.set(null);
     if (this.conflictOpen() || this.editForm.invalid || !this.canEdit()) {
@@ -211,18 +345,8 @@ export class IncidentDetailPage {
       return;
     }
     const id = this.id();
-    if (!id) {
-      return;
-    }
-    // Prefer QueryClient cache so submit tokens stay current even when the
-    // injectQuery signal has not flushed yet after conflict recovery.
-    const options = runInInjectionContext(this.injector, () =>
-      incidentQuery(id),
-    );
-    const incident =
-      this.queryClient.getQueryData<IncidentDetailDto>(options.queryKey) ??
-      this.detail.data();
-    if (!incident) {
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
       return;
     }
     const value = this.editForm.getRawValue();
@@ -236,25 +360,161 @@ export class IncidentDetailPage {
       });
       this.editForm.markAsPristine();
     } catch (error) {
-      if (isConcurrencyConflict(error)) {
-        this.conflictOpen.set(true);
-        const fresh = await this.queryClient.fetchQuery({
-          ...options,
-          staleTime: 0,
-        });
-        this.lastBoundVersion.set(String(fresh.version));
-        this.editForm.reset({
-          title: fresh.title,
-          description: fresh.description,
-          serviceId: fresh.serviceId,
-        });
-        return;
-      }
-      if (isValidationFailed(error)) {
-        this.editError.set(error.detail || error.title || 'Validation failed');
-        return;
-      }
-      this.editError.set('Could not save incident details.');
+      await this.handleMutationError(error, 'edit');
     }
+  }
+
+  async applySeverity(): Promise<void> {
+    this.lifecycleError.set(null);
+    if (this.conflictOpen() || !this.showSeverity()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.severityMut.mutateAsync({
+        id,
+        body: {
+          severity: this.severityDraft(),
+          expectedVersion: incident.version,
+        },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'lifecycle');
+    }
+  }
+
+  async applyStatus(): Promise<void> {
+    this.lifecycleError.set(null);
+    if (this.conflictOpen() || !this.showStatus()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.statusMut.mutateAsync({
+        id,
+        body: {
+          status: this.statusDraft(),
+          expectedVersion: incident.version,
+        },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'lifecycle');
+    }
+  }
+
+  async resolveIncident(): Promise<void> {
+    this.lifecycleError.set(null);
+    if (this.conflictOpen() || !this.showResolve()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.resolveMut.mutateAsync({
+        id,
+        body: { expectedVersion: incident.version },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'lifecycle');
+    }
+  }
+
+  async reopenIncident(): Promise<void> {
+    this.lifecycleError.set(null);
+    if (this.conflictOpen() || !this.showReopen()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.reopenMut.mutateAsync({
+        id,
+        body: { expectedVersion: incident.version },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'lifecycle');
+    }
+  }
+
+  private cachedDetail(id: string): IncidentDetailDto | undefined {
+    if (!id) {
+      return undefined;
+    }
+    const options = runInInjectionContext(this.injector, () =>
+      incidentQuery(id),
+    );
+    return (
+      this.queryClient.getQueryData<IncidentDetailDto>(options.queryKey) ??
+      this.detail.data()
+    );
+  }
+
+  private async handleMutationError(
+    error: unknown,
+    surface: 'edit' | 'lifecycle',
+  ): Promise<void> {
+    if (isConcurrencyConflict(error)) {
+      this.conflictOpen.set(true);
+      const id = this.id();
+      if (!id) {
+        return;
+      }
+      const options = runInInjectionContext(this.injector, () =>
+        incidentQuery(id),
+      );
+      const fresh = await this.queryClient.fetchQuery({
+        ...options,
+        staleTime: 0,
+      });
+      this.lastBoundVersion.set(String(fresh.version));
+      this.editForm.reset({
+        title: fresh.title,
+        description: fresh.description,
+        serviceId: fresh.serviceId,
+      });
+      this.severityDraft.set(fresh.severity);
+      this.statusDraft.set(
+        fresh.status === 'Resolved' ? 'Investigating' : fresh.status,
+      );
+      return;
+    }
+
+    const message = this.problemMessage(error);
+    if (surface === 'edit') {
+      this.editError.set(message);
+    } else {
+      this.lifecycleError.set(message);
+    }
+  }
+
+  private problemMessage(error: unknown): string {
+    if (isValidationFailed(error)) {
+      return error.detail || error.title || 'Validation failed';
+    }
+    if (isLifecycleConflict(error)) {
+      return error.detail || error.title || 'Lifecycle conflict';
+    }
+    if (isForbidden(error)) {
+      return error.detail || error.title || 'Not allowed';
+    }
+    return 'Could not complete that action.';
   }
 }

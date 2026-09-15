@@ -81,6 +81,100 @@
         }
       </section>
 
+      <section class="panel" aria-labelledby="life-h">
+        <h2 id="life-h">Lifecycle</h2>
+        <p class="muted">
+          Status-aware: resolve available while active; reopen only when
+          resolved. Status select excludes Resolved (use Resolve).
+        </p>
+        @if (lifecycleError()) {
+          <ob-callout variant="error">{{ lifecycleError() }}</ob-callout>
+        }
+        @if (conflictOpen()) {
+          <ob-callout variant="conflict">
+            Server data changed. Dismiss the conflict above before applying
+            lifecycle changes.
+          </ob-callout>
+        }
+        <div class="actions lifecycle-actions">
+          @if (showSeverity()) {
+            <label class="inline-field" for="life-sev">
+              Severity
+              <select
+                id="life-sev"
+                [value]="severityDraft()"
+                (change)="onSeverityDraft($any($event.target).value)"
+                [disabled]="lifecyclePending() || conflictOpen()"
+              >
+                @for (sev of severities; track sev) {
+                  <option [value]="sev">{{ sev }}</option>
+                }
+              </select>
+            </label>
+            <button
+              type="button"
+              class="btn"
+              [disabled]="lifecyclePending() || conflictOpen()"
+              (click)="applySeverity()"
+            >
+              Apply severity
+            </button>
+          }
+          @if (showStatus()) {
+            <label class="inline-field" for="life-st">
+              Status
+              <select
+                id="life-st"
+                [value]="statusDraft()"
+                (change)="onStatusDraft($any($event.target).value)"
+                [disabled]="lifecyclePending() || conflictOpen()"
+              >
+                @for (st of activeStatusOptions; track st) {
+                  <option [value]="st">{{ st }}</option>
+                }
+              </select>
+            </label>
+            <button
+              type="button"
+              class="btn"
+              [disabled]="lifecyclePending() || conflictOpen()"
+              (click)="applyStatus()"
+            >
+              Apply status
+            </button>
+          }
+          @if (showResolve()) {
+            <button
+              type="button"
+              class="btn btn--danger"
+              [disabled]="lifecyclePending() || conflictOpen()"
+              (click)="openResolveConfirm($event)"
+            >
+              Resolve…
+            </button>
+          }
+          @if (showReopen()) {
+            <button
+              type="button"
+              class="btn"
+              [disabled]="lifecyclePending() || conflictOpen()"
+              (click)="openReopenConfirm($event)"
+            >
+              Reopen…
+            </button>
+          }
+        </div>
+        <ob-confirm-dialog
+          #lifecycleConfirm
+          [title]="confirmTitle()"
+          [body]="confirmBody()"
+          [confirmLabel]="confirmLabel()"
+          [danger]="confirmKind() === 'resolve'"
+          (confirmed)="onLifecycleConfirmed()"
+          (cancelled)="onLifecycleCancelled()"
+        />
+      </section>
+
       <section class="panel" aria-labelledby="resp-h">
         <h2 id="resp-h">Responders</h2>
         @if (responders.isPending()) {
