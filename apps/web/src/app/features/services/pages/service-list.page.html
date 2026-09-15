@@ -1,0 +1,96 @@
+<ob-page-header title="Services" />
+
+<form class="filters" aria-label="Service filters">
+  <label>
+    Health
+    <select
+      [ngModel]="listQuery().health ?? ''"
+      (ngModelChange)="commitFilter({ health: $event || null })"
+      name="health"
+    >
+      <option value="">Any</option>
+      @for (h of healths; track h) {
+        <option [value]="h">{{ h }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Team
+    @if (teams.isError()) {
+      <ob-callout variant="error">Could not load teams.</ob-callout>
+    } @else {
+      <select
+        [ngModel]="listQuery().teamId ?? ''"
+        (ngModelChange)="commitFilter({ teamId: $event || null })"
+        name="teamId"
+        [disabled]="teams.isPending()"
+      >
+        <option value="">{{ teams.isPending() ? 'Loading…' : 'Any' }}</option>
+        @for (team of teams.data()?.items ?? []; track team.id) {
+          <option [value]="team.id">{{ team.name }}</option>
+        }
+      </select>
+    }
+  </label>
+  <label>
+    Search
+    <input
+      type="search"
+      name="search"
+      [ngModel]="searchDraft()"
+      (ngModelChange)="searchDraft.set($event)"
+      placeholder="Name contains…"
+    />
+  </label>
+  <label>
+    Sort
+    <select
+      [ngModel]="listQuery().sort ?? 'name'"
+      (ngModelChange)="commitFilter({ sort: $event })"
+      name="sort"
+    >
+      <option value="name">Name</option>
+      <option value="health">Health</option>
+      <option value="updatedAt">Updated</option>
+    </select>
+  </label>
+</form>
+
+@if (services.isPending()) {
+  <ob-callout variant="loading">Loading services…</ob-callout>
+} @else if (services.isError()) {
+  <ob-callout variant="error">Could not load services.</ob-callout>
+} @else if ((services.data()?.items.length ?? 0) === 0) {
+  <ob-callout variant="empty">No services match these filters.</ob-callout>
+} @else {
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Health</th>
+        <th scope="col">Team</th>
+        <th scope="col">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of services.data()!.items; track row.id) {
+        <tr>
+          <td>
+            <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
+          </td>
+          <td><ob-health-badge [health]="row.health" /></td>
+          <td>{{ row.teamName }}</td>
+          <td>{{ row.updatedAt }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <ob-pagination
+    [page]="services.data()!.page"
+    [totalPages]="services.data()!.totalPages"
+    [totalCount]="services.data()!.totalCount"
+    (previous)="onPage(-1)"
+    (next)="onPage(1)"
+  />
+}
