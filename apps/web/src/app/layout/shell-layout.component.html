@@ -1,0 +1,43 @@
+<div class="shell">
+  <header class="shell__banner" role="status">{{ demoBanner }}</header>
+
+  <div class="shell__body">
+    <nav class="shell__nav" aria-label="Primary">
+      <p class="shell__brand">OpsBoard</p>
+      <a
+        routerLink="/incidents"
+        routerLinkActive="shell__link--active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        class="shell__link"
+        >Incidents</a
+      >
+      <a
+        routerLink="/services"
+        routerLinkActive="shell__link--active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        class="shell__link"
+        >Services</a
+      >
+
+      <div class="shell__user">
+        @if (currentUser.isSuccess() && organization.isSuccess()) {
+          <strong class="shell__user-name">{{
+            currentUser.data()!.displayName
+          }}</strong>
+          <span class="shell__user-meta"
+            >{{ organization.data()!.name }} ·
+            {{ currentUser.data()!.role }}</span
+          >
+        } @else if (currentUser.isError() || organization.isError()) {
+          <ob-callout variant="error">Could not load identity.</ob-callout>
+        } @else {
+          <ob-callout variant="loading">Loading identity…</ob-callout>
+        }
+      </div>
+    </nav>
+
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

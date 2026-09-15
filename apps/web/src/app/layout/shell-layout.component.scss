@@ -1,0 +1,99 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__banner {
+  background: var(--ob-banner);
+  color: var(--ob-banner-ink);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+.shell__body {
+  display: grid;
+  grid-template-columns: 14rem 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.shell__nav {
+  border-right: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.shell__brand {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.shell__link {
+  display: block;
+  text-decoration: none;
+  color: var(--ob-ink);
+  padding: 0.4rem 0.5rem;
+  border-radius: 2px;
+}
+
+.shell__link--active {
+  background: color-mix(in srgb, var(--ob-accent) 16%, white);
+  font-weight: 600;
+}
+
+.shell__user {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ob-border);
+  font-size: 0.85rem;
+  color: var(--ob-muted);
+}
+
+.shell__user-name {
+  display: block;
+  color: var(--ob-ink);
+}
+
+.shell__user-meta {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.shell__content {
+  padding: 1.25rem 1.5rem 2rem;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .shell__body {
+    grid-template-columns: 1fr;
+  }
+
+  .shell__nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--ob-border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .shell__brand {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .shell__user {
+    width: 100%;
+    margin-top: 0.35rem;
+    border-top: 0;
+    padding-top: 0;
+  }
+}
