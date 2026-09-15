@@ -35,7 +35,11 @@ import {
   isConcurrencyConflict,
   isForbidden,
   isLifecycleConflict,
+  isResponderConflict,
   isValidationFailed,
+  joinIncidentMutation,
+  leaveIncidentMutation,
+  addIncidentUpdateMutation,
   reopenIncidentMutation,
   resolveIncidentMutation,
   servicesQuery,
@@ -49,6 +53,9 @@ import {
   canChangeActiveStatus,
   canChangeSeverity,
   canEditIncidentDetails,
+  canJoin,
+  canLeave,
+  canPostWrittenUpdate,
   canReopen,
   canResolve,
 } from '../utils/incident-actions';
@@ -59,7 +66,7 @@ import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
 
-type ConfirmKind = 'resolve' | 'reopen';
+type ConfirmKind = 'resolve' | 'reopen' | 'leave';
 
 @Component({
   selector: 'ob-incident-detail-page',
@@ -95,9 +102,11 @@ export class IncidentDetailPage {
   readonly conflictOpen = signal(false);
   protected readonly editError = signal<string | null>(null);
   protected readonly lifecycleError = signal<string | null>(null);
+  protected readonly collabError = signal<string | null>(null);
   readonly severityDraft = signal<IncidentSeverity>('Low');
   protected readonly statusDraft = signal<IncidentStatus>('Investigating');
   protected readonly confirmKind = signal<ConfirmKind | null>(null);
+  readonly updateBody = signal('');
 
   protected readonly severities = INCIDENT_SEVERITIES;
   protected readonly activeStatusOptions = ACTIVE_STATUS_OPTIONS;
@@ -155,6 +164,15 @@ export class IncidentDetailPage {
   private readonly reopenOptions = runInInjectionContext(this.injector, () =>
     reopenIncidentMutation(),
   );
+  private readonly joinOptions = runInInjectionContext(this.injector, () =>
+    joinIncidentMutation(),
+  );
+  private readonly leaveOptions = runInInjectionContext(this.injector, () =>
+    leaveIncidentMutation(),
+  );
+  private readonly addUpdateOptions = runInInjectionContext(this.injector, () =>
+    addIncidentUpdateMutation(),
+  );
 
   protected readonly detail = injectQuery(() => {
     const options = this.detailOptions();
@@ -204,6 +222,9 @@ export class IncidentDetailPage {
   protected readonly statusMut = injectMutation(() => this.statusOptions);
   protected readonly resolveMut = injectMutation(() => this.resolveOptions);
   protected readonly reopenMut = injectMutation(() => this.reopenOptions);
+  protected readonly joinMut = injectMutation(() => this.joinOptions);
+  protected readonly leaveMut = injectMutation(() => this.leaveOptions);
+  protected readonly addUpdateMut = injectMutation(() => this.addUpdateOptions);
 
   readonly editForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -241,6 +262,39 @@ export class IncidentDetailPage {
     return user && incident ? canReopen(user.role, incident.status) : false;
   });
 
+  protected readonly isMember = computed(() => {
+    const user = this.currentUser.data();
+    const items = this.responders.data()?.items;
+    if (!user || !items) {
+      return false;
+    }
+    return items.some((r) => r.userId === user.userId);
+  });
+
+  protected readonly showJoin = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident
+      ? canJoin(user.role, incident.status, this.isMember())
+      : false;
+  });
+
+  protected readonly showLeave = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident
+      ? canLeave(user.role, incident.status, this.isMember())
+      : false;
+  });
+
+  protected readonly showWrittenUpdate = computed(() => {
+    const user = this.currentUser.data();
+    const incident = this.detail.data();
+    return user && incident
+      ? canPostWrittenUpdate(user.role, incident.status)
+      : false;
+  });
+
   protected readonly lifecyclePending = computed(
     () =>
       this.severityMut.isPending() ||
@@ -249,19 +303,45 @@ export class IncidentDetailPage {
       this.reopenMut.isPending(),
   );
 
-  protected readonly confirmTitle = computed(() =>
-    this.confirmKind() === 'reopen' ? 'Reopen this incident?' : 'Resolve this incident?',
+  protected readonly collabPending = computed(
+    () =>
+      this.joinMut.isPending() ||
+      this.leaveMut.isPending() ||
+      this.addUpdateMut.isPending(),
   );
 
-  protected readonly confirmBody = computed(() =>
-    this.confirmKind() === 'reopen'
-      ? 'The incident returns to Investigating and responders can collaborate again.'
-      : 'This records resolution time and ends active collaboration intent.',
-  );
+  protected readonly confirmTitle = computed(() => {
+    switch (this.confirmKind()) {
+      case 'reopen':
+        return 'Reopen this incident?';
+      case 'leave':
+        return 'Leave this incident?';
+      default:
+        return 'Resolve this incident?';
+    }
+  });
 
-  protected readonly confirmLabel = computed(() =>
-    this.confirmKind() === 'reopen' ? 'Confirm reopen' : 'Confirm resolve',
-  );
+  protected readonly confirmBody = computed(() => {
+    switch (this.confirmKind()) {
+      case 'reopen':
+        return 'The incident returns to Investigating and responders can collaborate again.';
+      case 'leave':
+        return 'You will be removed from the responder list for this active incident.';
+      default:
+        return 'This records resolution time and ends active collaboration intent.';
+    }
+  });
+
+  protected readonly confirmLabel = computed(() => {
+    switch (this.confirmKind()) {
+      case 'reopen':
+        return 'Confirm reopen';
+      case 'leave':
+        return 'Confirm leave';
+      default:
+        return 'Confirm resolve';
+    }
+  });
 
   private lastBoundVersion = signal<string | null>(null);
 
@@ -324,6 +404,13 @@ export class IncidentDetailPage {
     this.confirmDialog().open(target);
   }
 
+  openLeaveConfirm(event: Event): void {
+    this.confirmKind.set('leave');
+    const target =
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.confirmDialog().open(target);
+  }
+
   onLifecycleConfirmed(): void {
     const kind = this.confirmKind();
     this.confirmKind.set(null);
@@ -331,6 +418,8 @@ export class IncidentDetailPage {
       void this.resolveIncident();
     } else if (kind === 'reopen') {
       void this.reopenIncident();
+    } else if (kind === 'leave') {
+      void this.leaveIncident();
     }
   }
 
@@ -454,6 +543,78 @@ export class IncidentDetailPage {
     }
   }
 
+  async joinIncident(): Promise<void> {
+    this.collabError.set(null);
+    if (this.conflictOpen() || !this.showJoin()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.joinMut.mutateAsync({
+        id,
+        body: { expectedLifecycleVersion: incident.lifecycleVersion },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'collab');
+    }
+  }
+
+  async leaveIncident(): Promise<void> {
+    this.collabError.set(null);
+    if (this.conflictOpen() || !this.showLeave()) {
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.leaveMut.mutateAsync({
+        id,
+        body: { expectedLifecycleVersion: incident.lifecycleVersion },
+      });
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'collab');
+    }
+  }
+
+  async postWrittenUpdate(): Promise<void> {
+    this.collabError.set(null);
+    const body = this.updateBody().trim();
+    if (this.conflictOpen() || !this.showWrittenUpdate() || !body) {
+      return;
+    }
+    if (body.length > 10000) {
+      this.collabError.set('Update must be at most 10000 characters.');
+      return;
+    }
+    const id = this.id();
+    const incident = this.cachedDetail(id);
+    if (!incident || !id) {
+      return;
+    }
+    try {
+      await this.addUpdateMut.mutateAsync({
+        id,
+        body: {
+          body,
+          expectedLifecycleVersion: incident.lifecycleVersion,
+        },
+      });
+      this.updateBody.set('');
+      this.resetTimelinePage();
+    } catch (error) {
+      await this.handleMutationError(error, 'collab');
+    }
+  }
+
   private cachedDetail(id: string): IncidentDetailDto | undefined {
     if (!id) {
       return undefined;
@@ -469,7 +630,7 @@ export class IncidentDetailPage {
 
   private async handleMutationError(
     error: unknown,
-    surface: 'edit' | 'lifecycle',
+    surface: 'edit' | 'lifecycle' | 'collab',
   ): Promise<void> {
     if (isConcurrencyConflict(error)) {
       this.conflictOpen.set(true);
@@ -500,8 +661,10 @@ export class IncidentDetailPage {
     const message = this.problemMessage(error);
     if (surface === 'edit') {
       this.editError.set(message);
-    } else {
+    } else if (surface === 'lifecycle') {
       this.lifecycleError.set(message);
+    } else {
+      this.collabError.set(message);
     }
   }
 
@@ -511,6 +674,9 @@ export class IncidentDetailPage {
     }
     if (isLifecycleConflict(error)) {
       return error.detail || error.title || 'Lifecycle conflict';
+    }
+    if (isResponderConflict(error)) {
+      return error.detail || error.title || 'Responder conflict';
     }
     if (isForbidden(error)) {
       return error.detail || error.title || 'Not allowed';

@@ -42,6 +42,9 @@ describe('IncidentDetailPage', () => {
   const changeStatus = vi.fn();
   const resolve = vi.fn();
   const reopen = vi.fn();
+  const joinMock = vi.fn();
+  const leaveMock = vi.fn();
+  const addUpdateMock = vi.fn();
   const getById = vi.fn();
 
   beforeEach(async () => {
@@ -50,6 +53,9 @@ describe('IncidentDetailPage', () => {
     changeStatus.mockReset();
     resolve.mockReset();
     reopen.mockReset();
+    joinMock.mockReset();
+    leaveMock.mockReset();
+    addUpdateMock.mockReset();
     getById.mockReset();
     getById.mockResolvedValue(detailDto());
 
@@ -88,6 +94,9 @@ describe('IncidentDetailPage', () => {
               ],
               nextAfter: null,
             }),
+            join: joinMock,
+            leave: leaveMock,
+            addUpdate: addUpdateMock,
             listTimeline: async () => ({
               items: [
                 {
@@ -313,5 +322,119 @@ describe('IncidentDetailPage', () => {
     expect(text).toContain('Apply severity');
     expect(text).not.toContain('Apply status');
     expect(text).not.toContain('Resolve…');
+    expect(text).not.toContain('Leave…');
+    expect(text).not.toContain('Post update');
+  });
+
+  it('posts written update with lifecycle token and shows leave when member', async () => {
+    addUpdateMock.mockResolvedValue({
+      incidentId: 'i1',
+      version: asRevisionString('2'),
+      lifecycleVersion: asRevisionString('4'),
+    });
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Leave…');
+    });
+    expect(fixture.nativeElement.textContent).toContain('Written update');
+    expect(fixture.nativeElement.textContent).not.toContain('Join incident');
+
+    fixture.componentInstance.updateBody.set('Checked payment path');
+    fixture.componentInstance.timelinePage.set(3);
+    await fixture.componentInstance.postWrittenUpdate();
+    expect(addUpdateMock).toHaveBeenCalledWith('i1', {
+      body: 'Checked payment path',
+      expectedLifecycleVersion: asRevisionString('3'),
+    });
+    expect(fixture.componentInstance.updateBody()).toBe('');
+    expect(fixture.componentInstance.timelinePage()).toBe(1);
+  });
+
+  it('joins when not already a responder using lifecycle token', async () => {
+    // Remount with empty responders
+    TestBed.resetTestingModule();
+    joinMock.mockResolvedValue({
+      incidentId: 'i1',
+      version: asRevisionString('2'),
+      lifecycleVersion: asRevisionString('5'),
+    });
+    getById.mockResolvedValue(detailDto());
+    const params$ = new BehaviorSubject(convertToParamMap({ id: 'i1' }));
+    await TestBed.configureTestingModule({
+      imports: [IncidentDetailPage],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTanStackQuery(new QueryClient()),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: params$.asObservable(),
+            snapshot: { paramMap: params$.value },
+          },
+        },
+        {
+          provide: IncidentsApi,
+          useValue: {
+            getById,
+            update: updateMock,
+            changeSeverity,
+            changeStatus,
+            resolve,
+            reopen,
+            join: joinMock,
+            leave: leaveMock,
+            addUpdate: addUpdateMock,
+            listResponders: async () => ({ items: [], nextAfter: null }),
+            listTimeline: async () => ({
+              items: [],
+              page: 1,
+              pageSize: 25,
+              totalCount: 0,
+              totalPages: 0,
+            }),
+          },
+        },
+        {
+          provide: ServicesApi,
+          useValue: {
+            list: async () => ({
+              items: [],
+              page: 1,
+              pageSize: 100,
+              totalCount: 0,
+              totalPages: 0,
+            }),
+          },
+        },
+        {
+          provide: IdentityApi,
+          useValue: {
+            getCurrentUser: async () => ({
+              userId: 'u1',
+              organizationId: 'o1',
+              displayName: 'Veyo R',
+              role: 'IncidentManager',
+              demo: true,
+            }),
+            getOrganization: async () => ({ id: 'o1', name: 'Acme' }),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Join incident');
+    });
+    await fixture.componentInstance.joinIncident();
+    expect(joinMock).toHaveBeenCalledWith('i1', {
+      expectedLifecycleVersion: asRevisionString('3'),
+    });
   });
 });

@@ -169,7 +169,7 @@
           [title]="confirmTitle()"
           [body]="confirmBody()"
           [confirmLabel]="confirmLabel()"
-          [danger]="confirmKind() === 'resolve'"
+          [danger]="confirmKind() === 'resolve' || confirmKind() === 'leave'"
           (confirmed)="onLifecycleConfirmed()"
           (cancelled)="onLifecycleCancelled()"
         />
@@ -177,6 +177,31 @@
 
       <section class="panel" aria-labelledby="resp-h">
         <h2 id="resp-h">Responders</h2>
+        @if (collabError()) {
+          <ob-callout variant="error">{{ collabError() }}</ob-callout>
+        }
+        <div class="actions">
+          @if (showJoin()) {
+            <button
+              type="button"
+              class="btn btn--primary"
+              [disabled]="collabPending() || conflictOpen()"
+              (click)="joinIncident()"
+            >
+              Join incident
+            </button>
+          }
+          @if (showLeave()) {
+            <button
+              type="button"
+              class="btn"
+              [disabled]="collabPending() || conflictOpen()"
+              (click)="openLeaveConfirm($event)"
+            >
+              Leave…
+            </button>
+          }
+        </div>
         @if (responders.isPending()) {
           <ob-callout variant="loading">Loading responders…</ob-callout>
         } @else if (responders.isError()) {
@@ -194,6 +219,36 @@
           </ul>
         }
       </section>
+
+      @if (showWrittenUpdate()) {
+        <section class="panel" aria-labelledby="upd-h">
+          <h2 id="upd-h">Written update</h2>
+          <form
+            class="form"
+            (submit)="$event.preventDefault(); postWrittenUpdate()"
+          >
+            <div class="field">
+              <label for="update-body">Update</label>
+              <textarea
+                id="update-body"
+                rows="3"
+                [value]="updateBody()"
+                (input)="updateBody.set($any($event.target).value)"
+                [disabled]="collabPending() || conflictOpen()"
+              ></textarea>
+            </div>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              [disabled]="
+                collabPending() || conflictOpen() || !updateBody().trim()
+              "
+            >
+              Post update
+            </button>
+          </form>
+        </section>
+      }
 
       <section class="panel" aria-labelledby="tl-h">
         <h2 id="tl-h">Timeline</h2>
