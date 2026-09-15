@@ -43,12 +43,22 @@
             </ob-callout>
           }
           @if (editError()) {
-            <ob-callout variant="error">{{ editError() }}</ob-callout>
+            <ob-callout id="edit-form-error" variant="error">{{
+              editError()
+            }}</ob-callout>
           }
           <form class="form" [formGroup]="editForm" (ngSubmit)="saveDetails()">
             <div class="field">
               <label for="edit-title">Title</label>
-              <input id="edit-title" formControlName="title" />
+              <input
+                id="edit-title"
+                formControlName="title"
+                [attr.aria-invalid]="
+                  editForm.controls.title.invalid &&
+                  editForm.controls.title.touched
+                "
+                [attr.aria-describedby]="editError() ? 'edit-form-error' : null"
+              />
             </div>
             <div class="field">
               <label for="edit-description">Description</label>
@@ -56,6 +66,10 @@
                 id="edit-description"
                 formControlName="description"
                 rows="4"
+                [attr.aria-invalid]="
+                  editForm.controls.description.invalid &&
+                  editForm.controls.description.touched
+                "
               ></textarea>
             </div>
             <div class="field">
@@ -74,6 +88,7 @@
               type="submit"
               class="btn btn--primary"
               [disabled]="updateMut.isPending() || conflictOpen()"
+              [attr.aria-busy]="updateMut.isPending()"
             >
               Save details
             </button>

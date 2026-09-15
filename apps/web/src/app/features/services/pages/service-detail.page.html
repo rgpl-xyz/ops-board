@@ -49,16 +49,33 @@
         </ob-callout>
       }
       @if (editError()) {
-        <ob-callout variant="error">{{ editError() }}</ob-callout>
+        <ob-callout id="svc-edit-error" variant="error">{{
+          editError()
+        }}</ob-callout>
       }
       <form class="form" [formGroup]="editForm" (ngSubmit)="save()">
         <div class="field">
           <label for="svc-name">Name</label>
-          <input id="svc-name" formControlName="name" />
+          <input
+            id="svc-name"
+            formControlName="name"
+            [attr.aria-invalid]="
+              editForm.controls.name.invalid && editForm.controls.name.touched
+            "
+            [attr.aria-describedby]="editError() ? 'svc-edit-error' : null"
+          />
         </div>
         <div class="field">
           <label for="svc-desc">Description</label>
-          <textarea id="svc-desc" formControlName="description" rows="4"></textarea>
+          <textarea
+            id="svc-desc"
+            formControlName="description"
+            rows="4"
+            [attr.aria-invalid]="
+              editForm.controls.description.invalid &&
+              editForm.controls.description.touched
+            "
+          ></textarea>
         </div>
         <div class="field">
           <label for="svc-team">Team</label>
@@ -84,6 +101,7 @@
           type="submit"
           class="btn btn--primary"
           [disabled]="updateMut.isPending() || conflictOpen()"
+          [attr.aria-busy]="updateMut.isPending()"
         >
           Save service
         </button>
