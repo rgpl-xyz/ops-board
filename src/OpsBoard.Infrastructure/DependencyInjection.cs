@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpsBoard.Application.Identity;
 using OpsBoard.Application.Incidents;
 using OpsBoard.Application.Lookups;
+using OpsBoard.Application.Realtime;
 using OpsBoard.Application.Services;
 using OpsBoard.Infrastructure.Identity;
 using OpsBoard.Infrastructure.Incidents;
@@ -27,6 +28,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IIncidentRealtimePublisher, NullIncidentRealtimePublisher>();
         services.AddScoped<ICurrentUser, DemoCurrentUser>();
         services.AddScoped<ILookupData, LookupData>();
         services.AddScoped<IServiceData, ServiceData>();
