@@ -4,14 +4,21 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using OpsBoard.Api.Endpoints;
 using OpsBoard.Api.Errors;
+using OpsBoard.Api.Realtime;
 using OpsBoard.Application;
+using OpsBoard.Application.Realtime;
 using OpsBoard.Infrastructure;
 using OpsBoard.Infrastructure.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.PayloadSerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
+});
 builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -36,6 +43,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IIncidentRealtimePublisher, SignalRIncidentRealtimePublisher>();
 
 var app = builder.Build();
 
@@ -89,6 +97,7 @@ app.MapGet("/api/health", () => Results.Ok(new
 .WithName("GetHealth");
 
 app.MapDomainEndpoints();
+app.MapHub<IncidentsHub>("/hubs/incidents");
 
 app.Run();
 
