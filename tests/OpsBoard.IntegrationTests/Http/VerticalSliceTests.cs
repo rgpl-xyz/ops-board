@@ -1,10 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using OpsBoard.Application.Identity;
 using OpsBoard.Domain.Enums;
 using OpsBoard.Infrastructure.Persistence;
@@ -128,17 +126,5 @@ public sealed class VerticalSliceTests(PostgresFixture fixture)
         await using var scope = factory.Services.CreateAsyncScope();
         var runner = scope.ServiceProvider.GetRequiredService<DemoSeedRunner>();
         await runner.RunAsync(CancellationToken.None);
-    }
-}
-
-internal sealed class OpsBoardWebApplicationFactory(string connectionString)
-    : WebApplicationFactory<Program>
-{
-    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
-    {
-        builder.UseSetting("ConnectionStrings:OpsBoard", connectionString);
-        builder.UseSetting("Demo:Enabled", "true");
-        builder.UseSetting("Demo:UserId", SeedIds.DemoUser.ToString());
-        builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.EnvironmentKey, "Development");
     }
 }
