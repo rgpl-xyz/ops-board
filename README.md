@@ -2,11 +2,11 @@
 
 Real-time incident and service operations management platform. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and Docker-based local development.
 
-> Status: **Phase 1 scaffold complete** (solution + Angular app compile). Domain features start in Phase 2.
+> Status: **Phases 1–4 complete** (scaffold, domain/persistence + APIs, Angular data-access, core incidents/services UI with responsive layout and baseline accessibility). Next: Phase 5 realtime (SignalR → Query cache sync).
 
 ## Screenshots
 
-_Placeholder — add dashboard / incident detail captures after Phase 4._
+_Placeholder — add dashboard / incident detail captures._
 
 ## Live demo
 
@@ -26,11 +26,17 @@ _Placeholder — deploy URL TBD._
 ```text
 OpsBoard/
 ├── apps/web/                 # Angular SPA (feature-oriented)
+│   └── src/app/
+│       ├── core/             # API, auth, config, errors (realtime TBD)
+│       ├── data-access/      # HTTP clients, Query keys/options, mappers
+│       ├── features/         # incidents, services (+ stubs for later features)
+│       ├── layout/           # shell, nav, demo banner
+│       └── shared/           # accessible UI primitives, URL sync, permissions
 ├── src/
-│   ├── OpsBoard.Api/         # HTTP + SignalR host
+│   ├── OpsBoard.Api/         # HTTP host, domain endpoints
 │   ├── OpsBoard.Application/ # DTOs, use cases, validation
-│   ├── OpsBoard.Domain/      # Entities + enums
-│   └── OpsBoard.Infrastructure/ # EF Core, persistence
+│   ├── OpsBoard.Domain/      # Entities + enums + lifecycle rules
+│   └── OpsBoard.Infrastructure/ # EF Core, migrations, demo seed
 ├── tests/
 │   ├── OpsBoard.UnitTests/
 │   └── OpsBoard.IntegrationTests/
@@ -40,14 +46,24 @@ OpsBoard/
 └── OpsBoard.sln
 ```
 
-## Architecture overview (planned)
+## Architecture overview
 
 - **Signals**: local UI / client state
-- **TanStack Query**: all server state (fetch, cache, mutations)
-- **RxJS**: SignalR streams and other async event orchestration
+- **TanStack Query**: all server state (fetch, cache, mutations, invalidation)
+- **RxJS**: async streams; SignalR orchestration arrives in Phase 5
 - **PostgreSQL**: system of record
 
 Full diagrams land in `docs/architecture.md` during Phase 8.
+
+## What works today
+
+- **Demo identity + Acme seed**: organization, teams, users, services, historical and active incidents
+- **Services API + UI**: paged/filtered list, detail, create/update with concurrency recovery
+- **Incidents API + UI**: paged/filtered list (URL-backed filters), create, detail, edit, severity/status/resolve/reopen, join/leave, written updates, timeline
+- **Shared UI**: severity/status/health badges (text cues), pagination, callouts, confirm dialog with focus management
+- **Shell**: demo environment banner, Incidents/Services navigation, identity chrome
+
+Not yet: dashboard summary UI, teams/users/postmortems screens, SignalR realtime, command palette, CI, and public architecture docs.
 
 ## Local setup
 
@@ -64,6 +80,21 @@ cp .env.example .env
 docker compose up -d postgres
 ```
 
+### Database
+
+Migrations are not applied on API startup. Apply them, then seed once:
+
+```bash
+dotnet ef database update \
+  --project src/OpsBoard.Infrastructure \
+  --startup-project src/OpsBoard.Api
+
+ASPNETCORE_ENVIRONMENT=Development \
+  dotnet run --project src/OpsBoard.Api --no-launch-profile -- --seed-demo
+```
+
+Re-running `--seed-demo` is a no-op when the Acme marker is present.
+
 ### Backend
 
 ```bash
@@ -75,7 +106,7 @@ dotnet run --project src/OpsBoard.Api --launch-profile http
 
 ### Frontend
 
-Requires **Node ≥ 24.15** (pinned in `mise.toml`) and **npm ≥ 11**.
+Requires **Node ≥ 24.15** (pinned in `mise.toml`) and **npm ≥ 11**. Dev proxy targets the local API.
 
 ```bash
 cd apps/web
@@ -96,6 +127,8 @@ dotnet test OpsBoard.sln
 cd apps/web && npm test
 ```
 
+Feature-level specs cover list/detail/forms and shared UI. Broader integration/E2E/a11y audit work is Phase 7+.
+
 ## Docker commands
 
 ```bash
@@ -104,25 +137,30 @@ docker compose ps
 docker compose down
 ```
 
-API and frontend container images are intentionally deferred until later phases. Phase 1 keeps Compose focused on PostgreSQL.
+Compose currently provides PostgreSQL only. API and frontend run locally as above; container images arrive in later phases.
 
-## Notable engineering decisions (Phase 1)
+## Notable engineering decisions
 
 1. **Pragmatic layered backend** (`Api` / `Application` / `Domain` / `Infrastructure`) without MediatR/CQRS ceremony.
 2. **Classic `.sln`** instead of .NET 10’s default `.slnx` for broader tooling compatibility.
-3. **TanStack Query wired at bootstrap** (`provideTanStackQuery`) so server-state ownership is established before feature work.
-4. **Demo banner** present from day one; auth abstraction + seed identity arrive with domain work.
-5. **Tool versions pinned in `mise.toml`** so recruiter/local clones use the same Node/.NET pair.
+3. **TanStack Query owns server state**; Signals stay on client/UI state — no mirroring Query data into Signals stores.
+4. **Optimistic concurrency** via incident `Version` / `LifecycleVersion` with conflict recovery in the UI.
+5. **URL-backed list filters** for incidents and services (shareable, refresh-safe).
+6. **Deterministic Acme demo seed** behind a Development-only `--seed-demo` command (not a public reset endpoint).
+7. **Tool versions pinned in `mise.toml`** so recruiter/local clones use the same Node/.NET pair.
 
-## Future roadmap
+## Roadmap
 
-1. Phase 2 — domain, EF Core, migrations, seed data, basic APIs  
-2. Phase 3 — Angular API client + query factories  
-3. Phase 4 — shell, dashboard, incidents, services UI  
-4. Phase 5 — SignalR realtime + cache sync  
-5. Phase 6 — command palette, a11y polish  
-6. Phase 7 — unit / integration / E2E tests  
-7. Phase 8 — GitHub Actions + architecture docs / ADRs  
+| Phase | Focus | Status |
+| --- | --- | --- |
+| 1 | Architecture / scaffold | Done |
+| 2 | Domain, EF Core, migrations, seed, service/incident APIs | Done |
+| 3 | Angular API client, Query factories, mutations | Done |
+| 4 | Shell, incidents/services lists & details, forms, baseline a11y | Done |
+| 5 | SignalR realtime + Query cache synchronization | Next |
+| 6 | Command palette, deeper keyboard/a11y polish | Planned |
+| 7 | Frontend/backend/integration/E2E/a11y test hardening | Planned |
+| 8 | GitHub Actions, Docker API support, architecture docs / ADRs | Planned |
 
 ## License
 
