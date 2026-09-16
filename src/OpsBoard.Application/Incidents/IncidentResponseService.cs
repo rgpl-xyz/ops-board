@@ -1,8 +1,10 @@
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using OpsBoard.Application.Common;
 using OpsBoard.Application.Errors;
 using OpsBoard.Application.Identity;
 using OpsBoard.Application.Lookups;
+using OpsBoard.Application.Realtime;
 using OpsBoard.Domain;
 using OpsBoard.Domain.Entities;
 
@@ -13,6 +15,8 @@ public sealed class IncidentResponseService(
     IIncidentData data,
     IIncidentReadData readData,
     ILookupData lookupData,
+    IIncidentRealtimePublisher realtimePublisher,
+    ILogger<IncidentResponseService> logger,
     IValidator<LifecycleVersionRequest> lifecycleValidator,
     IValidator<WrittenUpdateRequest> updateValidator,
     TimeProvider timeProvider)
@@ -58,6 +62,14 @@ public sealed class IncidentResponseService(
             now);
         session.AppendHistory(entry);
         var committed = await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.ResponderJoined,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         var dto = await MapEntryAsync(user.OrganizationId, committed!, cancellationToken);
         var display = await DisplayNameAsync(user.OrganizationId, user.UserId, cancellationToken);
         return new ResponseMutationDto(
@@ -108,6 +120,14 @@ public sealed class IncidentResponseService(
             now);
         session.AppendHistory(entry);
         var committed = await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.ResponderLeft,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         var dto = await MapEntryAsync(user.OrganizationId, committed!, cancellationToken);
         return new ResponseMutationDto(
             id,
@@ -152,6 +172,14 @@ public sealed class IncidentResponseService(
             request.Body);
         session.AppendHistory(entry);
         var committed = await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.WrittenUpdateAdded,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         var dto = await MapEntryAsync(user.OrganizationId, committed!, cancellationToken);
         return new ResponseMutationDto(
             id,
@@ -211,6 +239,25 @@ public sealed class IncidentResponseService(
             total,
             PageMath.TotalPages(total, query.PageSize));
     }
+
+    private Task PublishAsync(
+        Guid organizationId,
+        Guid incidentId,
+        IncidentRealtimeFactKind kind,
+        long version,
+        long lifecycleVersion,
+        DateTimeOffset occurredAtUtc,
+        CancellationToken cancellationToken) =>
+        IncidentRealtimePublication.TryPublishAsync(
+            realtimePublisher,
+            logger,
+            organizationId,
+            incidentId,
+            kind,
+            version,
+            lifecycleVersion,
+            occurredAtUtc,
+            cancellationToken);
 
     private async Task<TimelineEntryDto> MapEntryAsync(
         Guid organizationId,

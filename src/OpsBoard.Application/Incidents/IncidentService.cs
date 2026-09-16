@@ -1,7 +1,9 @@
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using OpsBoard.Application.Common;
 using OpsBoard.Application.Errors;
 using OpsBoard.Application.Identity;
+using OpsBoard.Application.Realtime;
 using OpsBoard.Application.Services;
 using OpsBoard.Domain;
 using OpsBoard.Domain.Entities;
@@ -13,6 +15,8 @@ public sealed class IncidentService(
     ICurrentUser currentUser,
     IIncidentData data,
     IServiceData serviceData,
+    IIncidentRealtimePublisher realtimePublisher,
+    ILogger<IncidentService> logger,
     IValidator<CreateIncidentRequest> createValidator,
     IValidator<UpdateIncidentRequest> updateValidator,
     IValidator<SeverityRequest> severityValidator,
@@ -78,6 +82,14 @@ public sealed class IncidentService(
             now,
             request.Severity));
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            incident.Id,
+            IncidentRealtimeFactKind.IncidentCreated,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(incident.Id, cancellationToken);
     }
 
@@ -110,6 +122,14 @@ public sealed class IncidentService(
 
         session.AdvanceScalarRevision(lifecycleChanged: false);
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.IncidentDetailsChanged,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
 
@@ -155,6 +175,14 @@ public sealed class IncidentService(
             from,
             request.Severity));
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.IncidentSeverityChanged,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
 
@@ -193,6 +221,14 @@ public sealed class IncidentService(
             from,
             request.Status));
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.IncidentStatusChanged,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
 
@@ -227,6 +263,14 @@ public sealed class IncidentService(
             now,
             from));
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.IncidentResolved,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
 
@@ -259,8 +303,35 @@ public sealed class IncidentService(
             sequence,
             now));
         await session.CommitAsync(cancellationToken);
+        await PublishAsync(
+            user.OrganizationId,
+            id,
+            IncidentRealtimeFactKind.IncidentReopened,
+            session.Version,
+            session.LifecycleVersion,
+            now,
+            cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
+
+    private Task PublishAsync(
+        Guid organizationId,
+        Guid incidentId,
+        IncidentRealtimeFactKind kind,
+        long version,
+        long lifecycleVersion,
+        DateTimeOffset occurredAtUtc,
+        CancellationToken cancellationToken) =>
+        IncidentRealtimePublication.TryPublishAsync(
+            realtimePublisher,
+            logger,
+            organizationId,
+            incidentId,
+            kind,
+            version,
+            lifecycleVersion,
+            occurredAtUtc,
+            cancellationToken);
 
     private async Task EnsureFilterTargetsExistAsync(
         Guid organizationId,
