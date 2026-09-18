@@ -11,6 +11,7 @@ import {
 
 import { routes } from './app.routes';
 import { shouldRetryQuery } from './data-access/query/query-retry';
+import { provideIncidentRealtime } from './core/realtime/provide-incident-realtime';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,5 +29,6 @@ export const appConfig: ApplicationConfig = {
         },
       }),
     ),
+    provideIncidentRealtime(),
   ],
 };
