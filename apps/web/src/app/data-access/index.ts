@@ -78,6 +78,11 @@ export {
 } from './mappers/service-query.params';
 
 export { opsboardKeys, stableQueryPart } from './query/keys';
+export {
+  invalidateIncidentLists,
+  invalidateIncidentRespondersPrefix,
+  invalidateIncidentTimelinePrefix,
+} from './query/cache-matrix';
 export { currentUserQuery, organizationQuery } from './query/identity.queries';
 export { teamsQuery, usersQuery } from './query/lookups.queries';
 export { serviceQuery, servicesQuery } from './query/services.queries';
