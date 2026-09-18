@@ -1,5 +1,15 @@
 <div class="shell">
   <header class="shell__banner" role="status">{{ demoBanner }}</header>
+  <div
+    class="shell__realtime"
+    [class.shell__realtime--warning]="
+      realtimeStatus() === 'reconnecting' || realtimeStatus() === 'disconnected'
+    "
+    role="status"
+    aria-live="polite"
+  >
+    Realtime: {{ realtimeStatusText() }}
+  </div>
 
   <div class="shell__body">
     <nav class="shell__nav" aria-label="Primary">

@@ -12,6 +12,19 @@
   letter-spacing: 0.01em;
 }
 
+.shell__realtime {
+  padding: 0.35rem 1rem;
+  border-bottom: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  color: var(--ob-muted);
+  font-size: 0.8125rem;
+}
+
+.shell__realtime--warning {
+  color: var(--ob-warn);
+  font-weight: 600;
+}
+
 .shell__body {
   display: grid;
   grid-template-columns: 14rem 1fr;

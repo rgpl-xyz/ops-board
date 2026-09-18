@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import {
@@ -10,6 +11,10 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 import { routes } from '../app.routes';
 import { IdentityApi } from '../data-access/http/identity.api';
+import {
+  IncidentRealtimeConnection,
+  type RealtimeConnectionStatus,
+} from '../core/realtime/incident-realtime-connection';
 import { ShellLayoutComponent } from './shell-layout.component';
 
 const fakeIdentity: Pick<IdentityApi, 'getCurrentUser' | 'getOrganization'> = {
@@ -27,7 +32,10 @@ const fakeIdentity: Pick<IdentityApi, 'getCurrentUser' | 'getOrganization'> = {
 };
 
 describe('ShellLayoutComponent', () => {
+  let realtimeStatus: WritableSignal<RealtimeConnectionStatus>;
+
   beforeEach(async () => {
+    realtimeStatus = signal<RealtimeConnectionStatus>('disconnected');
     await TestBed.configureTestingModule({
       imports: [ShellLayoutComponent],
       providers: [
@@ -36,6 +44,10 @@ describe('ShellLayoutComponent', () => {
         provideHttpClientTesting(),
         provideTanStackQuery(new QueryClient()),
         { provide: IdentityApi, useValue: fakeIdentity },
+        {
+          provide: IncidentRealtimeConnection,
+          useValue: { status: realtimeStatus },
+        },
       ],
     }).compileComponents();
   });
@@ -56,6 +68,35 @@ describe('ShellLayoutComponent', () => {
     expect(el.textContent).toContain('Services');
     expect(el.textContent).toContain('IncidentManager');
     expect(el.textContent).toContain('Acme Cloud');
+  });
+
+  it('renders and announces each realtime transport status without LIVE language', () => {
+    const fixture = TestBed.createComponent(ShellLayoutComponent);
+    fixture.detectChanges();
+    const statusElement = fixture.nativeElement.querySelector(
+      '.shell__realtime',
+    ) as HTMLElement;
+
+    expect(statusElement.getAttribute('role')).toBe('status');
+    expect(statusElement.getAttribute('aria-live')).toBe('polite');
+
+    for (const [status, text] of [
+      ['connecting', 'Realtime: Connecting'],
+      ['connected', 'Realtime: Connected'],
+      ['reconnecting', 'Realtime: Reconnecting'],
+      ['disconnected', 'Realtime: Disconnected'],
+    ] as const satisfies ReadonlyArray<
+      readonly [RealtimeConnectionStatus, string]
+    >) {
+      realtimeStatus.set(status);
+      fixture.detectChanges();
+      expect(statusElement.textContent).toContain(text);
+    }
+
+    expect(statusElement.textContent).not.toMatch(/\bLIVE\b/i);
+    expect(fixture.nativeElement.textContent).toContain('Incidents');
+    expect(fixture.nativeElement.textContent).toContain('Services');
+    expect(fixture.nativeElement.textContent).toContain('Demo Environment');
   });
 });
 

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   Injector,
   runInInjectionContext,
@@ -12,6 +13,7 @@ import {
   currentUserQuery,
   organizationQuery,
 } from '../data-access';
+import { IncidentRealtimeConnection } from '../core/realtime/incident-realtime-connection';
 import { CalloutComponent } from '../shared/ui/callout.component';
 
 @Component({
@@ -28,6 +30,7 @@ import { CalloutComponent } from '../shared/ui/callout.component';
 })
 export class ShellLayoutComponent {
   private readonly injector = inject(Injector);
+  private readonly realtimeConnection = inject(IncidentRealtimeConnection);
 
   /** Resolve factories once in an injection context (injectQuery option fns are not). */
   private readonly currentUserOptions = runInInjectionContext(this.injector, () =>
@@ -40,6 +43,19 @@ export class ShellLayoutComponent {
 
   protected readonly demoBanner =
     'Demo Environment — data may be periodically reset.';
+  protected readonly realtimeStatus = this.realtimeConnection.status;
+  protected readonly realtimeStatusText = computed(() => {
+    switch (this.realtimeStatus()) {
+      case 'connecting':
+        return 'Connecting';
+      case 'connected':
+        return 'Connected';
+      case 'reconnecting':
+        return 'Reconnecting';
+      case 'disconnected':
+        return 'Disconnected';
+    }
+  });
 
   protected readonly currentUser = injectQuery(() => this.currentUserOptions);
   protected readonly organization = injectQuery(
