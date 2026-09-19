@@ -121,6 +121,27 @@ public sealed class VerticalSliceTests(PostgresFixture fixture)
         Assert.NotNull(persisted.ResolvedAt);
     }
 
+    [Theory]
+    [InlineData("createdAt", "asc")]
+    [InlineData("createdAt", "desc")]
+    [InlineData("severity", "asc")]
+    [InlineData("severity", "desc")]
+    [InlineData("status", "asc")]
+    [InlineData("status", "desc")]
+    public async Task Incident_list_endpoint_returns_success_for_each_supported_sort(string sort, string direction)
+    {
+        await using var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);
+        await SeedAsync(factory);
+
+        var response = await factory.CreateClient().GetAsync(
+            $"/api/incidents?page=1&pageSize=3&sort={sort}&direction={direction}");
+
+        response.EnsureSuccessStatusCode();
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        Assert.True(page.GetProperty("totalCount").GetInt32() > 0);
+        Assert.True(page.GetProperty("items").GetArrayLength() <= 3);
+    }
+
     private static async Task SeedAsync(OpsBoardWebApplicationFactory factory)
     {
         await using var scope = factory.Services.CreateAsyncScope();

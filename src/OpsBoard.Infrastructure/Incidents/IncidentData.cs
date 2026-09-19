@@ -27,7 +27,12 @@ public sealed class IncidentData(OpsBoardDbContext db) : IIncidentData
                 on new { incident.OrganizationId, Id = incident.ServiceId } equals new { service.OrganizationId, service.Id }
             join team in db.Teams.AsNoTracking()
                 on new { service.OrganizationId, Id = service.TeamId } equals new { team.OrganizationId, team.Id }
-            select new IncidentListRow(incident, service, team);
+            select new
+            {
+                Incident = incident,
+                Service = service,
+                Team = team
+            };
 
         if (query.ServiceId is Guid serviceId)
         {
@@ -60,7 +65,35 @@ public sealed class IncidentData(OpsBoardDbContext db) : IIncidentData
 
         var total = await baseQuery.CountAsync(cancellationToken);
         var offset = PageMath.CheckedOffset(query.Page, query.PageSize);
-        var ordered = ApplySort(baseQuery, query.Sort, query.Direction);
+        var desc = query.Direction == "desc";
+        var ordered = query.Sort switch
+        {
+            "severity" => desc
+                ? baseQuery.OrderByDescending(x => x.Incident.Severity == IncidentSeverity.Critical)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.High)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Medium)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Low)
+                    .ThenBy(x => x.Incident.Id)
+                : baseQuery.OrderByDescending(x => x.Incident.Severity == IncidentSeverity.Low)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Medium)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.High)
+                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Critical)
+                    .ThenBy(x => x.Incident.Id),
+            "status" => desc
+                ? baseQuery.OrderByDescending(x => x.Incident.Status == IncidentStatus.Investigating)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Identified)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Monitoring)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Resolved)
+                    .ThenBy(x => x.Incident.Id)
+                : baseQuery.OrderByDescending(x => x.Incident.Status == IncidentStatus.Resolved)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Monitoring)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Identified)
+                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Investigating)
+                    .ThenBy(x => x.Incident.Id),
+            _ => desc
+                ? baseQuery.OrderByDescending(x => x.Incident.CreatedAt).ThenBy(x => x.Incident.Id)
+                : baseQuery.OrderBy(x => x.Incident.CreatedAt).ThenBy(x => x.Incident.Id)
+        };
         var items = await ordered.Skip(offset).Take(query.PageSize)
             .Select(x => new IncidentSummaryDto(
                 x.Incident.Id,
@@ -194,41 +227,4 @@ public sealed class IncidentData(OpsBoardDbContext db) : IIncidentData
         command.Parameters.Add(p);
     }
 
-    private static IQueryable<IncidentListRow> ApplySort(
-        IQueryable<IncidentListRow> query,
-        string sort,
-        string direction)
-    {
-        var desc = direction == "desc";
-        return sort switch
-        {
-            "severity" => desc
-                ? query.OrderByDescending(x => x.Incident.Severity == IncidentSeverity.Critical)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.High)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Medium)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Low)
-                    .ThenBy(x => x.Incident.Id)
-                : query.OrderByDescending(x => x.Incident.Severity == IncidentSeverity.Low)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Medium)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.High)
-                    .ThenByDescending(x => x.Incident.Severity == IncidentSeverity.Critical)
-                    .ThenBy(x => x.Incident.Id),
-            "status" => desc
-                ? query.OrderByDescending(x => x.Incident.Status == IncidentStatus.Investigating)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Identified)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Monitoring)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Resolved)
-                    .ThenBy(x => x.Incident.Id)
-                : query.OrderByDescending(x => x.Incident.Status == IncidentStatus.Resolved)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Monitoring)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Identified)
-                    .ThenByDescending(x => x.Incident.Status == IncidentStatus.Investigating)
-                    .ThenBy(x => x.Incident.Id),
-            _ => desc
-                ? query.OrderByDescending(x => x.Incident.CreatedAt).ThenBy(x => x.Incident.Id)
-                : query.OrderBy(x => x.Incident.CreatedAt).ThenBy(x => x.Incident.Id)
-        };
-    }
-
-    private sealed record IncidentListRow(Incident Incident, Service Service, Team Team);
 }
