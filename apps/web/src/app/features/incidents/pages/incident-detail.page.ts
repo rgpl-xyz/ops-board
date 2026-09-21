@@ -344,6 +344,7 @@ export class IncidentDetailPage {
   });
 
   private lastBoundVersion = signal<string | null>(null);
+  private lastFormVersion = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -353,20 +354,33 @@ export class IncidentDetailPage {
       }
       const version = String(incident.version);
       untracked(() => {
-        if (this.lastBoundVersion() === version) {
+        if (this.lastBoundVersion() !== version) {
+          this.lastBoundVersion.set(version);
+          this.severityDraft.set(incident.severity);
+          this.statusDraft.set(
+            incident.status === 'Resolved' ? 'Investigating' : incident.status,
+          );
+        }
+
+        /**
+         * A passive refresh never overwrites work in progress: only a pristine
+         * form adopts new server values. Explicit conflict recovery is the one
+         * path that replaces typed values.
+         */
+        if (this.editForm.dirty || this.lastFormVersion() === version) {
           return;
         }
-        this.lastBoundVersion.set(version);
-        this.editForm.reset({
-          title: incident.title,
-          description: incident.description,
-          serviceId: incident.serviceId,
-        });
-        this.severityDraft.set(incident.severity);
-        this.statusDraft.set(
-          incident.status === 'Resolved' ? 'Investigating' : incident.status,
-        );
+        this.bindEditForm(incident);
       });
+    });
+  }
+
+  private bindEditForm(incident: IncidentDetailDto): void {
+    this.lastFormVersion.set(String(incident.version));
+    this.editForm.reset({
+      title: incident.title,
+      description: incident.description,
+      serviceId: incident.serviceId,
     });
   }
 
@@ -646,11 +660,7 @@ export class IncidentDetailPage {
         staleTime: 0,
       });
       this.lastBoundVersion.set(String(fresh.version));
-      this.editForm.reset({
-        title: fresh.title,
-        description: fresh.description,
-        serviceId: fresh.serviceId,
-      });
+      this.bindEditForm(fresh);
       this.severityDraft.set(fresh.severity);
       this.statusDraft.set(
         fresh.status === 'Resolved' ? 'Investigating' : fresh.status,

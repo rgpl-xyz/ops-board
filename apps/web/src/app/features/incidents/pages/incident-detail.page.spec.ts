@@ -9,7 +9,7 @@ import {
 import { BehaviorSubject } from 'rxjs';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-import { asRevisionString } from '../../../data-access';
+import { asRevisionString, opsboardKeys } from '../../../data-access';
 import { IdentityApi } from '../../../data-access/http/identity.api';
 import { IncidentsApi } from '../../../data-access/http/incidents.api';
 import { ServicesApi } from '../../../data-access/http/services.api';
@@ -174,6 +174,88 @@ describe('IncidentDetailPage', () => {
         },
       ],
     }).compileComponents();
+  });
+
+  async function mountEditable() {
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Edit details');
+    });
+    return fixture;
+  }
+
+  /** Mirrors a realtime/refetch cache write, which is the passive path. */
+  function passiveDetail(overrides: Record<string, unknown>) {
+    TestBed.inject(QueryClient).setQueryData(
+      opsboardKeys.incidents.detail('i1'),
+      detailDto(overrides),
+    );
+  }
+
+  it('adopts fresh server values while the edit form is pristine', async () => {
+    const fixture = await mountEditable();
+    expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+      'Checkout timeouts',
+    );
+
+    passiveDetail({
+      title: 'Server retitled',
+      version: asRevisionString('5'),
+    });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+        'Server retitled',
+      );
+    });
+
+    expect(fixture.componentInstance.editForm.pristine).toBe(true);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('keeps dirty edit values, controls, and focus across a passive change', async () => {
+    const fixture = await mountEditable();
+
+    const title = fixture.nativeElement.querySelector(
+      '#edit-title',
+    ) as HTMLInputElement;
+    title.focus();
+    title.value = 'Half typed title';
+    title.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.editForm.dirty).toBe(true);
+
+    passiveDetail({
+      title: 'Server retitled',
+      description: 'Server description',
+      version: asRevisionString('7'),
+    });
+    // The passive change really did land: the page summary shows it.
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Server retitled');
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue()).toEqual({
+      title: 'Half typed title',
+      description: 'Payments failing',
+      serviceId: 's1',
+    });
+    expect(title.value).toBe('Half typed title');
+    expect(document.activeElement).toBe(title);
+    expect(fixture.componentInstance.conflictOpen()).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('[role="alert"]'),
+    ).toBeNull();
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('shows summary, responders, and written vs system timeline', async () => {
