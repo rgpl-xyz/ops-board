@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
@@ -79,6 +80,7 @@ function result(
 })
 export class CommandPaletteComponent {
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
 
   private readonly dialogRef =
     viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
@@ -400,12 +402,18 @@ export class CommandPaletteComponent {
     }
   }
 
+  /**
+   * Fixed order: mark the navigation close, close without restoring the
+   * invoker, and only then navigate, so no closing render step can pull focus
+   * back from the destination target.
+   */
   protected activate(row: PaletteResult): void {
     if (!row.enabled) {
       return;
     }
 
     this.close('navigate');
+    void this.router.navigate([...row.route]);
   }
 
   private activeElement(): HTMLElement | null {

@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router, RouterOutlet } from '@angular/router';
 import {
   provideTanStackQuery,
   QueryClient,
@@ -8,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { asRevisionString, type UserRole } from '../data-access';
+import { RouteFocusService } from '../core/a11y/route-focus.service';
 import { IdentityApi } from '../data-access/http/identity.api';
 import { IncidentsApi } from '../data-access/http/incidents.api';
 import { ServicesApi } from '../data-access/http/services.api';
@@ -73,6 +76,22 @@ const page = <T>(items: T[]) => ({
   totalPages: 1,
 });
 
+@Component({
+  selector: 'ob-test-blank',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '',
+})
+class BlankRoute {}
+
+/** Mirrors the real activation targets so activations resolve in tests. */
+const ACTIVATION_ROUTES = [
+  { path: 'incidents', component: BlankRoute },
+  { path: 'incidents/new', component: BlankRoute },
+  { path: 'incidents/:id', component: BlankRoute },
+  { path: 'services', component: BlankRoute },
+  { path: 'services/:id', component: BlankRoute },
+];
+
 describe('CommandPaletteComponent', () => {
   let fixture: ComponentFixture<CommandPaletteComponent>;
   let palette: CommandPaletteComponent;
@@ -85,6 +104,7 @@ describe('CommandPaletteComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CommandPaletteComponent],
       providers: [
+        provideRouter(ACTIVATION_ROUTES),
         provideHttpClient(),
         provideHttpClientTesting(),
         provideTanStackQuery(
@@ -483,6 +503,63 @@ describe('CommandPaletteComponent', () => {
       expect(document.activeElement).not.toBe(invoker);
     });
 
+    it('closes without restoring the invoker and then navigates for each activation', async () => {
+      const navigate = vi
+        .spyOn(TestBed.inject(Router), 'navigate')
+        .mockResolvedValue(true);
+
+      press('Enter');
+      await TestBed.tick();
+
+      expect(isOpen()).toBe(false);
+      expect(document.activeElement).not.toBe(invoker);
+      expect(navigate).toHaveBeenCalledWith(['/incidents']);
+
+      palette.openFrom(invoker);
+      await settle();
+      press('End');
+      press('Enter');
+      await TestBed.tick();
+      expect(navigate).toHaveBeenCalledWith(['/incidents', 'new']);
+
+      palette.openFrom(invoker);
+      await settle();
+      await search('pay');
+      await settle();
+
+      optionEls()[0].click();
+      await TestBed.tick();
+      expect(navigate).toHaveBeenCalledWith(['/incidents', 'i1']);
+      expect(isOpen()).toBe(false);
+
+      palette.openFrom(invoker);
+      await settle();
+      await search('pay');
+      await settle();
+      optionEls()[1].click();
+      await TestBed.tick();
+      expect(navigate).toHaveBeenCalledWith(['/services', 's1']);
+    });
+
+    it('navigates for Go to Services and leaves dismissal untouched', async () => {
+      const navigate = vi
+        .spyOn(TestBed.inject(Router), 'navigate')
+        .mockResolvedValue(true);
+
+      press('ArrowDown');
+      press('Enter');
+      await TestBed.tick();
+      expect(navigate).toHaveBeenCalledWith(['/services']);
+
+      palette.openFrom(invoker);
+      await settle();
+      press('Escape');
+      await TestBed.tick();
+
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(invoker);
+    });
+
     it('announces a settled count or no-match outcome politely and stays quiet otherwise', async () => {
       const summary = fixture.nativeElement.querySelector(
         '.palette__summary',
@@ -513,6 +590,130 @@ describe('CommandPaletteComponent', () => {
       await settle();
 
       expect(optionLabels()).toEqual(['Go to Incidents', 'Go to Services']);
+    });
+  });
+
+  describe('routed activation handoff', () => {
+    @Component({
+      selector: 'ob-test-incidents',
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template:
+        '<main><h1 data-ob-route-focus tabindex="-1">Incidents</h1></main>',
+    })
+    class IncidentsRoute {}
+
+    @Component({
+      selector: 'ob-test-services',
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template:
+        '<main><h1 data-ob-route-focus tabindex="-1">Services</h1></main>',
+    })
+    class ServicesRoute {}
+
+    @Component({
+      selector: 'ob-test-host',
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      imports: [CommandPaletteComponent, RouterOutlet],
+      template: `
+        <button type="button" id="entry">Command menu</button>
+        <ob-command-palette />
+        <router-outlet />
+      `,
+    })
+    class HostShell {
+      private readonly routeFocus = inject(RouteFocusService);
+
+      constructor() {
+        this.routeFocus.initialize();
+      }
+    }
+
+    it('gives the destination target focus instead of the palette invoker', async () => {
+      await TestBed.configureTestingModule({
+        imports: [HostShell],
+        providers: [
+          provideRouter([
+            { path: 'incidents', component: IncidentsRoute },
+            { path: 'services', component: ServicesRoute },
+          ]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          provideTanStackQuery(
+            new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+          ),
+          {
+            provide: IdentityApi,
+            useValue: {
+              getCurrentUser: async () => ({
+                userId: 'u1',
+                organizationId: 'o1',
+                displayName: 'Veyo R',
+                role: 'IncidentManager',
+                demo: true,
+              }),
+              getOrganization: async () => ({ id: 'o1', name: 'Acme Cloud' }),
+            },
+          },
+          { provide: IncidentsApi, useValue: { list: incidentsList } },
+          { provide: ServicesApi, useValue: { list: servicesList } },
+        ],
+      }).compileComponents();
+
+      const host = TestBed.createComponent(HostShell);
+      document.body.append(host.nativeElement);
+      host.detectChanges();
+
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl('/incidents');
+      await TestBed.tick();
+
+      const dialog = host.nativeElement.querySelector(
+        'dialog',
+      ) as HTMLDialogElement;
+      stubNativeDialog(dialog);
+
+      const entry = host.nativeElement.querySelector(
+        '#entry',
+      ) as HTMLButtonElement;
+      entry.focus();
+
+      const paletteInstance = host.debugElement.query(
+        (node) => node.componentInstance instanceof CommandPaletteComponent,
+      ).componentInstance as CommandPaletteComponent;
+      paletteInstance.openFrom(entry);
+      await TestBed.tick();
+
+      const search = host.nativeElement.querySelector(
+        'input[role="combobox"]',
+      ) as HTMLInputElement;
+      search.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowDown',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      search.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+
+      await vi.advanceTimersByTimeAsync(300);
+      await TestBed.tick();
+      await TestBed.tick();
+
+      expect(router.url).toBe('/services');
+      expect(dialog.open || dialog.hasAttribute('open')).toBe(false);
+      expect(document.activeElement).not.toBe(entry);
+      expect(
+        (document.activeElement as HTMLElement | null)?.textContent,
+      ).toContain('Services');
+
+      host.destroy();
+      host.nativeElement.remove();
     });
   });
 });
