@@ -15,6 +15,7 @@ import {
   IncidentRealtimeConnection,
   type RealtimeConnectionStatus,
 } from '../core/realtime/incident-realtime-connection';
+import { RouteFocusService } from '../core/a11y/route-focus.service';
 import { ShellLayoutComponent } from './shell-layout.component';
 
 const fakeIdentity: Pick<IdentityApi, 'getCurrentUser' | 'getOrganization'> = {
@@ -97,6 +98,23 @@ describe('ShellLayoutComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Incidents');
     expect(fixture.nativeElement.textContent).toContain('Services');
     expect(fixture.nativeElement.textContent).toContain('Demo Environment');
+  });
+
+  it('initializes the root route-focus service from the persistent shell', () => {
+    let instances = 0;
+    const initialize = vi.fn();
+    TestBed.overrideProvider(RouteFocusService, {
+      useFactory: () => {
+        instances += 1;
+        return { initialize };
+      },
+    });
+
+    const fixture = TestBed.createComponent(ShellLayoutComponent);
+    fixture.detectChanges();
+
+    expect(instances).toBe(1);
+    expect(initialize).toHaveBeenCalledTimes(1);
   });
 });
 

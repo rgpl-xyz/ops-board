@@ -102,6 +102,17 @@ describe('ServiceDetailPage', () => {
     expect(link).toBeTruthy();
   });
 
+  it('marks its loading branch as a named route-focus context', () => {
+    const fixture = TestBed.createComponent(ServiceDetailPage);
+    fixture.detectChanges();
+
+    const target = fixture.nativeElement.querySelector(
+      '[data-ob-route-focus]',
+    ) as HTMLElement;
+    expect(target.getAttribute('tabindex')).toBe('-1');
+    expect(target.getAttribute('aria-label')).toBe('Loading service details');
+  });
+
   it('saves with expectedVersion from Query and recovers from 409', async () => {
     update.mockRejectedValueOnce({
       type: 'urn:opsboard:problem:concurrency_conflict',

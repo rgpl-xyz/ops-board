@@ -67,9 +67,12 @@ describe('shared presentational UI', () => {
     const fixture = TestBed.createComponent(PageHeaderComponent);
     fixture.componentRef.setInput('title', 'Incidents');
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain(
+    const heading = fixture.nativeElement.querySelector('h1') as HTMLElement;
+    expect(heading.textContent).toContain(
       'Incidents',
     );
+    expect(heading.getAttribute('data-ob-route-focus')).toBe('');
+    expect(heading.getAttribute('tabindex')).toBe('-1');
   });
 
   it('disables previous on first page and next on last page', async () => {

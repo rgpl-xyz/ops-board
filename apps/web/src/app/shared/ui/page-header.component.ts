@@ -9,7 +9,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         @if (eyebrow()) {
           <p class="page-header__eyebrow">{{ eyebrow() }}</p>
         }
-        <h1 class="page-header__title">{{ title() }}</h1>
+        <h1
+          class="page-header__title"
+          data-ob-route-focus
+          tabindex="-1"
+        >
+          {{ title() }}
+        </h1>
       </div>
       <div class="page-header__actions">
         <ng-content select="[actions]" />

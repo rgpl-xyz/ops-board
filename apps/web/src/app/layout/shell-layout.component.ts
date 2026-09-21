@@ -14,6 +14,7 @@ import {
   organizationQuery,
 } from '../data-access';
 import { IncidentRealtimeConnection } from '../core/realtime/incident-realtime-connection';
+import { RouteFocusService } from '../core/a11y/route-focus.service';
 import { CalloutComponent } from '../shared/ui/callout.component';
 
 @Component({
@@ -31,6 +32,7 @@ import { CalloutComponent } from '../shared/ui/callout.component';
 export class ShellLayoutComponent {
   private readonly injector = inject(Injector);
   private readonly realtimeConnection = inject(IncidentRealtimeConnection);
+  private readonly routeFocus = inject(RouteFocusService);
 
   /** Resolve factories once in an injection context (injectQuery option fns are not). */
   private readonly currentUserOptions = runInInjectionContext(this.injector, () =>
@@ -61,4 +63,8 @@ export class ShellLayoutComponent {
   protected readonly organization = injectQuery(
     () => this.organizationOptions,
   );
+
+  constructor() {
+    this.routeFocus.initialize();
+  }
 }

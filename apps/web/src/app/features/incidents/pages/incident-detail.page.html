@@ -1,10 +1,31 @@
 @if (!id()) {
-  <ob-callout variant="error">Missing incident id.</ob-callout>
+  <section
+    aria-label="Incident details"
+    data-ob-route-focus
+    tabindex="-1"
+  >
+    <h1>Incident details</h1>
+    <ob-callout variant="error">Missing incident id.</ob-callout>
+  </section>
 } @else {
   @if (detail.isPending()) {
-    <ob-callout variant="loading">Loading incident…</ob-callout>
+    <section
+      aria-label="Loading incident details"
+      data-ob-route-focus
+      tabindex="-1"
+    >
+      <h1>Loading incident details</h1>
+      <ob-callout variant="loading">Loading incident…</ob-callout>
+    </section>
   } @else if (detail.isError()) {
-    <ob-callout variant="error">Could not load incident.</ob-callout>
+    <section
+      aria-label="Incident details error"
+      data-ob-route-focus
+      tabindex="-1"
+    >
+      <h1>Incident details</h1>
+      <ob-callout variant="error">Could not load incident.</ob-callout>
+    </section>
   } @else if (detail.data(); as incident) {
     <ob-page-header [title]="incident.title">
       <a actions routerLink="/incidents" class="back">Incidents</a>

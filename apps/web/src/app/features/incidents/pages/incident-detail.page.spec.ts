@@ -190,6 +190,19 @@ describe('IncidentDetailPage', () => {
     expect(text).toContain('System · IncidentCreated');
   });
 
+  it('marks its loading branch as a named route-focus context', () => {
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    fixture.detectChanges();
+
+    const target = fixture.nativeElement.querySelector(
+      '[data-ob-route-focus]',
+    ) as HTMLElement;
+    expect(target.getAttribute('tabindex')).toBe('-1');
+    expect(target.getAttribute('aria-label')).toBe(
+      'Loading incident details',
+    );
+  });
+
   it('saves details with expectedVersion from Query data', async () => {
     updateMock.mockResolvedValue(
       detailDto({ title: 'Updated', version: asRevisionString('3') }),
