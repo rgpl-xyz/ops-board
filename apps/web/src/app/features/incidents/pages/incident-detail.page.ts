@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   Injector,
   runInInjectionContext,
@@ -59,6 +60,7 @@ import {
   canReopen,
   canResolve,
 } from '../utils/incident-actions';
+import { focusAfterRender } from '../../../shared/a11y/focus';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
@@ -92,6 +94,10 @@ export class IncidentDetailPage {
 
   private readonly confirmDialog =
     viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
+  private readonly conflictDismiss =
+    viewChild<ElementRef<HTMLButtonElement>>('conflictDismiss');
+  private readonly editTitle =
+    viewChild<ElementRef<HTMLInputElement>>('editTitle');
 
   protected readonly id = toSignal(
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
@@ -394,6 +400,7 @@ export class IncidentDetailPage {
 
   dismissConflict(): void {
     this.conflictOpen.set(false);
+    focusAfterRender(this.injector, () => this.editTitle()?.nativeElement);
   }
 
   onSeverityDraft(value: string): void {
@@ -648,6 +655,10 @@ export class IncidentDetailPage {
   ): Promise<void> {
     if (isConcurrencyConflict(error)) {
       this.conflictOpen.set(true);
+      focusAfterRender(
+        this.injector,
+        () => this.conflictDismiss()?.nativeElement,
+      );
       const id = this.id();
       if (!id) {
         return;

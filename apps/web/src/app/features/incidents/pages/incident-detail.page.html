@@ -57,7 +57,12 @@
               fields, then dismiss and submit again if your change is still
               needed.
               <div class="actions">
-                <button type="button" class="btn btn--primary" (click)="dismissConflict()">
+                <button
+                  #conflictDismiss
+                  type="button"
+                  class="btn btn--primary"
+                  (click)="dismissConflict()"
+                >
                   Dismiss and continue editing
                 </button>
               </div>
@@ -72,6 +77,7 @@
             <div class="field">
               <label for="edit-title">Title</label>
               <input
+                #editTitle
                 id="edit-title"
                 formControlName="title"
                 [attr.aria-invalid]="
@@ -127,10 +133,10 @@
           <ob-callout variant="error">{{ lifecycleError() }}</ob-callout>
         }
         @if (conflictOpen()) {
-          <ob-callout variant="conflict">
-            Server data changed. Dismiss the conflict above before applying
-            lifecycle changes.
-          </ob-callout>
+          <p class="muted">
+            Server data changed. Dismiss the recovery message in Edit details
+            before applying lifecycle changes.
+          </p>
         }
         <div class="actions lifecycle-actions">
           @if (showSeverity()) {

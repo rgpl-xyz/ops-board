@@ -258,6 +258,54 @@ describe('IncidentDetailPage', () => {
     fixture.nativeElement.remove();
   });
 
+  it('focuses one conflict recovery surface and returns focus on dismiss', async () => {
+    updateMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:concurrency_conflict',
+      title: 'Conflict',
+      status: 409,
+      detail: 'stale',
+      code: 'concurrency_conflict',
+    });
+    getById
+      .mockResolvedValueOnce(detailDto())
+      .mockResolvedValue(
+        detailDto({ title: 'Server title', version: asRevisionString('9') }),
+      );
+
+    const fixture = await mountEditable();
+    fixture.componentInstance.editForm.setValue({
+      title: 'Stale draft',
+      description: 'Payments failing',
+      serviceId: 's1',
+    });
+
+    await fixture.componentInstance.saveDetails();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+
+    const recovery = alerts[0].querySelector('button') as HTMLButtonElement;
+    expect(recovery.textContent).toContain('Dismiss and continue editing');
+    expect(document.activeElement).toBe(recovery);
+    expect(fixture.nativeElement.textContent).toContain(
+      'before applying lifecycle changes',
+    );
+
+    recovery.click();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.conflictOpen()).toBe(false);
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('#edit-title'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   it('shows summary, responders, and written vs system timeline', async () => {
     const fixture = TestBed.createComponent(IncidentDetailPage);
     fixture.detectChanges();

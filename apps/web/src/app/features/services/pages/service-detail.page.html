@@ -60,6 +60,7 @@
           dismiss and submit again if your change is still needed.
           <div class="actions">
             <button
+              #conflictDismiss
               type="button"
               class="btn btn--primary"
               (click)="dismissConflict()"
@@ -78,6 +79,7 @@
         <div class="field">
           <label for="svc-name">Name</label>
           <input
+            #editName
             id="svc-name"
             formControlName="name"
             [attr.aria-invalid]="

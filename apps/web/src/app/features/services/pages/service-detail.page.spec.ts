@@ -168,4 +168,55 @@ describe('ServiceDetailPage', () => {
       expectedVersion: asRevisionString('9'),
     });
   });
+
+  it('focuses its conflict recovery action and returns focus on dismiss', async () => {
+    update.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:concurrency_conflict',
+      title: 'Conflict',
+      status: 409,
+      detail: 'stale',
+      code: 'concurrency_conflict',
+    });
+    getById
+      .mockResolvedValueOnce(serviceDto())
+      .mockResolvedValue(
+        serviceDto({ name: 'Server name', version: asRevisionString('9') }),
+      );
+
+    const fixture = TestBed.createComponent(ServiceDetailPage);
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Update service');
+    });
+
+    fixture.componentInstance.editForm.setValue({
+      name: 'Stale draft',
+      description: 'Authorizes checkout payments',
+      teamId: 't1',
+      health: 'Outage',
+    });
+    await fixture.componentInstance.save();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+
+    const recovery = alerts[0].querySelector('button') as HTMLButtonElement;
+    expect(document.activeElement).toBe(recovery);
+
+    recovery.click();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.conflictOpen()).toBe(false);
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('#svc-name'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 });

@@ -3,11 +3,13 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   Injector,
   runInInjectionContext,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -36,6 +38,7 @@ import {
   type ServiceHealth,
 } from '../../../data-access';
 import { canManage } from '../../../shared/permissions/capabilities';
+import { focusAfterRender } from '../../../shared/a11y/focus';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { HealthBadgeComponent } from '../../../shared/ui/health-badge.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
@@ -63,6 +66,11 @@ export class ServiceDetailPage {
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
     { initialValue: '' },
   );
+
+  private readonly conflictDismiss =
+    viewChild<ElementRef<HTMLButtonElement>>('conflictDismiss');
+  private readonly editName =
+    viewChild<ElementRef<HTMLInputElement>>('editName');
 
   readonly conflictOpen = signal(false);
   protected readonly editError = signal<string | null>(null);
@@ -142,6 +150,7 @@ export class ServiceDetailPage {
 
   dismissConflict(): void {
     this.conflictOpen.set(false);
+    focusAfterRender(this.injector, () => this.editName()?.nativeElement);
   }
 
   async save(): Promise<void> {
@@ -176,6 +185,10 @@ export class ServiceDetailPage {
     } catch (error) {
       if (isConcurrencyConflict(error)) {
         this.conflictOpen.set(true);
+        focusAfterRender(
+          this.injector,
+          () => this.conflictDismiss()?.nativeElement,
+        );
         const fresh = await this.queryClient.fetchQuery({
           ...options,
           staleTime: 0,
