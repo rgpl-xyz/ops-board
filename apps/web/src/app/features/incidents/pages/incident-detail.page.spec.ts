@@ -580,4 +580,70 @@ describe('IncidentDetailPage', () => {
       expectedLifecycleVersion: asRevisionString('3'),
     });
   });
+
+  it('focuses the first invalid edit control and keeps typed values', async () => {
+    const fixture = await mountEditable();
+    const title = fixture.nativeElement.querySelector(
+      '#edit-title',
+    ) as HTMLInputElement;
+    title.value = '';
+    title.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.saveDetails();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(title.getAttribute('aria-describedby')).toBe('edit-title-error');
+    expect(
+      (
+        fixture.nativeElement.querySelector('#edit-title-error') as HTMLElement
+      ).textContent,
+    ).toContain('Title is required.');
+    expect(document.activeElement).toBe(title);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('maps a server field error on the edit form without an alert summary', async () => {
+    updateMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:validation_failed',
+      title: 'Validation failed',
+      status: 400,
+      detail: 'One or more fields are invalid.',
+      code: 'validation_failed',
+      errors: { title: ['Title is already used.'] },
+    });
+
+    const fixture = await mountEditable();
+    fixture.componentInstance.editForm.setValue({
+      title: 'Duplicate title',
+      description: 'Payments failing',
+      serviceId: 's1',
+    });
+
+    await fixture.componentInstance.saveDetails();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+      'Duplicate title',
+    );
+    expect(
+      (
+        fixture.nativeElement.querySelector('#edit-title-error') as HTMLElement
+      ).textContent,
+    ).toContain('Title is already used.');
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('#edit-title'),
+    );
+    expect(
+      fixture.nativeElement.querySelectorAll('[role="alert"]'),
+    ).toHaveLength(0);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 });

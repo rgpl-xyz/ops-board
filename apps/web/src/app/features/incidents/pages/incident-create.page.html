@@ -5,7 +5,7 @@
 } @else {
   <form class="form" [formGroup]="form" (ngSubmit)="submit()">
     @if (formError()) {
-      <ob-callout id="create-form-error" variant="error">{{
+      <ob-callout id="create-form-error" tabindex="-1" variant="error">{{
         formError()
       }}</ob-callout>
     }
@@ -16,12 +16,10 @@
         id="title"
         formControlName="title"
         [attr.aria-invalid]="form.controls.title.invalid && form.controls.title.touched"
-        [attr.aria-describedby]="
-          form.controls.title.errors?.['server'] ? 'title-error' : null
-        "
+        [attr.aria-describedby]="fieldError('title') ? 'title-error' : null"
       />
-      @if (form.controls.title.errors?.['server']; as msg) {
-        <p id="title-error" class="field__error" role="alert">{{ msg }}</p>
+      @if (fieldError('title'); as msg) {
+        <p id="title-error" class="field__error">{{ msg }}</p>
       }
     </div>
 
@@ -34,7 +32,13 @@
         [attr.aria-invalid]="
           form.controls.description.invalid && form.controls.description.touched
         "
+        [attr.aria-describedby]="
+          fieldError('description') ? 'description-error' : null
+        "
       ></textarea>
+      @if (fieldError('description'); as msg) {
+        <p id="description-error" class="field__error">{{ msg }}</p>
+      }
     </div>
 
     <div class="field">
@@ -42,7 +46,16 @@
       @if (services.isError()) {
         <ob-callout variant="error">Could not load services.</ob-callout>
       } @else {
-        <select id="serviceId" formControlName="serviceId">
+        <select
+          id="serviceId"
+          formControlName="serviceId"
+          [attr.aria-invalid]="
+            form.controls.serviceId.invalid && form.controls.serviceId.touched
+          "
+          [attr.aria-describedby]="
+            fieldError('serviceId') ? 'serviceId-error' : null
+          "
+        >
           <option value="">
             {{ services.isPending() ? 'Loading…' : 'Select a service…' }}
           </option>
@@ -51,15 +64,30 @@
           }
         </select>
       }
+      @if (fieldError('serviceId'); as msg) {
+        <p id="serviceId-error" class="field__error">{{ msg }}</p>
+      }
     </div>
 
     <div class="field">
       <label for="severity">Severity</label>
-      <select id="severity" formControlName="severity">
+      <select
+        id="severity"
+        formControlName="severity"
+        [attr.aria-invalid]="
+          form.controls.severity.invalid && form.controls.severity.touched
+        "
+        [attr.aria-describedby]="
+          fieldError('severity') ? 'severity-error' : null
+        "
+      >
         @for (s of severities; track s) {
           <option [value]="s">{{ s }}</option>
         }
       </select>
+      @if (fieldError('severity'); as msg) {
+        <p id="severity-error" class="field__error">{{ msg }}</p>
+      }
     </div>
 
     <div class="actions">

@@ -69,7 +69,7 @@
             </ob-callout>
           }
           @if (editError()) {
-            <ob-callout id="edit-form-error" variant="error">{{
+            <ob-callout id="edit-form-error" tabindex="-1" variant="error">{{
               editError()
             }}</ob-callout>
           }
@@ -84,8 +84,13 @@
                   editForm.controls.title.invalid &&
                   editForm.controls.title.touched
                 "
-                [attr.aria-describedby]="editError() ? 'edit-form-error' : null"
+                [attr.aria-describedby]="
+                  editFieldError('title') ? 'edit-title-error' : null
+                "
               />
+              @if (editFieldError('title'); as msg) {
+                <p id="edit-title-error" class="field__error">{{ msg }}</p>
+              }
             </div>
             <div class="field">
               <label for="edit-description">Description</label>
@@ -97,18 +102,37 @@
                   editForm.controls.description.invalid &&
                   editForm.controls.description.touched
                 "
+                [attr.aria-describedby]="
+                  editFieldError('description') ? 'edit-description-error' : null
+                "
               ></textarea>
+              @if (editFieldError('description'); as msg) {
+                <p id="edit-description-error" class="field__error">{{ msg }}</p>
+              }
             </div>
             <div class="field">
               <label for="edit-service">Service</label>
               @if (services.isError()) {
                 <ob-callout variant="error">Could not load services.</ob-callout>
               } @else {
-                <select id="edit-service" formControlName="serviceId">
+                <select
+                  id="edit-service"
+                  formControlName="serviceId"
+                  [attr.aria-invalid]="
+                    editForm.controls.serviceId.invalid &&
+                    editForm.controls.serviceId.touched
+                  "
+                  [attr.aria-describedby]="
+                    editFieldError('serviceId') ? 'edit-service-error' : null
+                  "
+                >
                   @for (svc of services.data()?.items ?? []; track svc.id) {
                     <option [value]="svc.id">{{ svc.name }}</option>
                   }
                 </select>
+              }
+              @if (editFieldError('serviceId'); as msg) {
+                <p id="edit-service-error" class="field__error">{{ msg }}</p>
               }
             </div>
             <button

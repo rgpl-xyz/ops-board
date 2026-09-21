@@ -61,6 +61,13 @@ import {
   canResolve,
 } from '../utils/incident-actions';
 import { focusAfterRender } from '../../../shared/a11y/focus';
+import {
+  applyServerFieldErrors,
+  fieldErrorMessage,
+  firstInvalidField,
+  focusFormElement,
+  type FormFieldRef,
+} from '../../../shared/a11y/form-focus';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
@@ -69,6 +76,14 @@ import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.compon
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
 
 type ConfirmKind = 'resolve' | 'reopen' | 'leave';
+
+const EDIT_FIELDS: readonly FormFieldRef[] = [
+  { name: 'title', id: 'edit-title', label: 'Title' },
+  { name: 'description', id: 'edit-description', label: 'Description' },
+  { name: 'serviceId', id: 'edit-service', label: 'Service' },
+];
+
+const EDIT_SUMMARY_ID = 'edit-form-error';
 
 @Component({
   selector: 'ob-incident-detail-page',
@@ -91,6 +106,7 @@ export class IncidentDetailPage {
   private readonly injector = inject(Injector);
   private readonly queryClient = inject(QueryClient);
   private readonly fb = inject(FormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly confirmDialog =
     viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
@@ -448,10 +464,23 @@ export class IncidentDetailPage {
     this.confirmKind.set(null);
   }
 
+  protected editFieldError(name: string): string | null {
+    const field = EDIT_FIELDS.find((candidate) => candidate.name === name);
+    return field
+      ? fieldErrorMessage(field.label, this.editForm.get(name))
+      : null;
+  }
+
   async saveDetails(): Promise<void> {
     this.editError.set(null);
     if (this.conflictOpen() || this.editForm.invalid || !this.canEdit()) {
       this.editForm.markAllAsTouched();
+      if (!this.conflictOpen()) {
+        const field = firstInvalidField(EDIT_FIELDS, (name) =>
+          this.editForm.get(name),
+        );
+        this.focusEditElement(field?.id);
+      }
       return;
     }
     const id = this.id();
@@ -470,8 +499,31 @@ export class IncidentDetailPage {
       });
       this.editForm.markAsPristine();
     } catch (error) {
+      if (isValidationFailed(error)) {
+        const affected = applyServerFieldErrors(
+          error.errors ?? {},
+          EDIT_FIELDS,
+          (name) => this.editForm.get(name),
+        );
+        if (affected) {
+          this.focusEditElement(affected.id);
+          return;
+        }
+        this.editError.set(
+          error.detail || error.title || 'Validation failed',
+        );
+        this.focusEditElement(EDIT_SUMMARY_ID);
+        return;
+      }
       await this.handleMutationError(error, 'edit');
+      if (!this.conflictOpen()) {
+        this.focusEditElement(EDIT_SUMMARY_ID);
+      }
     }
+  }
+
+  private focusEditElement(elementId: string | undefined): void {
+    focusFormElement(this.injector, () => this.host.nativeElement, elementId);
   }
 
   async applySeverity(): Promise<void> {

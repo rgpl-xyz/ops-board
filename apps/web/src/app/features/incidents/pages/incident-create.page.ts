@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   Injector,
   runInInjectionContext,
@@ -27,8 +28,24 @@ import {
 } from '../../../data-access';
 import { INCIDENT_SEVERITIES } from '../../../data-access/contracts/enums';
 import { canCreateIncident } from '../utils/incident-actions';
+import {
+  applyServerFieldErrors,
+  fieldErrorMessage,
+  firstInvalidField,
+  focusFormElement,
+  type FormFieldRef,
+} from '../../../shared/a11y/form-focus';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+
+const FIELDS: readonly FormFieldRef[] = [
+  { name: 'title', id: 'title', label: 'Title' },
+  { name: 'description', id: 'description', label: 'Description' },
+  { name: 'serviceId', id: 'serviceId', label: 'Service' },
+  { name: 'severity', id: 'severity', label: 'Severity' },
+];
+
+const SUMMARY_ID = 'create-form-error';
 
 @Component({
   selector: 'ob-incident-create-page',
@@ -45,6 +62,7 @@ export class IncidentCreatePage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly servicesOptions = runInInjectionContext(this.injector, () =>
     servicesQuery({ pageSize: 100, sort: 'name' }),
@@ -76,6 +94,11 @@ export class IncidentCreatePage {
     severity: this.fb.nonNullable.control<IncidentSeverity>('High'),
   });
 
+  protected fieldError(name: string): string | null {
+    const field = FIELDS.find((candidate) => candidate.name === name);
+    return field ? fieldErrorMessage(field.label, this.form.get(name)) : null;
+  }
+
   cancel(): void {
     void this.router.navigate(['/incidents']);
   }
@@ -84,6 +107,7 @@ export class IncidentCreatePage {
     this.formError.set(null);
     if (this.form.invalid || !this.canCreate()) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalid();
       return;
     }
     const value = this.form.getRawValue();
@@ -92,17 +116,30 @@ export class IncidentCreatePage {
       await this.router.navigate(['/incidents', created.id]);
     } catch (error) {
       if (isValidationFailed(error)) {
-        const errors = error.errors ?? {};
-        for (const [key, messages] of Object.entries(errors)) {
-          const control = this.form.get(key);
-          if (control) {
-            control.setErrors({ server: messages.join(' ') });
-          }
+        const affected = applyServerFieldErrors(
+          error.errors ?? {},
+          FIELDS,
+          (name) => this.form.get(name),
+        );
+        if (affected) {
+          this.focusField(affected.id);
+          return;
         }
         this.formError.set(error.detail || error.title || 'Validation failed');
+        this.focusField(SUMMARY_ID);
         return;
       }
       this.formError.set('Could not create incident.');
+      this.focusField(SUMMARY_ID);
     }
+  }
+
+  private focusFirstInvalid(): void {
+    const field = firstInvalidField(FIELDS, (name) => this.form.get(name));
+    this.focusField(field?.id);
+  }
+
+  private focusField(elementId: string | undefined): void {
+    focusFormElement(this.injector, () => this.host.nativeElement, elementId);
   }
 }

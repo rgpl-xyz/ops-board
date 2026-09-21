@@ -71,7 +71,7 @@
         </ob-callout>
       }
       @if (editError()) {
-        <ob-callout id="svc-edit-error" variant="error">{{
+        <ob-callout id="svc-edit-error" tabindex="-1" variant="error">{{
           editError()
         }}</ob-callout>
       }
@@ -85,8 +85,13 @@
             [attr.aria-invalid]="
               editForm.controls.name.invalid && editForm.controls.name.touched
             "
-            [attr.aria-describedby]="editError() ? 'svc-edit-error' : null"
+            [attr.aria-describedby]="
+              editFieldError('name') ? 'svc-name-error' : null
+            "
           />
+          @if (editFieldError('name'); as msg) {
+            <p id="svc-name-error" class="field__error">{{ msg }}</p>
+          }
         </div>
         <div class="field">
           <label for="svc-desc">Description</label>
@@ -98,27 +103,59 @@
               editForm.controls.description.invalid &&
               editForm.controls.description.touched
             "
+            [attr.aria-describedby]="
+              editFieldError('description') ? 'svc-desc-error' : null
+            "
           ></textarea>
+          @if (editFieldError('description'); as msg) {
+            <p id="svc-desc-error" class="field__error">{{ msg }}</p>
+          }
         </div>
         <div class="field">
           <label for="svc-team">Team</label>
           @if (teams.isError()) {
             <ob-callout variant="error">Could not load teams.</ob-callout>
           } @else {
-            <select id="svc-team" formControlName="teamId">
+            <select
+              id="svc-team"
+              formControlName="teamId"
+              [attr.aria-invalid]="
+                editForm.controls.teamId.invalid &&
+                editForm.controls.teamId.touched
+              "
+              [attr.aria-describedby]="
+                editFieldError('teamId') ? 'svc-team-error' : null
+              "
+            >
               @for (team of teams.data()?.items ?? []; track team.id) {
                 <option [value]="team.id">{{ team.name }}</option>
               }
             </select>
           }
+          @if (editFieldError('teamId'); as msg) {
+            <p id="svc-team-error" class="field__error">{{ msg }}</p>
+          }
         </div>
         <div class="field">
           <label for="svc-health">Health</label>
-          <select id="svc-health" formControlName="health">
+          <select
+            id="svc-health"
+            formControlName="health"
+            [attr.aria-invalid]="
+              editForm.controls.health.invalid &&
+              editForm.controls.health.touched
+            "
+            [attr.aria-describedby]="
+              editFieldError('health') ? 'svc-health-error' : null
+            "
+          >
             @for (h of healths; track h) {
               <option [value]="h">{{ h }}</option>
             }
           </select>
+          @if (editFieldError('health'); as msg) {
+            <p id="svc-health-error" class="field__error">{{ msg }}</p>
+          }
         </div>
         <button
           type="submit"

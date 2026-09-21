@@ -219,4 +219,61 @@ describe('ServiceDetailPage', () => {
     fixture.destroy();
     fixture.nativeElement.remove();
   });
+
+  it('focuses the first invalid control and one summary for a general failure', async () => {
+    const fixture = TestBed.createComponent(ServiceDetailPage);
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Update service');
+    });
+
+    const name = fixture.nativeElement.querySelector(
+      '#svc-name',
+    ) as HTMLInputElement;
+    name.value = '';
+    name.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.save();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(update).not.toHaveBeenCalled();
+    expect(name.getAttribute('aria-describedby')).toBe('svc-name-error');
+    expect(document.activeElement).toBe(name);
+
+    fixture.componentInstance.editForm.setValue({
+      name: 'Payment Processor',
+      description: 'Authorizes checkout payments',
+      teamId: 't1',
+      health: 'Outage',
+    });
+    update.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:validation_failed',
+      title: 'Validation failed',
+      status: 400,
+      detail: 'Service cannot be updated right now.',
+      code: 'validation_failed',
+      errors: { organization: ['Quota reached.'] },
+    });
+
+    await fixture.componentInstance.save();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    const summary = fixture.nativeElement.querySelector(
+      '#svc-edit-error',
+    ) as HTMLElement;
+    expect(document.activeElement).toBe(summary);
+    expect(fixture.componentInstance.editForm.getRawValue().name).toBe(
+      'Payment Processor',
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 });

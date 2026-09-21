@@ -125,4 +125,129 @@ describe('IncidentCreatePage', () => {
     expect(createMock).not.toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith(['/incidents']);
   });
+
+  async function mountCreate() {
+    const fixture = TestBed.createComponent(IncidentCreatePage);
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('API Gateway');
+    });
+    return fixture;
+  }
+
+  it('keeps values, associates messages, and focuses the first invalid field', async () => {
+    const fixture = await mountCreate();
+    fixture.componentInstance.form.patchValue({
+      description: 'Typed body',
+      serviceId: 's1',
+    });
+
+    await fixture.componentInstance.submit();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(createMock).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.form.getRawValue().description).toBe(
+      'Typed body',
+    );
+
+    const title = fixture.nativeElement.querySelector(
+      '#title',
+    ) as HTMLInputElement;
+    expect(title.getAttribute('aria-invalid')).toBe('true');
+    expect(title.getAttribute('aria-describedby')).toBe('title-error');
+    const message = fixture.nativeElement.querySelector(
+      '#title-error',
+    ) as HTMLElement;
+    expect(message.textContent).toContain('Title is required.');
+    expect(message.getAttribute('role')).toBeNull();
+    expect(document.activeElement).toBe(title);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('maps server field errors to their control and focuses the first one', async () => {
+    createMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:validation_failed',
+      title: 'Validation failed',
+      status: 400,
+      detail: 'One or more fields are invalid.',
+      code: 'validation_failed',
+      errors: { description: ['Description is too vague.'] },
+    });
+
+    const fixture = await mountCreate();
+    fixture.componentInstance.form.setValue({
+      title: 'New incident',
+      description: 'Broke',
+      serviceId: 's1',
+      severity: 'High',
+    });
+
+    await fixture.componentInstance.submit();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.getRawValue().description).toBe(
+      'Broke',
+    );
+    const description = fixture.nativeElement.querySelector(
+      '#description',
+    ) as HTMLTextAreaElement;
+    expect(description.getAttribute('aria-describedby')).toBe(
+      'description-error',
+    );
+    expect(
+      (
+        fixture.nativeElement.querySelector('#description-error') as HTMLElement
+      ).textContent,
+    ).toContain('Description is too vague.');
+    expect(document.activeElement).toBe(description);
+    expect(fixture.nativeElement.querySelectorAll('[role="alert"]')).toHaveLength(
+      0,
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('focuses one alert summary when no known field is affected', async () => {
+    createMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:validation_failed',
+      title: 'Validation failed',
+      status: 400,
+      detail: 'Organization quota reached.',
+      code: 'validation_failed',
+      errors: { organization: ['Quota reached.'] },
+    });
+
+    const fixture = await mountCreate();
+    fixture.componentInstance.form.setValue({
+      title: 'New incident',
+      description: 'Something broke',
+      serviceId: 's1',
+      severity: 'High',
+    });
+
+    await fixture.componentInstance.submit();
+    await TestBed.tick();
+    fixture.detectChanges();
+
+    const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    const summary = fixture.nativeElement.querySelector(
+      '#create-form-error',
+    ) as HTMLElement;
+    expect(summary.textContent).toContain('Organization quota reached.');
+    expect(document.activeElement).toBe(summary);
+    expect(fixture.componentInstance.form.getRawValue().title).toBe(
+      'New incident',
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 });

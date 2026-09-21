@@ -39,9 +39,25 @@ import {
 } from '../../../data-access';
 import { canManage } from '../../../shared/permissions/capabilities';
 import { focusAfterRender } from '../../../shared/a11y/focus';
+import {
+  applyServerFieldErrors,
+  fieldErrorMessage,
+  firstInvalidField,
+  focusFormElement,
+  type FormFieldRef,
+} from '../../../shared/a11y/form-focus';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { HealthBadgeComponent } from '../../../shared/ui/health-badge.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+
+const EDIT_FIELDS: readonly FormFieldRef[] = [
+  { name: 'name', id: 'svc-name', label: 'Name' },
+  { name: 'description', id: 'svc-desc', label: 'Description' },
+  { name: 'teamId', id: 'svc-team', label: 'Team' },
+  { name: 'health', id: 'svc-health', label: 'Health' },
+];
+
+const EDIT_SUMMARY_ID = 'svc-edit-error';
 
 @Component({
   selector: 'ob-service-detail-page',
@@ -61,6 +77,7 @@ export class ServiceDetailPage {
   private readonly injector = inject(Injector);
   private readonly queryClient = inject(QueryClient);
   private readonly fb = inject(FormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly id = toSignal(
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
@@ -153,10 +170,23 @@ export class ServiceDetailPage {
     focusAfterRender(this.injector, () => this.editName()?.nativeElement);
   }
 
+  protected editFieldError(name: string): string | null {
+    const field = EDIT_FIELDS.find((candidate) => candidate.name === name);
+    return field
+      ? fieldErrorMessage(field.label, this.editForm.get(name))
+      : null;
+  }
+
   async save(): Promise<void> {
     this.editError.set(null);
     if (this.conflictOpen() || this.editForm.invalid || !this.canEdit()) {
       this.editForm.markAllAsTouched();
+      if (!this.conflictOpen()) {
+        const field = firstInvalidField(EDIT_FIELDS, (name) =>
+          this.editForm.get(name),
+        );
+        this.focusEditElement(field?.id);
+      }
       return;
     }
     const id = this.id();
@@ -203,14 +233,30 @@ export class ServiceDetailPage {
         return;
       }
       if (isValidationFailed(error)) {
+        const affected = applyServerFieldErrors(
+          error.errors ?? {},
+          EDIT_FIELDS,
+          (name) => this.editForm.get(name),
+        );
+        if (affected) {
+          this.focusEditElement(affected.id);
+          return;
+        }
         this.editError.set(error.detail || error.title || 'Validation failed');
+        this.focusEditElement(EDIT_SUMMARY_ID);
         return;
       }
       if (isForbidden(error)) {
         this.editError.set(error.detail || error.title || 'Not allowed');
+        this.focusEditElement(EDIT_SUMMARY_ID);
         return;
       }
       this.editError.set('Could not save service.');
+      this.focusEditElement(EDIT_SUMMARY_ID);
     }
+  }
+
+  private focusEditElement(elementId: string | undefined): void {
+    focusFormElement(this.injector, () => this.host.nativeElement, elementId);
   }
 }
