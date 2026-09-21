@@ -85,6 +85,35 @@
   overflow-x: hidden;
 }
 
+.shell__command {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  border: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell__kbd {
+  border: 1px solid var(--ob-border);
+  border-radius: 2px;
+  background: var(--ob-bg);
+  color: var(--ob-muted);
+  padding: 0.05rem 0.3rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .shell__body {
     grid-template-columns: 1fr;

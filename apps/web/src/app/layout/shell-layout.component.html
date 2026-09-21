@@ -29,6 +29,16 @@
         >Services</a
       >
 
+      <button
+        type="button"
+        class="shell__command"
+        aria-keyshortcuts="Control+K Meta+K"
+        (click)="openPalette($event)"
+      >
+        Command menu
+        <kbd class="shell__kbd">Ctrl K</kbd>
+      </button>
+
       <div class="shell__user">
         @if (currentUser.isSuccess() && organization.isSuccess()) {
           <strong class="shell__user-name">{{
@@ -50,4 +60,6 @@
       <router-outlet />
     </main>
   </div>
+
+  <ob-command-palette />
 </div>

@@ -1,0 +1,74 @@
+.palette {
+  border: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  padding: 0.85rem 1rem 1rem;
+  width: calc(100% - 2rem);
+  max-width: 34rem;
+  margin-top: 8vh;
+}
+
+.palette::backdrop {
+  background: rgb(28 27 25 / 45%);
+}
+
+.palette__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.palette__title {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.palette__close {
+  appearance: none;
+  border: 1px solid var(--ob-border);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  padding: 0.25rem 0.55rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.palette__help {
+  margin: 0.35rem 0 0.5rem;
+  color: var(--ob-muted);
+  font-size: 0.85rem;
+}
+
+.palette__search {
+  width: 100%;
+  border: 1px solid var(--ob-border);
+  background: var(--ob-bg);
+  color: var(--ob-ink);
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.palette__results {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.palette__empty {
+  margin: 0.6rem 0 0;
+  color: var(--ob-muted);
+  font-size: 0.9rem;
+}
+
+.palette__hint {
+  margin: 0.75rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ob-border);
+  color: var(--ob-muted);
+  font-size: 0.8125rem;
+}
