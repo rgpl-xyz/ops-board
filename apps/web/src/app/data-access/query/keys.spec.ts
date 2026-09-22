@@ -32,7 +32,7 @@ describe('stableQueryPart', () => {
 });
 
 describe('opsboardKeys', () => {
-  it('builds hierarchical shapes matching the documented key contract', () => {
+  it('builds hierarchical query-key shapes', () => {
     expect(opsboardKeys.currentUser()).toEqual(['opsboard', 'current-user']);
     expect(opsboardKeys.organization()).toEqual(['opsboard', 'organization']);
     expect(opsboardKeys.lookups.teams({ limit: 100 })).toEqual([
