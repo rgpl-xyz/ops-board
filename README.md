@@ -2,7 +2,7 @@
 
 Real-time incident and service operations management platform. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and Docker-based local development.
 
-> Status: **Phases 1–6 complete** (scaffold, domain/persistence + APIs, Angular data-access, core incidents/services UI, SignalR realtime with Query cache sync, and the command palette with keyboard/focus accessibility work). Next: Phase 7 test hardening.
+> Status: **Phases 1–7 complete** (scaffold, domain/persistence + APIs, Angular data-access, core incidents/services UI, SignalR realtime with Query cache sync, the command palette with keyboard/focus accessibility work, and a four-tier test suite covering unit, integration, browser journeys and automated accessibility). Next: Phase 8 CI and documentation.
 
 ## Screenshots
 
@@ -170,8 +170,8 @@ Compose currently provides PostgreSQL only. API and frontend run locally as abov
 | 4 | Shell, incidents/services lists & details, forms, baseline a11y | Done |
 | 5 | SignalR realtime + Query cache synchronization | Done |
 | 6 | Command palette, deeper keyboard/a11y polish | Done |
-| 7 | Frontend/backend/integration/E2E/a11y test hardening | Next |
-| 8 | GitHub Actions, Docker API support, architecture docs / ADRs | Planned |
+| 7 | Frontend/backend/integration/E2E/a11y test hardening | Done |
+| 8 | GitHub Actions, Docker API support, architecture docs / ADRs | Next |
 
 ## License
 
