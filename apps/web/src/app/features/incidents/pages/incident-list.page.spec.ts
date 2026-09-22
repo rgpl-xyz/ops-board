@@ -56,7 +56,9 @@ describe('IncidentListPage', () => {
         provideRouter([{ path: 'incidents', component: IncidentListPage }]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideTanStackQuery(new QueryClient()),
+        provideTanStackQuery(
+          new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+        ),
         {
           provide: ActivatedRoute,
           useValue: {
@@ -164,5 +166,101 @@ describe('IncidentListPage', () => {
         queryParamsHandling: '',
       }),
     );
+  });
+
+  async function mountList() {
+    const fixture = TestBed.createComponent(IncidentListPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(listMock).toHaveBeenCalled();
+    });
+    return fixture;
+  }
+
+  it('requests the sort and direction it is given', async () => {
+    queryParams$.next(
+      convertToParamMap({ sort: 'severity', direction: 'asc', pageSize: '10' }),
+    );
+    await mountList();
+
+    await vi.waitFor(() => {
+      expect(listMock.mock.calls.at(-1)?.[0]).toMatchObject({
+        sort: 'severity',
+        direction: 'asc',
+        pageSize: 10,
+      });
+    });
+  });
+
+  it('moves page while preserving the active filters', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = await mountList();
+
+    fixture.componentInstance.onPage(1);
+
+    expect(navigateSpy).toHaveBeenCalledWith(
+      ['/incidents'],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({
+          status: 'Investigating',
+          // The mapper stringifies and omits defaults, so page 2 arrives as '2'.
+          page: '2',
+        }),
+      }),
+    );
+  });
+
+  it('renders its empty state when no incident matches', async () => {
+    listMock.mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 25,
+      totalCount: 0,
+      totalPages: 0,
+    });
+    const fixture = await mountList();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain(
+        'No incidents match these filters',
+      );
+    });
+    expect(fixture.nativeElement.textContent).not.toContain('Checkout timeouts');
+  });
+
+  it('renders its error state when the list cannot be loaded', async () => {
+    listMock.mockRejectedValue({
+      type: 'urn:opsboard:problem:unavailable',
+      title: 'Unavailable',
+      status: 503,
+      detail: 'Database is down.',
+      code: 'unavailable',
+    });
+    const fixture = await mountList();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain(
+        'Could not load incidents',
+      );
+    });
+    const alert = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Could not load incidents');
+  });
+
+  it('shows the committed search text in its search field', async () => {
+    queryParams$.next(convertToParamMap({ search: 'payments' }));
+    const fixture = await mountList();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      const input = fixture.nativeElement.querySelector(
+        'input[type="search"], #search',
+      ) as HTMLInputElement | null;
+      expect(input?.value).toBe('payments');
+    });
   });
 });

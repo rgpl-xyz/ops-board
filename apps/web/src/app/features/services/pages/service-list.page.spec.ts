@@ -53,7 +53,9 @@ describe('ServiceListPage', () => {
         provideRouter([{ path: 'services', component: ServiceListPage }]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideTanStackQuery(new QueryClient()),
+        provideTanStackQuery(
+          new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+        ),
         {
           provide: ActivatedRoute,
           useValue: {
@@ -120,5 +122,82 @@ describe('ServiceListPage', () => {
         queryParamsHandling: '',
       }),
     );
+  });
+
+  async function mountList() {
+    const fixture = TestBed.createComponent(ServiceListPage);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(listMock).toHaveBeenCalled();
+    });
+    return fixture;
+  }
+
+  /// Services allow one sort field, `name`, which is also the default, so only
+  /// the direction and page size can vary here.
+  it('requests the direction and page size it is given', async () => {
+    queryParams$.next(convertToParamMap({ direction: 'desc', pageSize: '10' }));
+    await mountList();
+
+    await vi.waitFor(() => {
+      // sort is omitted from the query when it equals the default.
+      expect(listMock.mock.calls.at(-1)?.[0]).toMatchObject({
+        direction: 'desc',
+        pageSize: 10,
+      });
+    });
+  });
+
+  it('moves page while preserving the active filters', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = await mountList();
+
+    fixture.componentInstance.onPage(1);
+
+    expect(navigateSpy).toHaveBeenCalledWith(
+      ['/services'],
+      expect.objectContaining({
+        // The mapper stringifies and omits defaults, so page 2 arrives as '2'.
+        queryParams: expect.objectContaining({ page: '2' }),
+      }),
+    );
+  });
+
+  it('renders its empty state when no service matches', async () => {
+    listMock.mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 25,
+      totalCount: 0,
+      totalPages: 0,
+    });
+    const fixture = await mountList();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain(
+        'No services match these filters',
+      );
+    });
+  });
+
+  it('renders its error state when the list cannot be loaded', async () => {
+    listMock.mockRejectedValue({
+      type: 'urn:opsboard:problem:unavailable',
+      title: 'Unavailable',
+      status: 503,
+      detail: 'Database is down.',
+      code: 'unavailable',
+    });
+    const fixture = await mountList();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain(
+        'Could not load services',
+      );
+    });
   });
 });
