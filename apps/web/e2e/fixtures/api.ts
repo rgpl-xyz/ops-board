@@ -39,6 +39,33 @@ export async function provisionIncident(
   return { id: (await created.json()).id as string, title, serviceId };
 }
 
+/**
+ * Creates a service the run owns. This goes through the API because the
+ * application has no service-create surface: the service routes are list and
+ * detail only. Building one is product work, not test work.
+ */
+export async function provisionService(
+  request: APIRequestContext,
+  name: string,
+): Promise<string> {
+  const teams = await request.get('/api/lookups/teams');
+  if (!teams.ok()) {
+    throw new Error(`Could not read teams: ${teams.status()}`);
+  }
+  const teamId = (await teams.json()).items[0].id as string;
+
+  const created = await request.post('/api/services', {
+    data: { name, description: 'Provisioned for a browser journey.', teamId },
+  });
+  if (!created.ok()) {
+    throw new Error(
+      `Could not create a service: ${created.status()} ${await created.text()}`,
+    );
+  }
+
+  return (await created.json()).id as string;
+}
+
 /** The first seeded team, needed to create a service through the UI. */
 export async function firstTeamName(request: APIRequestContext): Promise<string> {
   const teams = await request.get('/api/lookups/teams');
