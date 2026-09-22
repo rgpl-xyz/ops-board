@@ -157,9 +157,9 @@ Compose currently provides PostgreSQL only. API and frontend run locally as abov
 | 2 | Domain, EF Core, migrations, seed, service/incident APIs | Done |
 | 3 | Angular API client, Query factories, mutations | Done |
 | 4 | Shell, incidents/services lists & details, forms, baseline a11y | Done |
-| 5 | SignalR realtime + Query cache synchronization | Next |
-| 6 | Command palette, deeper keyboard/a11y polish | Planned |
-| 7 | Frontend/backend/integration/E2E/a11y test hardening | Planned |
+| 5 | SignalR realtime + Query cache synchronization | Done |
+| 6 | Command palette, deeper keyboard/a11y polish | Done |
+| 7 | Frontend/backend/integration/E2E/a11y test hardening | Next |
 | 8 | GitHub Actions, Docker API support, architecture docs / ADRs | Planned |
 
 ## License
