@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.21
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Create environment file
+        run: cp .env.example .env
+
+      - name: Restore backend
+        run: dotnet restore OpsBoard.sln
+
+      - name: Build backend
+        run: dotnet build OpsBoard.sln --no-restore
+
+      - name: Backend unit tests
+        run: dotnet test tests/OpsBoard.UnitTests/OpsBoard.UnitTests.csproj --no-build
+
+      - name: Backend integration tests
+        run: dotnet test tests/OpsBoard.IntegrationTests/OpsBoard.IntegrationTests.csproj --no-build
+
+      - name: Install frontend dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Frontend unit tests
+        working-directory: apps/web
+        run: npm test
