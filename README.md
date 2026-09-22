@@ -120,14 +120,25 @@ If `ng` reports an unsupported Node version while mise is installed, ensure mise
 ## Testing commands
 
 ```bash
-# Backend
+# Backend unit + integration
 dotnet test OpsBoard.sln
 
 # Frontend unit tests (Vitest via Angular)
 cd apps/web && npm test
+
+# Browser journeys + accessibility checks (Playwright, Chromium)
+cd apps/web && npm run test:e2e
+
+# Coverage, reported rather than gated
+dotnet test OpsBoard.sln --collect:"XPlat Code Coverage"
+cd apps/web && npm test -- --coverage
 ```
 
-Feature-level specs cover list/detail/forms and shared UI. Broader integration/E2E/a11y audit work is Phase 7+.
+**Backend.** The integration tests create a uniquely named database per run, apply migrations, and drop it afterwards. They use `OpsBoardTests__AdminConnection` or `ConnectionStrings__OpsBoard` when either is set, and otherwise start `postgres:17-alpine` themselves for the run, so a clean checkout needs no manual step. With neither a connection nor a container runtime available they fail immediately and name both remedies.
+
+**Frontend.** Component and service specs run in jsdom and collect only from `apps/web/src`.
+
+**Browser.** The tier lives in `apps/web/e2e` and needs a one-off `npx playwright install chromium`. Its setup brings up the database container, applies migrations and runs the demo seed, then starts the API and the dev server, reusing either if it is already running. The journeys create the records they change, so they can be run repeatedly. Any accepted accessibility violation is listed with its reason in `apps/web/e2e/a11y-accepted.json`, which is currently empty.
 
 ## Docker commands
 
