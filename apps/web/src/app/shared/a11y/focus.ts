@@ -19,3 +19,15 @@ export function focusAfterRender(
     { injector },
   );
 }
+
+export function firstFocusable(
+  candidates: readonly (HTMLElement | null | undefined)[],
+): HTMLElement | null {
+  return (
+    candidates.find(
+      (candidate) =>
+        candidate?.isConnected &&
+        !(candidate instanceof HTMLButtonElement && candidate.disabled),
+    ) ?? null
+  );
+}

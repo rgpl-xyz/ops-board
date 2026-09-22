@@ -2,24 +2,52 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  inject,
   input,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
+import { focusAfterRender, firstFocusable } from '../a11y/focus';
+
+export interface ConfirmDialogOpenOptions {
+  invoker?: HTMLElement | null;
+  initialFocus?: 'cancel' | 'confirm';
+  cancelFallback?: () => HTMLElement | null | undefined;
+}
+
+export interface ConfirmDialogSettleOptions {
+  focusTarget: () => HTMLElement | null | undefined;
+}
 
 @Component({
   selector: 'ob-confirm-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <dialog #dialog class="confirm" (cancel)="onCancel($event)">
+    <dialog
+      #dialog
+      class="confirm"
+      aria-labelledby="confirm-dialog-title"
+      [attr.aria-describedby]="body() ? 'confirm-dialog-body' : null"
+      (cancel)="onCancel($event)"
+    >
       <form method="dialog" class="confirm__form" (submit)="onSubmit($event)">
-        <h2 class="confirm__title">{{ title() }}</h2>
-        <p class="confirm__body">{{ body() }}</p>
+        <h2 id="confirm-dialog-title" class="confirm__title">{{ title() }}</h2>
+        @if (body()) {
+          <p id="confirm-dialog-body" class="confirm__body">{{ body() }}</p>
+        }
+        @if (pending()) {
+          <p #pendingStatus class="confirm__pending" role="status" tabindex="-1">
+            Working…
+          </p>
+        }
         <div class="confirm__actions">
           <button
             type="submit"
             class="confirm__btn confirm__btn--cancel"
             value="cancel"
+            [disabled]="pending()"
           >
             Cancel
           </button>
@@ -29,6 +57,7 @@ import {
             class="confirm__btn"
             [class.confirm__btn--danger]="danger()"
             value="confirm"
+            [disabled]="pending()"
           >
             {{ confirmLabel() }}
           </button>
@@ -82,47 +111,63 @@ import {
   `,
 })
 export class ConfirmDialogComponent {
+  private readonly injector = inject(Injector);
   readonly title = input.required<string>();
   readonly body = input.required<string>();
   readonly confirmLabel = input('Confirm');
   readonly danger = input(false);
 
-  readonly confirmed = output<void>();
+  readonly confirmRequested = output<void>();
   readonly cancelled = output<void>();
+  readonly pending = signal(false);
 
   private readonly dialog =
     viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly confirmBtn =
     viewChild<ElementRef<HTMLButtonElement>>('confirmBtn');
+  private readonly pendingStatus =
+    viewChild<ElementRef<HTMLElement>>('pendingStatus');
 
-  private restoreFocusTo: HTMLElement | null = null;
+  private invoker: HTMLElement | null = null;
+  private cancelFallback: (() => HTMLElement | null | undefined) | null = null;
 
-  open(restoreFocusTo?: HTMLElement | null): void {
-    this.restoreFocusTo =
-      restoreFocusTo ??
+  open(options: ConfirmDialogOpenOptions = {}): void {
+    this.invoker =
+      options.invoker ??
       (document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null);
+    this.cancelFallback = options.cancelFallback ?? null;
+    this.pending.set(false);
     const el = this.dialog().nativeElement;
     if (!el.open) {
       el.showModal();
     }
-    queueMicrotask(() => this.confirmBtn()?.nativeElement.focus());
+    focusAfterRender(this.injector, () =>
+      options.initialFocus === 'cancel'
+        ? (el.querySelector('button[value="cancel"]') as HTMLButtonElement | null)
+        : this.confirmBtn()?.nativeElement,
+    );
   }
 
-  close(): void {
+  settle(options: ConfirmDialogSettleOptions): void {
+    this.pending.set(false);
     const el = this.dialog().nativeElement;
     if (el.open) {
       el.close();
     }
-    this.restoreFocus();
+    focusAfterRender(this.injector, () =>
+      firstFocusable([options.focusTarget()]),
+    );
+    this.clearFocusContext();
   }
 
   protected onCancel(event: Event): void {
     event.preventDefault();
-    this.dialog().nativeElement.close();
-    this.cancelled.emit();
-    this.restoreFocus();
+    if (this.pending()) {
+      return;
+    }
+    this.dismiss();
   }
 
   protected onSubmit(event: Event): void {
@@ -131,16 +176,34 @@ export class ConfirmDialogComponent {
       | null;
     const value = submitter?.value ?? 'cancel';
     if (value === 'confirm') {
-      this.confirmed.emit();
+      event.preventDefault();
+      if (this.pending()) {
+        return;
+      }
+      this.pending.set(true);
+      focusAfterRender(this.injector, () => this.pendingStatus()?.nativeElement);
+      this.confirmRequested.emit();
     } else {
-      this.cancelled.emit();
+      event.preventDefault();
+      if (!this.pending()) {
+        this.dismiss();
+      }
     }
-    this.restoreFocus();
   }
 
-  private restoreFocus(): void {
-    const target = this.restoreFocusTo;
-    this.restoreFocusTo = null;
-    queueMicrotask(() => target?.focus());
+  private dismiss(): void {
+    const target = firstFocusable([this.invoker, this.cancelFallback?.()]);
+    const el = this.dialog().nativeElement;
+    if (el.open) {
+      el.close();
+    }
+    this.cancelled.emit();
+    focusAfterRender(this.injector, () => target);
+    this.clearFocusContext();
+  }
+
+  private clearFocusContext(): void {
+    this.invoker = null;
+    this.cancelFallback = null;
   }
 }

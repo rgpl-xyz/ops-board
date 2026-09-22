@@ -60,7 +60,7 @@ import {
   canReopen,
   canResolve,
 } from '../utils/incident-actions';
-import { focusAfterRender } from '../../../shared/a11y/focus';
+import { focusAfterRender, firstFocusable } from '../../../shared/a11y/focus';
 import {
   applyServerFieldErrors,
   fieldErrorMessage,
@@ -114,6 +114,18 @@ export class IncidentDetailPage {
     viewChild<ElementRef<HTMLButtonElement>>('conflictDismiss');
   private readonly editTitle =
     viewChild<ElementRef<HTMLInputElement>>('editTitle');
+  private readonly lifecycleHeading =
+    viewChild<ElementRef<HTMLElement>>('lifecycleHeading');
+  private readonly respondersHeading =
+    viewChild<ElementRef<HTMLElement>>('respondersHeading');
+  private readonly resolveAction =
+    viewChild<ElementRef<HTMLButtonElement>>('resolveAction');
+  private readonly reopenAction =
+    viewChild<ElementRef<HTMLButtonElement>>('reopenAction');
+  private readonly joinAction =
+    viewChild<ElementRef<HTMLButtonElement>>('joinAction');
+  private readonly leaveAction =
+    viewChild<ElementRef<HTMLButtonElement>>('leaveAction');
 
   protected readonly id = toSignal(
     this.route.paramMap.pipe(map((p) => p.get('id') ?? '')),
@@ -428,40 +440,79 @@ export class IncidentDetailPage {
   }
 
   openResolveConfirm(event: Event): void {
-    this.confirmKind.set('resolve');
-    const target =
-      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-    this.confirmDialog().open(target);
+    this.openConfirm('resolve', event);
   }
 
   openReopenConfirm(event: Event): void {
-    this.confirmKind.set('reopen');
-    const target =
-      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-    this.confirmDialog().open(target);
+    this.openConfirm('reopen', event);
   }
 
   openLeaveConfirm(event: Event): void {
-    this.confirmKind.set('leave');
-    const target =
-      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-    this.confirmDialog().open(target);
+    this.openConfirm('leave', event);
   }
 
-  onLifecycleConfirmed(): void {
+  async onLifecycleConfirmed(): Promise<void> {
     const kind = this.confirmKind();
-    this.confirmKind.set(null);
-    if (kind === 'resolve') {
-      void this.resolveIncident();
-    } else if (kind === 'reopen') {
-      void this.reopenIncident();
-    } else if (kind === 'leave') {
-      void this.leaveIncident();
+    if (!kind) {
+      return;
+    }
+    try {
+      if (kind === 'resolve') {
+        await this.resolveIncident();
+      } else if (kind === 'reopen') {
+        await this.reopenIncident();
+      } else {
+        await this.leaveIncident();
+      }
+    } finally {
+      this.confirmKind.set(null);
+      this.confirmDialog().settle({
+        focusTarget: () => this.confirmationOutcomeTarget(kind),
+      });
     }
   }
 
   onLifecycleCancelled(): void {
     this.confirmKind.set(null);
+  }
+
+  private openConfirm(kind: ConfirmKind, event: Event): void {
+    this.confirmKind.set(kind);
+    const invoker =
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.confirmDialog().open({
+      invoker,
+      initialFocus: kind === 'resolve' || kind === 'leave' ? 'cancel' : 'confirm',
+      cancelFallback: () =>
+        kind === 'leave'
+          ? this.respondersHeading()?.nativeElement
+          : this.lifecycleHeading()?.nativeElement,
+    });
+  }
+
+  private confirmationOutcomeTarget(kind: ConfirmKind): HTMLElement | null {
+    if (this.conflictOpen()) {
+      return this.conflictDismiss()?.nativeElement ?? null;
+    }
+    if (kind === 'leave') {
+      return firstFocusable([
+        this.joinAction()?.nativeElement,
+        this.respondersHeading()?.nativeElement,
+        this.leaveAction()?.nativeElement,
+      ]);
+    }
+    if (kind === 'resolve') {
+      return firstFocusable([
+        this.reopenAction()?.nativeElement,
+        this.lifecycleHeading()?.nativeElement,
+        this.resolveAction()?.nativeElement,
+      ]);
+    }
+    return firstFocusable([
+      this.resolveAction()?.nativeElement,
+      this.lifecycleHeading()?.nativeElement,
+      this.reopenAction()?.nativeElement,
+    ]);
   }
 
   protected editFieldError(name: string): string | null {

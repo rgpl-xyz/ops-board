@@ -4,111 +4,91 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 
+function installDialogStubs(dialog: HTMLDialogElement): void {
+  if (typeof dialog.showModal !== 'function') {
+    dialog.showModal = vi.fn(function (this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    });
+    dialog.close = vi.fn(function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    });
+  }
+}
+
 describe('ConfirmDialogComponent', () => {
-  it('opens with showModal, focuses confirm, and restores focus on cancel', async () => {
+  it('names the dialog, focuses Cancel for destructive confirmation, and restores the invoker once', async () => {
     @Component({
       imports: [ConfirmDialogComponent],
       template: `
         <button type="button" #invoker id="invoker">Open</button>
-        <ob-confirm-dialog
-          #dlg
-          title="Resolve incident?"
-          body="This records resolution."
-          confirmLabel="Confirm resolve"
-          [danger]="true"
-        />
+        <ob-confirm-dialog #dlg title="Resolve incident?" body="This records resolution." confirmLabel="Confirm resolve" [danger]="true" />
       `,
     })
-    class Host {
-      // bound in template via #dlg
-    }
+    class Host {}
 
     await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
     const fixture = TestBed.createComponent(Host);
-    await fixture.whenStable();
-
-    const invoker = fixture.nativeElement.querySelector(
-      '#invoker',
-    ) as HTMLButtonElement;
-    invoker.focus();
-
-    const dialogEl = fixture.nativeElement.querySelector(
-      'dialog',
-    ) as HTMLDialogElement;
-    if (typeof dialogEl.showModal !== 'function') {
-      dialogEl.showModal = vi.fn(function (this: HTMLDialogElement) {
-        this.setAttribute('open', '');
-      });
-      dialogEl.close = vi.fn(function (this: HTMLDialogElement) {
-        this.removeAttribute('open');
-      });
-    }
-
-    const dlgDebug = fixture.debugElement.query(
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    installDialogStubs(dialog);
+    const invoker = fixture.nativeElement.querySelector('#invoker') as HTMLButtonElement;
+    const dlg = fixture.debugElement.query(
       (d) => d.componentInstance instanceof ConfirmDialogComponent,
-    );
-    const dlg = dlgDebug.componentInstance as ConfirmDialogComponent;
+    ).componentInstance as ConfirmDialogComponent;
+    const cancelled = vi.fn();
+    dlg.cancelled.subscribe(cancelled);
 
-    let cancelled = false;
-    dlg.cancelled.subscribe(() => {
-      cancelled = true;
-    });
+    dlg.open({ invoker, initialFocus: 'cancel', cancelFallback: () => null });
+    await TestBed.tick();
 
-    dlg.open(invoker);
-    await fixture.whenStable();
-    await Promise.resolve();
+    expect(dialog.getAttribute('aria-labelledby')).toBe('confirm-dialog-title');
+    expect(dialog.getAttribute('aria-describedby')).toBe('confirm-dialog-body');
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('button[value="cancel"]'));
 
-    expect(dialogEl.open || dialogEl.hasAttribute('open')).toBeTruthy();
-    const confirmBtn = fixture.nativeElement.querySelector(
-      'button[value="confirm"]',
-    ) as HTMLButtonElement;
-    expect(document.activeElement).toBe(confirmBtn);
-
-    (fixture.nativeElement.querySelector(
-      'button[value="cancel"]',
-    ) as HTMLButtonElement).click();
-    await fixture.whenStable();
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(cancelled).toBe(true);
+    (fixture.nativeElement.querySelector('button[value="cancel"]') as HTMLButtonElement).click();
+    await TestBed.tick();
+    expect(cancelled).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(invoker);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
-  it('emits confirmed when confirm is submitted', async () => {
-    await TestBed.configureTestingModule({
-      imports: [ConfirmDialogComponent],
-    }).compileComponents();
+  it('keeps focus in a pending dialog until its parent settles the outcome', async () => {
+    await TestBed.configureTestingModule({ imports: [ConfirmDialogComponent] }).compileComponents();
     const fixture = TestBed.createComponent(ConfirmDialogComponent);
+    document.body.append(fixture.nativeElement);
     fixture.componentRef.setInput('title', 'Leave?');
     fixture.componentRef.setInput('body', 'Leave this incident.');
-    fixture.componentRef.setInput('confirmLabel', 'Leave');
-    await fixture.whenStable();
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    installDialogStubs(dialog);
+    const requested = vi.fn();
+    fixture.componentInstance.confirmRequested.subscribe(requested);
+    const fallback = document.createElement('button');
+    fallback.type = 'button';
+    document.body.append(fallback);
 
-    const dialogEl = fixture.nativeElement.querySelector(
-      'dialog',
-    ) as HTMLDialogElement;
-    if (typeof dialogEl.showModal !== 'function') {
-      dialogEl.showModal = vi.fn(function (this: HTMLDialogElement) {
-        this.setAttribute('open', '');
-      });
-      dialogEl.close = vi.fn(function (this: HTMLDialogElement) {
-        this.removeAttribute('open');
-      });
-    }
+    fixture.componentInstance.open({ initialFocus: 'confirm' });
+    await TestBed.tick();
+    (fixture.nativeElement.querySelector('button[value="confirm"]') as HTMLButtonElement).click();
+    await TestBed.tick();
 
-    let confirmed = false;
-    fixture.componentInstance.confirmed.subscribe(() => {
-      confirmed = true;
-    });
+    expect(requested).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.pending()).toBe(true);
+    expect(dialog.open || dialog.hasAttribute('open')).toBe(true);
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[role="status"]'));
 
-    fixture.componentInstance.open();
-    await fixture.whenStable();
-    (fixture.nativeElement.querySelector(
-      'button[value="confirm"]',
-    ) as HTMLButtonElement).click();
-    await fixture.whenStable();
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    expect(fixture.componentInstance.pending()).toBe(true);
+    fixture.componentInstance.settle({ focusTarget: () => fallback });
+    await TestBed.tick();
 
-    expect(confirmed).toBe(true);
+    expect(fixture.componentInstance.pending()).toBe(false);
+    expect(document.activeElement).toBe(fallback);
+    fallback.remove();
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 });

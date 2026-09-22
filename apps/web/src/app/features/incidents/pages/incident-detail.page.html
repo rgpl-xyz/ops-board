@@ -148,7 +148,7 @@
       </section>
 
       <section class="panel" aria-labelledby="life-h">
-        <h2 id="life-h">Lifecycle</h2>
+        <h2 #lifecycleHeading id="life-h" tabindex="-1">Lifecycle</h2>
         <p class="muted">
           Status-aware: resolve available while active; reopen only when
           resolved. Status select excludes Resolved (use Resolve).
@@ -178,6 +178,7 @@
               </select>
             </label>
             <button
+              #resolveAction
               type="button"
               class="btn"
               [disabled]="lifecyclePending() || conflictOpen()"
@@ -201,6 +202,7 @@
               </select>
             </label>
             <button
+              #reopenAction
               type="button"
               class="btn"
               [disabled]="lifecyclePending() || conflictOpen()"
@@ -236,19 +238,20 @@
           [body]="confirmBody()"
           [confirmLabel]="confirmLabel()"
           [danger]="confirmKind() === 'resolve' || confirmKind() === 'leave'"
-          (confirmed)="onLifecycleConfirmed()"
+          (confirmRequested)="onLifecycleConfirmed()"
           (cancelled)="onLifecycleCancelled()"
         />
       </section>
 
       <section class="panel" aria-labelledby="resp-h">
-        <h2 id="resp-h">Responders</h2>
+        <h2 #respondersHeading id="resp-h" tabindex="-1">Responders</h2>
         @if (collabError()) {
           <ob-callout variant="error">{{ collabError() }}</ob-callout>
         }
         <div class="actions">
           @if (showJoin()) {
             <button
+              #joinAction
               type="button"
               class="btn btn--primary"
               [disabled]="collabPending() || conflictOpen()"
@@ -259,6 +262,7 @@
           }
           @if (showLeave()) {
             <button
+              #leaveAction
               type="button"
               class="btn"
               [disabled]="collabPending() || conflictOpen()"
