@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using OpsBoard.Domain.Entities;
+using OpsBoard.Domain.Enums;
+using OpsBoard.Infrastructure.Persistence;
 using OpsBoard.Infrastructure.Persistence.Seed;
 using OpsBoard.IntegrationTests.Fixtures;
 using Xunit;
@@ -137,6 +140,136 @@ public sealed class AuthorizationMatrixTests(PostgresFixture fixture)
 
         await AssertGateAsync(severity, allowed: false);
     }
+
+    /// Another organization's records must be invisible, and invisible in the same
+    /// way a record that does not exist is: the response may not disclose which.
+    [Fact]
+    public async Task Another_organizations_incident_is_indistinguishable_from_a_missing_one()
+    {
+        await using var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);
+        await SeedAsync(factory);
+        var foreign = await ArrangeForeignOrganizationAsync(factory);
+        var client = factory.CreateClient();
+
+        var all = await client.GetFromJsonAsync<JsonElement>("/api/incidents?pageSize=100", JsonOptions);
+        var visibleIds = all.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .ToList();
+        Assert.DoesNotContain(foreign.IncidentId, visibleIds);
+        Assert.Equal(visibleIds.Count, all.GetProperty("totalCount").GetInt32());
+
+        var foreignRead = await client.GetAsync($"/api/incidents/{foreign.IncidentId}");
+        var missingRead = await client.GetAsync($"/api/incidents/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, foreignRead.StatusCode);
+        Assert.Equal(missingRead.StatusCode, foreignRead.StatusCode);
+        Assert.Equal(
+            await ProblemCodeAsync(missingRead),
+            await ProblemCodeAsync(foreignRead));
+
+        var foreignWrite = await client.PatchAsJsonAsync(
+            $"/api/incidents/{foreign.IncidentId}/severity",
+            new { severity = "Critical", expectedVersion = "1" },
+            JsonOptions);
+        Assert.Equal(HttpStatusCode.NotFound, foreignWrite.StatusCode);
+
+        var foreignResponders = await client.GetAsync($"/api/incidents/{foreign.IncidentId}/responders");
+        var foreignTimeline = await client.GetAsync($"/api/incidents/{foreign.IncidentId}/timeline");
+        Assert.Equal(HttpStatusCode.NotFound, foreignResponders.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, foreignTimeline.StatusCode);
+
+        var foreignService = await client.GetAsync($"/api/services/{foreign.ServiceId}");
+        Assert.Equal(HttpStatusCode.NotFound, foreignService.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_user_of_another_organization_sees_only_its_own_incidents()
+    {
+        await using var acmeFactory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);
+        await SeedAsync(acmeFactory);
+        var foreign = await ArrangeForeignOrganizationAsync(acmeFactory);
+
+        var acmeIncidents = await acmeFactory.CreateClient()
+            .GetFromJsonAsync<JsonElement>("/api/incidents?pageSize=100", JsonOptions);
+        var anAcmeIncident = acmeIncidents.GetProperty("items")[0].GetProperty("id").GetGuid();
+
+        await using var foreignFactory = new OpsBoardWebApplicationFactory(
+            fixture.ConnectionString,
+            foreign.UserId);
+        var foreignClient = foreignFactory.CreateClient();
+
+        var visible = await foreignClient.GetFromJsonAsync<JsonElement>(
+            "/api/incidents?pageSize=100",
+            JsonOptions);
+        var visibleIds = visible.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .ToList();
+
+        Assert.Contains(foreign.IncidentId, visibleIds);
+        Assert.DoesNotContain(anAcmeIncident, visibleIds);
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await foreignClient.GetAsync($"/api/incidents/{anAcmeIncident}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_unknown_identity_is_refused_before_any_data_is_read()
+    {
+        await using var factory = new OpsBoardWebApplicationFactory(
+            fixture.ConnectionString,
+            Guid.NewGuid());
+        await SeedAsync(factory);
+        var client = factory.CreateClient();
+
+        var me = await client.GetAsync("/api/current-user");
+        var list = await client.GetAsync("/api/incidents");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
+        Assert.Equal("identity_unavailable", await ProblemCodeAsync(me));
+        Assert.Equal(HttpStatusCode.Unauthorized, list.StatusCode);
+    }
+
+    private async Task<ForeignOrganization> ArrangeForeignOrganizationAsync(
+        OpsBoardWebApplicationFactory factory)
+    {
+        var organizationId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+        var incidentId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OpsBoardDbContext>();
+        db.AddRange(
+            Organization.Create(organizationId, $"Globex {organizationId:N}"),
+            Team.Create(teamId, organizationId, "Globex Platform"),
+            User.Create(userId, organizationId, teamId, "Globex Manager", UserRole.IncidentManager),
+            Service.Create(serviceId, organizationId, teamId, "Globex Billing", "Foreign service", now),
+            Incident.Create(
+                incidentId,
+                organizationId,
+                serviceId,
+                userId,
+                "Globex billing outage",
+                "Belongs to another organization.",
+                IncidentSeverity.High,
+                now));
+        await db.SaveChangesAsync();
+
+        return new ForeignOrganization(organizationId, userId, serviceId, incidentId);
+    }
+
+    private static async Task<string?> ProblemCodeAsync(HttpResponseMessage response)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        return problem.GetProperty("code").GetString();
+    }
+
+    private sealed record ForeignOrganization(
+        Guid OrganizationId,
+        Guid UserId,
+        Guid ServiceId,
+        Guid IncidentId);
 
     private static async Task AssertGateAsync(HttpResponseMessage response, bool allowed)
     {
