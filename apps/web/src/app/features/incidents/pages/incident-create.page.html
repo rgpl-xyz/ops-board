@@ -1,11 +1,11 @@
 <ob-page-header title="Create incident" eyebrow="Incidents / new" />
 
 @if (!canCreate() && currentUser.isSuccess()) {
-  <ob-callout variant="forbidden">You cannot create incidents.</ob-callout>
+  <ob-callout variant="forbidden" semantic="alert">You cannot create incidents.</ob-callout>
 } @else {
   <form class="form" [formGroup]="form" (ngSubmit)="submit()">
     @if (formError()) {
-      <ob-callout id="create-form-error" tabindex="-1" variant="error">{{
+      <ob-callout id="create-form-error" tabindex="-1" variant="error" semantic="alert">{{
         formError()
       }}</ob-callout>
     }

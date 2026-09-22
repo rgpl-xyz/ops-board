@@ -59,7 +59,7 @@
 @if (services.isPending()) {
   <ob-callout variant="loading">Loading services…</ob-callout>
 } @else if (services.isError()) {
-  <ob-callout variant="error">Could not load services.</ob-callout>
+  <ob-callout variant="error" semantic="alert">Could not load services.</ob-callout>
 } @else if ((services.data()?.items.length ?? 0) === 0) {
   <ob-callout variant="empty">No services match these filters.</ob-callout>
 } @else {

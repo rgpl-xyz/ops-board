@@ -23,12 +23,13 @@ describe('Phase 4 baseline accessibility smoke', () => {
     expect(health.nativeElement.textContent).toContain('Degraded');
   });
 
-  it('exposes alert roles for conflict callouts and status for loading', async () => {
+  it('keeps loading quiet while preserving explicit conflict alerts', async () => {
     await TestBed.configureTestingModule({
       imports: [CalloutComponent],
     }).compileComponents();
     const conflict = TestBed.createComponent(CalloutComponent);
     conflict.componentRef.setInput('variant', 'conflict');
+    conflict.componentRef.setInput('semantic', 'alert');
     await conflict.whenStable();
     expect(
       conflict.nativeElement.querySelector('[role="alert"]'),
@@ -37,9 +38,7 @@ describe('Phase 4 baseline accessibility smoke', () => {
     const loading = TestBed.createComponent(CalloutComponent);
     loading.componentRef.setInput('variant', 'loading');
     await loading.whenStable();
-    expect(
-      loading.nativeElement.querySelector('[role="status"]'),
-    ).toBeTruthy();
+    expect(loading.nativeElement.querySelector('[role]')).toBeNull();
   });
 
   it('renders labeled confirm controls in the dialog template', async () => {

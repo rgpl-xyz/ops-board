@@ -5,7 +5,7 @@
     tabindex="-1"
   >
     <h1>Service details</h1>
-    <ob-callout variant="error">Missing service id.</ob-callout>
+    <ob-callout variant="error" semantic="alert">Missing service id.</ob-callout>
   </section>
 } @else if (detail.isPending()) {
   <section
@@ -23,7 +23,7 @@
     tabindex="-1"
   >
     <h1>Service details</h1>
-    <ob-callout variant="error">Could not load service.</ob-callout>
+    <ob-callout variant="error" semantic="alert">Could not load service.</ob-callout>
   </section>
 } @else if (detail.data(); as service) {
   <ob-page-header [title]="service.name">
@@ -54,7 +54,7 @@
     <section class="panel" aria-labelledby="edit-h">
       <h2 id="edit-h">Update service</h2>
       @if (conflictOpen()) {
-        <ob-callout variant="conflict">
+        <ob-callout variant="conflict" semantic="alert">
           This service changed since you loaded it. Your save was not applied.
           The form now shows the latest server data. Review the fields, then
           dismiss and submit again if your change is still needed.
@@ -71,7 +71,7 @@
         </ob-callout>
       }
       @if (editError()) {
-        <ob-callout id="svc-edit-error" tabindex="-1" variant="error">{{
+        <ob-callout id="svc-edit-error" tabindex="-1" variant="error" semantic="alert">{{
           editError()
         }}</ob-callout>
       }

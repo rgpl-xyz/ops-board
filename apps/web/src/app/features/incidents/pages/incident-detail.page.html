@@ -5,7 +5,7 @@
     tabindex="-1"
   >
     <h1>Incident details</h1>
-    <ob-callout variant="error">Missing incident id.</ob-callout>
+    <ob-callout variant="error" semantic="alert">Missing incident id.</ob-callout>
   </section>
 } @else {
   @if (detail.isPending()) {
@@ -24,7 +24,7 @@
       tabindex="-1"
     >
       <h1>Incident details</h1>
-      <ob-callout variant="error">Could not load incident.</ob-callout>
+      <ob-callout variant="error" semantic="alert">Could not load incident.</ob-callout>
     </section>
   } @else if (detail.data(); as incident) {
     <ob-page-header [title]="incident.title">
@@ -51,7 +51,7 @@
         @if (canEdit()) {
           <h2>Edit details</h2>
           @if (conflictOpen()) {
-            <ob-callout variant="conflict">
+            <ob-callout variant="conflict" semantic="alert">
               This incident changed since you loaded it. Your save was not
               applied. The form now shows the latest server data. Review the
               fields, then dismiss and submit again if your change is still
@@ -69,7 +69,7 @@
             </ob-callout>
           }
           @if (editError()) {
-            <ob-callout id="edit-form-error" tabindex="-1" variant="error">{{
+            <ob-callout id="edit-form-error" tabindex="-1" variant="error" semantic="alert">{{
               editError()
             }}</ob-callout>
           }
@@ -154,7 +154,7 @@
           resolved. Status select excludes Resolved (use Resolve).
         </p>
         @if (lifecycleError()) {
-          <ob-callout variant="error">{{ lifecycleError() }}</ob-callout>
+          <ob-callout variant="error" semantic="alert">{{ lifecycleError() }}</ob-callout>
         }
         @if (conflictOpen()) {
           <p class="muted">
@@ -246,7 +246,7 @@
       <section class="panel" aria-labelledby="resp-h">
         <h2 #respondersHeading id="resp-h" tabindex="-1">Responders</h2>
         @if (collabError()) {
-          <ob-callout variant="error">{{ collabError() }}</ob-callout>
+          <ob-callout variant="error" semantic="alert">{{ collabError() }}</ob-callout>
         }
         <div class="actions">
           @if (showJoin()) {
@@ -275,7 +275,7 @@
         @if (responders.isPending()) {
           <ob-callout variant="loading">Loading responders…</ob-callout>
         } @else if (responders.isError()) {
-          <ob-callout variant="error">Could not load responders.</ob-callout>
+          <ob-callout variant="error" semantic="alert">Could not load responders.</ob-callout>
         } @else if ((responders.data()?.items.length ?? 0) === 0) {
           <ob-callout variant="empty">No responders yet.</ob-callout>
         } @else {
@@ -325,7 +325,7 @@
         @if (timeline.isPending()) {
           <ob-callout variant="loading">Loading timeline…</ob-callout>
         } @else if (timeline.isError()) {
-          <ob-callout variant="error">Could not load timeline.</ob-callout>
+          <ob-callout variant="error" semantic="alert">Could not load timeline.</ob-callout>
         } @else if ((timeline.data()?.items.length ?? 0) === 0) {
           <ob-callout variant="empty">No timeline entries.</ob-callout>
         } @else {

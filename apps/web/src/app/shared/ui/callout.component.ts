@@ -8,6 +8,8 @@ export type CalloutVariant =
   | 'conflict'
   | 'info';
 
+export type CalloutSemantic = 'quiet' | 'status' | 'alert';
+
 @Component({
   selector: 'ob-callout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +22,7 @@ export type CalloutVariant =
       [class.callout--conflict]="variant() === 'conflict'"
       [class.callout--info]="variant() === 'info'"
       [attr.role]="role()"
+      [attr.aria-live]="semantic() === 'status' ? 'polite' : null"
     >
       <ng-content />
     </div>
@@ -51,11 +54,16 @@ export type CalloutVariant =
 })
 export class CalloutComponent {
   readonly variant = input<CalloutVariant>('info');
+  readonly semantic = input<CalloutSemantic>('quiet');
 
-  protected role(): 'status' | 'alert' {
-    const v = this.variant();
-    return v === 'error' || v === 'forbidden' || v === 'conflict'
-      ? 'alert'
-      : 'status';
+  protected role(): 'status' | 'alert' | null {
+    switch (this.semantic()) {
+      case 'status':
+        return 'status';
+      case 'alert':
+        return 'alert';
+      default:
+        return null;
+    }
   }
 }

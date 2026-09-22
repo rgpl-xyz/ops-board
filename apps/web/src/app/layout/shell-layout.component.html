@@ -49,7 +49,7 @@
             {{ currentUser.data()!.role }}</span
           >
         } @else if (currentUser.isError() || organization.isError()) {
-          <ob-callout variant="error">Could not load identity.</ob-callout>
+          <ob-callout variant="error" semantic="alert">Could not load identity.</ob-callout>
         } @else {
           <ob-callout variant="loading">Loading identity…</ob-callout>
         }

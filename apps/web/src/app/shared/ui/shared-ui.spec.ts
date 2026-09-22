@@ -40,13 +40,16 @@ describe('shared presentational UI', () => {
     expect(fixture.nativeElement.textContent).toContain('Investigating');
   });
 
-  it('uses alert role for error and conflict callouts', async () => {
+  it('keeps quiet callouts readable without live semantics and supports explicit alerts', async () => {
     @Component({
       imports: [CalloutComponent],
       template: `
-        <ob-callout variant="error">Failed</ob-callout>
-        <ob-callout variant="conflict">Conflict</ob-callout>
+        <ob-callout variant="error">Passive error</ob-callout>
+        <ob-callout variant="empty">Empty</ob-callout>
         <ob-callout variant="loading">Loading</ob-callout>
+        <ob-callout variant="error" semantic="alert">Failed</ob-callout>
+        <ob-callout variant="conflict" semantic="alert">Conflict</ob-callout>
+        <ob-callout variant="info" semantic="status">Updated</ob-callout>
       `,
     })
     class Host {}
@@ -57,7 +60,10 @@ describe('shared presentational UI', () => {
     const roles = Array.from(
       fixture.nativeElement.querySelectorAll('.callout'),
     ).map((el) => (el as HTMLElement).getAttribute('role'));
-    expect(roles).toEqual(['alert', 'alert', 'status']);
+    expect(roles).toEqual([null, null, null, 'alert', 'alert', 'status']);
+    expect(
+      fixture.nativeElement.querySelectorAll('[aria-live="polite"]'),
+    ).toHaveLength(1);
   });
 
   it('renders page header title', async () => {

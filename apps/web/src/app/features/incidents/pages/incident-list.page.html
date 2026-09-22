@@ -102,7 +102,7 @@
 @if (incidents.isPending()) {
   <ob-callout variant="loading">Loading incidents…</ob-callout>
 } @else if (incidents.isError()) {
-  <ob-callout variant="error">Could not load incidents.</ob-callout>
+  <ob-callout variant="error" semantic="alert">Could not load incidents.</ob-callout>
 } @else if ((incidents.data()?.items.length ?? 0) === 0) {
   <ob-callout variant="empty">No incidents match these filters.</ob-callout>
 } @else {

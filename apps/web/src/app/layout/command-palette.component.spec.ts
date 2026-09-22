@@ -566,6 +566,14 @@ describe('CommandPaletteComponent', () => {
       ) as HTMLElement;
       expect(summary.getAttribute('role')).toBe('status');
       expect(summary.getAttribute('aria-live')).toBe('polite');
+      expect(
+        fixture.nativeElement.querySelectorAll('[role="option"][tabindex]'),
+      ).toHaveLength(0);
+      expect(
+        fixture.nativeElement.querySelector('[aria-selected="true"]')?.classList.contains(
+          'palette__option--active',
+        ),
+      ).toBe(true);
       expect(summaryText()).toBe('');
 
       await search('pay');
