@@ -164,3 +164,92 @@ function targetFor(
 
   return target;
 }
+
+/**
+ * A lazily loaded route renders after the navigation that reached it, so the
+ * marker does not exist at the first render. Focus must still arrive.
+ */
+@Component({
+  template: `
+    <main>
+      @if (ready()) {
+        <h1 data-ob-route-focus tabindex="-1">Late destination</h1>
+      }
+    </main>
+  `,
+})
+class LateRouteFocusHost {
+  readonly ready = signal(false);
+}
+
+describe('RouteFocusService with a destination that renders late', () => {
+  let lateEvents: Subject<NavigationEnd>;
+  let lateFixture: ReturnType<typeof TestBed.createComponent<LateRouteFocusHost>>;
+
+  beforeEach(async () => {
+    lateEvents = new Subject<NavigationEnd>();
+    const serializer = new DefaultUrlSerializer();
+
+    await TestBed.configureTestingModule({
+      imports: [LateRouteFocusHost],
+      providers: [
+        RouteFocusService,
+        {
+          provide: Router,
+          useValue: {
+            events: lateEvents.asObservable(),
+            parseUrl: (url: string) => serializer.parse(url),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    lateFixture = TestBed.createComponent(LateRouteFocusHost);
+    document.body.append(lateFixture.nativeElement);
+    lateFixture.detectChanges();
+    TestBed.inject(RouteFocusService).initialize();
+  });
+
+  afterEach(() => {
+    lateFixture.destroy();
+    lateFixture.nativeElement.remove();
+  });
+
+  it('focuses the destination once it appears', async () => {
+    lateEvents.next(new NavigationEnd(1, '/incidents', '/incidents'));
+    await TestBed.tick();
+    lateEvents.next(new NavigationEnd(2, '/incidents/i1', '/incidents/i1'));
+    await TestBed.tick();
+
+    // Nothing to focus yet, and focus has not been taken from the body.
+    expect(document.activeElement).toBe(document.body);
+
+    lateFixture.componentInstance.ready.set(true);
+    lateFixture.detectChanges();
+
+    await vi.waitFor(() => {
+      const heading = lateFixture.nativeElement.querySelector('h1') as HTMLElement;
+      expect(document.activeElement).toBe(heading);
+    });
+  });
+
+  it('leaves focus alone if something else claimed it while the destination loaded', async () => {
+    const elsewhere = document.createElement('button');
+    elsewhere.type = 'button';
+    document.body.append(elsewhere);
+
+    lateEvents.next(new NavigationEnd(1, '/incidents', '/incidents'));
+    await TestBed.tick();
+    lateEvents.next(new NavigationEnd(2, '/incidents/i1', '/incidents/i1'));
+    await TestBed.tick();
+
+    elsewhere.focus();
+    lateFixture.componentInstance.ready.set(true);
+    lateFixture.detectChanges();
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(document.activeElement).toBe(elsewhere);
+
+    elsewhere.remove();
+  });
+});
