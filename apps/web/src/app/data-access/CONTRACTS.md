@@ -1,9 +1,9 @@
-# Phase 3 data-access contract alignment
+# Data-access API contracts
 
-Reference mapping of Angular data-access types/routes to closed Phase 2
-contracts. Acceptance is automated tests; this file is review aid only.
+Reference mapping of Angular data-access types and routes to the API and
+application contract sources.
 
-Upstream:
+Sources:
 
 - `src/OpsBoard.Api/Endpoints/DomainEndpoints.cs`
 - Application DTOs under `src/OpsBoard.Application/`
@@ -34,7 +34,8 @@ Upstream:
 | POST | `/api/incidents/{id}/updates` | `IncidentsApi.addUpdate` → `ResponseMutationDto` |
 | GET | `/api/incidents/{id}/timeline` | `IncidentsApi.listTimeline` → `Page<TimelineEntryDto>` |
 
-Out of Phase 3 client boundary: `/api/health`, dashboard, postmortem, SignalR.
+Not represented by this client API layer: `/api/health`, dashboard, postmortem,
+and SignalR.
 
 ## Application DTO source files
 
