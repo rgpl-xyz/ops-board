@@ -90,7 +90,7 @@ public sealed class IncidentConcurrencyTests(PostgresFixture fixture)
             Task.Run(() => TryJoinAsync(ids)));
 
         var refused = outcomes.Where(error => error is not null).ToList();
-        Assert.Single(outcomes.Where(error => error is null));
+        Assert.Single(outcomes, error => error is null);
         var loser = Assert.Single(refused);
         Assert.True(
             loser is ResponderConflictException or ConcurrencyConflictException,
