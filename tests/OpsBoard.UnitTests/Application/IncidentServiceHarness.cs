@@ -22,9 +22,12 @@ internal static class IncidentServiceHarness
     internal static readonly Guid ServiceId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     internal static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-16T12:00:00Z");
 
-    internal static IncidentService CreateIncidentService(FakeIncidentData data, IIncidentRealtimePublisher publisher) =>
+    internal static IncidentService CreateIncidentService(
+        FakeIncidentData data,
+        IIncidentRealtimePublisher publisher,
+        UserRole role = UserRole.IncidentManager) =>
         new(
-            new FakeCurrentUser(),
+            new FakeCurrentUser(role),
             data,
             new FakeServiceData(),
             publisher,
@@ -41,9 +44,10 @@ internal static class IncidentServiceHarness
         FakeIncidentData data,
         FakeReadData read,
         FakeLookups lookups,
-        IIncidentRealtimePublisher publisher) =>
+        IIncidentRealtimePublisher publisher,
+        UserRole role = UserRole.IncidentManager) =>
         new(
-            new FakeCurrentUser(),
+            new FakeCurrentUser(role),
             data,
             read,
             lookups,
@@ -86,10 +90,10 @@ internal sealed class ThrowingPublisher : IIncidentRealtimePublisher
         throw new InvalidOperationException("notify failed");
 }
 
-internal sealed class FakeCurrentUser : ICurrentUser
+internal sealed class FakeCurrentUser(UserRole role = UserRole.IncidentManager) : ICurrentUser
 {
     public Task<CurrentUser> GetAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(new CurrentUser(UserId, OrgId, UserRole.IncidentManager));
+        Task.FromResult(new CurrentUser(UserId, OrgId, role));
 }
 
 internal sealed class FakeServiceData : IServiceData
