@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using OpsBoard.Domain.Entities;
+using OpsBoard.Domain.Enums;
+using OpsBoard.Infrastructure.Persistence;
 using OpsBoard.Infrastructure.Persistence.Seed;
 using OpsBoard.IntegrationTests.Fixtures;
 using Xunit;
@@ -223,6 +226,110 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
             $"/api/incidents/{incident.GetProperty("id").GetGuid()}/responders?limit={limit}");
 
         Assert.Equal(expected, response.StatusCode);
+    }
+
+    /// The seed holds 27 incidents and continuation caps at 100, so a continuation
+    /// past the cap needs data of its own. Paging must return every member once
+    /// and then stop.
+    [Fact]
+    public async Task A_continuation_past_the_limit_returns_every_member_exactly_once()
+    {
+        const int memberCount = 120;
+        const int pageLimit = 50;
+
+        await using var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);
+        await SeedAsync(factory);
+        var arranged = await ArrangeCrowdedIncidentAsync(factory, memberCount);
+
+        await using var memberFactory = new OpsBoardWebApplicationFactory(
+            fixture.ConnectionString,
+            arranged.MemberIds[0]);
+        var client = memberFactory.CreateClient();
+
+        var collected = new List<Guid>();
+        Guid? after = null;
+        var requests = 0;
+        do
+        {
+            var url = after is null
+                ? $"/api/incidents/{arranged.IncidentId}/responders?limit={pageLimit}"
+                : $"/api/incidents/{arranged.IncidentId}/responders?limit={pageLimit}&after={after}";
+            var page = await client.GetFromJsonAsync<JsonElement>(url, JsonOptions);
+
+            var items = page.GetProperty("items").EnumerateArray()
+                .Select(item => item.GetProperty("userId").GetGuid())
+                .ToList();
+            collected.AddRange(items);
+
+            after = page.TryGetProperty("nextAfter", out var next) && next.ValueKind != JsonValueKind.Null
+                ? next.GetGuid()
+                : null;
+
+            Assert.True(items.Count <= pageLimit, "A page returned more members than its limit.");
+            requests++;
+            Assert.True(requests <= 10, "The continuation did not terminate.");
+        }
+        while (after is not null);
+
+        Assert.Equal(memberCount, collected.Count);
+        Assert.Equal(memberCount, collected.Distinct().Count());
+        Assert.Equal(
+            arranged.MemberIds.OrderBy(id => id).ToList(),
+            collected.OrderBy(id => id).ToList());
+        Assert.True(requests >= 3, "120 members at 50 per page must take more than two requests.");
+    }
+
+    private static async Task<CrowdedIncident> ArrangeCrowdedIncidentAsync(
+        OpsBoardWebApplicationFactory factory,
+        int memberCount)
+    {
+        var organizationId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+        var incidentId = Guid.NewGuid();
+        var creatorId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OpsBoardDbContext>();
+
+        db.AddRange(
+            Organization.Create(organizationId, $"Continuation {organizationId:N}"),
+            Team.Create(teamId, organizationId, "Continuation Team"),
+            // The incident's author must exist: created_by_user_id is a foreign key.
+            User.Create(creatorId, organizationId, teamId, "Continuation Author", UserRole.IncidentManager),
+            Service.Create(serviceId, organizationId, teamId, "Continuation Service", "Arranged", now),
+            Incident.Create(
+                incidentId,
+                organizationId,
+                serviceId,
+                creatorId,
+                "Continuation incident",
+                "Arranged for continuation coverage.",
+                IncidentSeverity.Low,
+                now));
+
+        var memberIds = new List<Guid>();
+        for (var i = 0; i < memberCount; i++)
+        {
+            var userId = Guid.NewGuid();
+            memberIds.Add(userId);
+            db.AddRange(
+                User.Create(userId, organizationId, teamId, $"Member {i:D3}", UserRole.Responder),
+                IncidentResponder.Create(organizationId, incidentId, userId, now));
+        }
+
+        await db.SaveChangesAsync();
+        return new CrowdedIncident(incidentId, memberIds);
+    }
+
+    private sealed record CrowdedIncident(Guid IncidentId, List<Guid> MemberIds);
+
+    private static async Task SeedAsync(OpsBoardWebApplicationFactory factory)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var runner = scope.ServiceProvider.GetRequiredService<DemoSeedRunner>();
+        await runner.RunAsync(CancellationToken.None);
     }
 
     private static List<Guid> Ids(JsonElement page) =>
