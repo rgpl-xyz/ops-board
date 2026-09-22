@@ -2,7 +2,7 @@
 
 Real-time incident and service operations management platform. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and Docker-based local development.
 
-> Status: **Phases 1–4 complete** (scaffold, domain/persistence + APIs, Angular data-access, core incidents/services UI with responsive layout and baseline accessibility). Next: Phase 5 realtime (SignalR → Query cache sync).
+> Status: **Phases 1–6 complete** (scaffold, domain/persistence + APIs, Angular data-access, core incidents/services UI, SignalR realtime with Query cache sync, and the command palette with keyboard/focus accessibility work). Next: Phase 7 test hardening.
 
 ## Screenshots
 
