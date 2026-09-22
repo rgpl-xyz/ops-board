@@ -48,6 +48,14 @@ public static class ExceptionMapping
                 "One or more validation errors occurred.",
                 fv.Errors.GroupBy(e => e.PropertyName)
                     .ToDictionary(g => ToCamel(g.Key), g => g.Select(e => e.ErrorMessage).ToArray())),
+            // A value the framework could not bind is a client error, not a server
+            // fault: without this case it reaches the catch-all below as a 500.
+            BadHttpRequestException => (
+                StatusCodes.Status400BadRequest,
+                "validation_failed",
+                "Validation failed",
+                "A request value could not be read.",
+                null),
             IdentityUnavailableException e => (StatusCodes.Status401Unauthorized, e.Code, "Identity unavailable", e.Message, null),
             ForbiddenException e => (StatusCodes.Status403Forbidden, e.Code, "Forbidden", e.Message, null),
             UnavailableException e => (StatusCodes.Status404NotFound, e.Code, "Unavailable", e.Message, null),
