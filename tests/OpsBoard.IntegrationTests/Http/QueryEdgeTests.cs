@@ -48,7 +48,28 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
         Assert.Equal("validation_failed", await ProblemCodeAsync(response));
     }
 
+    // Enum filters are part of the contract by name only; the framework's own
+    // binding would also accept a number such as severity=1.
     [Theory]
+    [InlineData("/api/incidents?severity=1", "severity")]
+    [InlineData("/api/incidents?status=0", "status")]
+    [InlineData("/api/services?health=1", "health")]
+    public async Task A_numeric_enum_value_is_rejected_naming_its_field(string url, string field)
+    {
+        var client = await ClientAsync();
+
+        var response = await client.GetAsync(url);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        Assert.Equal("validation_failed", problem.GetProperty("code").GetString());
+        Assert.True(problem.GetProperty("errors").TryGetProperty(field, out _), $"errors should name {field}");
+    }
+
+    [Theory]
+    [InlineData("/api/incidents?severity=Critical")]
+    [InlineData("/api/incidents?status=Investigating")]
+    [InlineData("/api/services?health=Degraded")]
     [InlineData("/api/incidents?pageSize=1")]
     [InlineData("/api/incidents?pageSize=100")]
     [InlineData("/api/incidents?sort=severity&direction=asc")]

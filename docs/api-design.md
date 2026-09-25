@@ -23,7 +23,7 @@ Lifecycle changes are explicit commands rather than generic edits. `PUT` on an i
 ## Conventions
 
 - **Status codes.** Reads and updates answer `200`. Creating a service, an incident or a written update answers `201` with a `Location` header: the new resource, or for a written update the incident's timeline. Every failure answers with a problem response, described below.
-- **Enumerations** are exchanged by name (`Critical`, `Degraded`, `Resolved`), in responses, request bodies and query parameters. Names are case-sensitive, and request bodies reject numeric values.
+- **Enumerations** are exchanged by name (`Critical`, `Degraded`, `Resolved`), in responses, request bodies and query parameters. Numeric values are rejected everywhere. Query parameters must use the exact name; request bodies match names without regard to case.
 - **Identifiers** are GUIDs. A path segment that is not a GUID does not match a route.
 - **Revisions** (`version`, `lifecycleVersion`) travel as positive decimal strings, so that clients never round them.
 - **Text limits** are counted in user-perceived characters rather than bytes or UTF-16 units. For example, an incident title allows 200 and a written update 4,000. Required text must contain more than whitespace.
