@@ -69,9 +69,45 @@ public sealed class MalformedRequestTests(PostgresFixture fixture)
         Assert.Equal("validation_failed", problem.GetProperty("code").GetString());
     }
 
-    private async Task<HttpClient> ClientAsync()
+    // Outside Development the framework answers a binding failure itself unless
+    // told to throw, so these run the host as Production.
+    [Theory]
+    [InlineData("/api/incidents?page=notanumber")]
+    [InlineData("/api/incidents?severity=Catastrophic")]
+    public async Task An_unreadable_query_value_reports_a_validation_failure_in_production(string url)
     {
-        var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);
+        var client = await ClientAsync("Production");
+
+        var response = await client.GetAsync(url);
+
+        await AssertValidationProblemAsync(response);
+    }
+
+    [Fact]
+    public async Task An_unreadable_request_body_reports_a_validation_failure_in_production()
+    {
+        var client = await ClientAsync("Production");
+
+        var response = await client.PostAsync(
+            "/api/incidents",
+            new StringContent("{ this is not json", Encoding.UTF8, "application/json"));
+
+        await AssertValidationProblemAsync(response);
+    }
+
+    private static async Task AssertValidationProblemAsync(HttpResponseMessage response)
+    {
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        Assert.Equal("urn:opsboard:problem:validation_failed", problem.GetProperty("type").GetString());
+        Assert.Equal(400, problem.GetProperty("status").GetInt32());
+        Assert.Equal("validation_failed", problem.GetProperty("code").GetString());
+    }
+
+    private async Task<HttpClient> ClientAsync(string environment = "Development")
+    {
+        var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString, environment: environment);
         await using var scope = factory.Services.CreateAsyncScope();
         var runner = scope.ServiceProvider.GetRequiredService<DemoSeedRunner>();
         await runner.RunAsync(CancellationToken.None);

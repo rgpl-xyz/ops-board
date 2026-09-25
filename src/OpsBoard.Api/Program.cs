@@ -20,6 +20,9 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
         new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
 });
 builder.Services.AddProblemDetails();
+// Binding failures throw in every environment, not only Development, so they
+// reach the problem mapping below instead of the framework's own 400.
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;

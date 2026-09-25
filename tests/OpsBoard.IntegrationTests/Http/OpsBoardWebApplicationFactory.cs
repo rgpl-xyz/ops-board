@@ -11,15 +11,18 @@ internal sealed class OpsBoardWebApplicationFactory : WebApplicationFactory<Prog
     private readonly string _connectionString;
     private readonly Guid _demoUserId;
     private readonly Action<IServiceCollection>? _configureServices;
+    private readonly string _environment;
 
     public OpsBoardWebApplicationFactory(
         string connectionString,
         Guid? demoUserId = null,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        string environment = "Development")
     {
         _connectionString = connectionString;
         _demoUserId = demoUserId ?? SeedIds.DemoUser;
         _configureServices = configureServices;
+        _environment = environment;
     }
 
 
@@ -28,7 +31,7 @@ internal sealed class OpsBoardWebApplicationFactory : WebApplicationFactory<Prog
         builder.UseSetting("ConnectionStrings:OpsBoard", _connectionString);
         builder.UseSetting("Demo:Enabled", "true");
         builder.UseSetting("Demo:UserId", _demoUserId.ToString());
-        builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.EnvironmentKey, "Development");
+        builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.EnvironmentKey, _environment);
         if (_configureServices is not null)
         {
             builder.ConfigureServices(_configureServices);
