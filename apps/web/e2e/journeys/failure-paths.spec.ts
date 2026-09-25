@@ -89,3 +89,46 @@ test('a conflicting change offers recovery instead of silently discarding it', a
 
   await page.unroute('**/api/incidents/*');
 });
+
+test('a stale edit is rejected rather than overwriting a change that arrived while typing', async ({
+  page,
+  request,
+}) => {
+  const incident = await provisionIncident(request, runName('Concurrent edit incident'));
+
+  await page.goto(`/incidents/${incident.id}`);
+  const title = page.locator('#edit-title');
+  await expect(title).toBeVisible();
+  const typed = `${incident.title} edited`;
+  await title.fill(typed);
+
+  // Someone else saves first, through the real API, from the current version.
+  const current = await (await request.get(`/api/incidents/${incident.id}`)).json();
+  const concurrentDescription = `Changed elsewhere ${runName('description')}`;
+  const concurrent = await request.put(`/api/incidents/${incident.id}`, {
+    data: {
+      title: current.title,
+      description: concurrentDescription,
+      serviceId: current.serviceId,
+      expectedVersion: current.version,
+    },
+  });
+  expect(concurrent.ok()).toBe(true);
+
+  // The realtime refresh reaches the page, and the unsaved edit survives it.
+  await expect(page.getByText(concurrentDescription)).toBeVisible();
+  await expect(title).toHaveValue(typed);
+
+  const save = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      response.url().endsWith(`/api/incidents/${incident.id}`),
+  );
+  await page.getByRole('button', { name: 'Save details' }).click();
+  expect((await save).status()).toBe(409);
+  await expect(page.getByRole('alert')).toContainText('changed since you loaded it');
+
+  const stored = await (await request.get(`/api/incidents/${incident.id}`)).json();
+  expect(stored.description).toBe(concurrentDescription);
+  expect(stored.title).toBe(incident.title);
+});

@@ -333,7 +333,7 @@ describe('IncidentDetailPage', () => {
     );
   });
 
-  it('saves details with expectedVersion from Query data', async () => {
+  it('saves details with the version the form was loaded from', async () => {
     updateMock.mockResolvedValue(
       detailDto({ title: 'Updated', version: asRevisionString('3') }),
     );
@@ -356,6 +356,96 @@ describe('IncidentDetailPage', () => {
       serviceId: 's1',
       expectedVersion: asRevisionString('2'),
     });
+  });
+
+  it('keeps the loaded version as the save baseline across a passive change', async () => {
+    updateMock.mockResolvedValue(detailDto({ version: asRevisionString('8') }));
+    const fixture = await mountEditable();
+    const title = fixture.nativeElement.querySelector(
+      '#edit-title',
+    ) as HTMLInputElement;
+    title.value = 'Half typed title';
+    title.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    passiveDetail({
+      description: 'Changed by someone else',
+      version: asRevisionString('7'),
+    });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Changed by someone else');
+    });
+    expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+      'Half typed title',
+    );
+
+    await fixture.componentInstance.saveDetails();
+
+    // The form was loaded at 2; the server must be able to reject it as stale.
+    expect(updateMock).toHaveBeenCalledWith('i1', {
+      title: 'Half typed title',
+      description: 'Payments failing',
+      serviceId: 's1',
+      expectedVersion: asRevisionString('2'),
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('advances the save baseline when a pristine form adopts a newer version', async () => {
+    updateMock.mockResolvedValue(detailDto({ version: asRevisionString('6') }));
+    const fixture = await mountEditable();
+
+    passiveDetail({ title: 'Server retitled', version: asRevisionString('5') });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+        'Server retitled',
+      );
+    });
+
+    fixture.componentInstance.editForm.controls.title.setValue('Edited after refresh');
+    await fixture.componentInstance.saveDetails();
+
+    expect(updateMock.mock.calls[0]?.[1]?.expectedVersion).toEqual(
+      asRevisionString('5'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('bases the next save on the version a successful save returned', async () => {
+    updateMock
+      .mockResolvedValueOnce(
+        detailDto({ title: 'First edit', version: asRevisionString('3') }),
+      )
+      .mockResolvedValueOnce(
+        detailDto({ title: 'Second edit', version: asRevisionString('4') }),
+      );
+    const fixture = await mountEditable();
+
+    fixture.componentInstance.editForm.controls.title.setValue('First edit');
+    fixture.componentInstance.editForm.markAsDirty();
+    await fixture.componentInstance.saveDetails();
+    fixture.detectChanges();
+
+    fixture.componentInstance.editForm.controls.title.setValue('Second edit');
+    fixture.componentInstance.editForm.markAsDirty();
+    await fixture.componentInstance.saveDetails();
+
+    expect(updateMock).toHaveBeenCalledTimes(2);
+    expect(updateMock.mock.calls[0]?.[1]?.expectedVersion).toEqual(
+      asRevisionString('2'),
+    );
+    expect(updateMock.mock.calls[1]?.[1]?.expectedVersion).toEqual(
+      asRevisionString('3'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('handles concurrency conflict without auto-resubmit', async () => {

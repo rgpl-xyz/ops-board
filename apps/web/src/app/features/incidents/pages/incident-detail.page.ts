@@ -48,6 +48,7 @@ import {
   type IncidentDetailDto,
   type IncidentSeverity,
   type IncidentStatus,
+  type RevisionString,
 } from '../../../data-access';
 import {
   ACTIVE_STATUS_OPTIONS,
@@ -378,7 +379,7 @@ export class IncidentDetailPage {
   });
 
   private lastBoundVersion = signal<string | null>(null);
-  private lastFormVersion = signal<string | null>(null);
+  private lastFormVersion = signal<RevisionString | null>(null);
 
   constructor() {
     effect(() => {
@@ -410,7 +411,7 @@ export class IncidentDetailPage {
   }
 
   private bindEditForm(incident: IncidentDetailDto): void {
-    this.lastFormVersion.set(String(incident.version));
+    this.lastFormVersion.set(incident.version);
     this.editForm.reset({
       title: incident.title,
       description: incident.description,
@@ -535,20 +536,22 @@ export class IncidentDetailPage {
       return;
     }
     const id = this.id();
-    const incident = this.cachedDetail(id);
-    if (!incident || !id) {
+    // The version the form was loaded from, not the newest cached one, so a
+    // change that arrived while typing is rejected instead of overwritten.
+    const baseline = this.lastFormVersion();
+    if (!baseline || !id) {
       return;
     }
     const value = this.editForm.getRawValue();
     try {
-      await this.updateMut.mutateAsync({
+      const saved = await this.updateMut.mutateAsync({
         id,
         body: {
           ...value,
-          expectedVersion: incident.version,
+          expectedVersion: baseline,
         },
       });
-      this.editForm.markAsPristine();
+      this.bindEditForm(saved);
     } catch (error) {
       if (isValidationFailed(error)) {
         const affected = applyServerFieldErrors(
