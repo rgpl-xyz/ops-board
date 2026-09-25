@@ -1,14 +1,17 @@
 <div class="shell">
-  <header class="shell__banner">{{ demoBanner }}</header>
-  <div
-    class="shell__realtime"
-    [class.shell__realtime--warning]="
-      realtimeStatus() === 'reconnecting' || realtimeStatus() === 'disconnected'
-    "
-    role="status"
-    aria-live="polite"
-  >
-    Realtime: {{ realtimeStatusText() }}
+  <div class="shell__top">
+    <header class="shell__banner">{{ demoBanner }}</header>
+    <div
+      class="shell__realtime"
+      [class.shell__realtime--live]="realtimeStatus() === 'connected'"
+      [class.shell__realtime--warning]="
+        realtimeStatus() === 'reconnecting' || realtimeStatus() === 'disconnected'
+      "
+      role="status"
+      aria-live="polite"
+    >
+      Realtime: {{ realtimeStatusText() }}
+    </div>
   </div>
 
   <div class="shell__body">
@@ -46,7 +49,7 @@
           }}</strong>
           <span class="shell__user-meta"
             >{{ organization.data()!.name }} ·
-            {{ currentUser.data()!.role }}</span
+            {{ currentUser.data()!.role | obHumanize }}</span
           >
         } @else if (currentUser.isError() || organization.isError()) {
           <ob-callout variant="error" semantic="alert">Could not load identity.</ob-callout>

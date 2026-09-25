@@ -1,22 +1,46 @@
 :root {
   color-scheme: light;
-  --ob-bg: #f3f1ec;
+
+  /* Paper and ink */
+  --ob-bg: #f6f4ef;
   --ob-surface: #fbfaf7;
-  --ob-ink: #1c1b19;
-  --ob-muted: #5c574f;
+  --ob-field: #ffffff;
+  --ob-ink: #191917;
+  --ob-ink-2: #3d3b36;
+  --ob-muted: #6a655c;
+  --ob-faint: #837d73;
+  --ob-rule: #e3dfd6;
+  --ob-rule-strong: #cfc9bd;
+  --ob-border: var(--ob-rule-strong);
+
+  /* One accent: links, primary actions, focus */
   --ob-accent: #0f5c4c;
-  --ob-banner: #1f2a24;
-  --ob-banner-ink: #e7efe9;
-  --ob-border: #d9d3c7;
+  --ob-accent-ink: #0b4a3d;
+  --ob-accent-wash: #e3eeea;
   --ob-focus: #0b6e4f;
+
+  /* Chrome */
+  --ob-banner: #1d2420;
+  --ob-banner-ink: #dfe8e2;
+
+  /* Semantic tones only */
+  --ob-critical: #a3231c;
+  --ob-high: #a1500e;
+  --ob-medium: #8a7420;
+  --ob-low: #8b867c;
+  --ob-ok: #3f7a5c;
   --ob-danger: #8f1d1d;
-  --ob-danger-bg: #f6e4e4;
-  --ob-danger-border: #e0b4b4;
-  --ob-warn: #8a4b12;
-  --ob-warn-bg: #f7ead9;
-  --ob-warn-border: #e0c9a8;
-  --ob-font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --ob-font-display: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --ob-danger-bg: #f8eceb;
+  --ob-danger-border: #e6bdb9;
+  --ob-warn: #85460f;
+  --ob-warn-bg: #f8eedf;
+  --ob-warn-border: #e3c9a2;
+
+  --ob-font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --ob-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ob-font-display: var(--ob-font-sans);
+
+  --ob-radius: 3px;
 }
 
 *,
@@ -30,8 +54,18 @@ body {
   margin: 0;
   min-height: 100%;
   font-family: var(--ob-font-sans);
+  font-size: 15px;
+  line-height: 1.45;
   background: var(--ob-bg);
   color: var(--ob-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 :focus-visible {
@@ -41,4 +75,344 @@ body {
 
 a {
   color: var(--ob-accent);
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--ob-accent-ink);
+}
+
+/* Machine-shaped text: timestamps, counts, codes. */
+.num,
+time {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86em;
+  letter-spacing: -0.01em;
+}
+
+/* Section micro-labels. */
+.micro,
+.section__title {
+  margin: 0;
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-muted);
+}
+
+.muted {
+  color: var(--ob-muted);
+}
+
+/* Rule-led sections instead of boxes. */
+.section {
+  border-top: 1px solid var(--ob-rule-strong);
+  padding-top: 0.75rem;
+  min-width: 0;
+}
+
+.section__title {
+  margin-bottom: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--ob-rule-strong);
+  border-radius: var(--ob-radius);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--ob-ink-2);
+  color: var(--ob-ink);
+}
+
+.btn:disabled,
+.btn--primary:disabled,
+.btn--danger:disabled {
+  border-color: var(--ob-rule-strong);
+  background: transparent;
+  color: var(--ob-faint);
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--ob-accent-ink);
+  border-color: var(--ob-accent-ink);
+  color: #fff;
+}
+
+.btn--danger {
+  border-color: var(--ob-danger-border);
+  color: var(--ob-danger);
+}
+
+.btn--danger:hover:not(:disabled) {
+  border-color: var(--ob-danger);
+  color: var(--ob-danger);
+}
+
+/* Back links read as quiet navigation. */
+.back {
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--ob-muted);
+}
+
+.back:hover {
+  color: var(--ob-accent);
+  text-decoration: underline;
+}
+
+/* Breadcrumb link projected above a page title. */
+[crumb] {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+}
+
+/* Form fields */
+.form {
+  max-width: 40rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.field label,
+.inline-field {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--ob-ink-2);
+}
+
+.field input,
+.field select,
+.field textarea,
+.inline-field select,
+.filters input,
+.filters select {
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--ob-rule-strong);
+  border-radius: var(--ob-radius);
+  background: var(--ob-field);
+  color: var(--ob-ink);
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.field textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'],
+.field textarea[aria-invalid='true'] {
+  border-color: var(--ob-danger);
+}
+
+.field [aria-invalid='true']:focus-visible {
+  outline-color: var(--ob-danger);
+}
+
+/* Selects: a quiet chevron instead of the platform default. */
+.field select,
+.inline-field select,
+.filters select {
+  appearance: none;
+  padding-right: 1.9rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236a655c' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+}
+
+.field__error {
+  margin: 0;
+  color: var(--ob-danger);
+  font-size: 0.84rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* List filters: one quiet strip above the table. */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.6rem 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--ob-rule);
+}
+
+.filters label {
+  display: grid;
+  gap: 0.25rem;
+  font-family: var(--ob-font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-muted);
+}
+
+.filters input,
+.filters select {
+  font-family: var(--ob-font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Data tables: rules between rows, no outer box. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.table th,
+.table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ob-rule);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 0;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0;
+}
+
+.table th {
+  border-bottom-color: var(--ob-rule-strong);
+  font-family: var(--ob-font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-muted);
+  white-space: nowrap;
+}
+
+.table td a {
+  color: var(--ob-ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.table td a:hover {
+  color: var(--ob-accent);
+  text-decoration: underline;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--ob-rule) 35%, transparent);
+}
+
+.table .row--resolved td,
+.table .row--resolved td a {
+  color: var(--ob-muted);
+}
+
+.table .row--resolved td a {
+  font-weight: 400;
+}
+
+.row__meta {
+  display: none;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--ob-muted);
+}
+
+/* Route content arrives with one short fade. */
+.shell__content > * {
+  animation: ob-enter 160ms ease-out both;
+}
+
+@keyframes ob-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell__content > * {
+    animation: none;
+  }
+}
+
+@media (max-width: 720px) {
+  html,
+  body {
+    font-size: 15px;
+  }
+
+  /* A deliberate strip running to the screen edge, faded where it continues. */
+  .filters {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    margin: 0 -0.85rem 0.75rem 0;
+    padding: 0 0.85rem 0.75rem 0;
+    scrollbar-width: thin;
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+
+  .filters label {
+    flex: 0 0 9.5rem;
+  }
+
+  .col-wide {
+    display: none;
+  }
+
+  .row__meta {
+    display: block;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.55rem 0.4rem;
+  }
 }

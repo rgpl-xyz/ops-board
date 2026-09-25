@@ -35,23 +35,35 @@ import {
   styles: `
     .pager {
       display: flex;
-      gap: 0.5rem;
+      flex-wrap: wrap;
       align-items: center;
-      margin-top: 0.65rem;
+      gap: 0.75rem;
+      margin-top: 1rem;
       color: var(--ob-muted);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+    }
+    .pager__status {
+      font-family: var(--ob-font-mono);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
     }
     .pager__btn {
       appearance: none;
-      border: 1px solid var(--ob-border);
+      min-height: 2rem;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--ob-rule-strong);
+      border-radius: var(--ob-radius);
       background: var(--ob-surface);
       color: var(--ob-ink);
-      padding: 0.35rem 0.65rem;
       font: inherit;
+      font-size: 0.85rem;
       cursor: pointer;
     }
+    .pager__btn:hover:not(:disabled) {
+      border-color: var(--ob-ink-2);
+    }
     .pager__btn:disabled {
-      opacity: 0.55;
+      opacity: 0.45;
       cursor: not-allowed;
     }
   `,

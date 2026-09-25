@@ -18,6 +18,7 @@ import { IncidentRealtimeConnection } from '../core/realtime/incident-realtime-c
 import { RouteFocusService } from '../core/a11y/route-focus.service';
 import { CalloutComponent } from '../shared/ui/callout.component';
 import { CommandPaletteComponent } from './command-palette.component';
+import { HumanizePipe } from '../shared/pipes/humanize.pipe';
 
 const EDITABLE_TARGET_SELECTOR =
   'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
@@ -31,6 +32,7 @@ const EDITABLE_TARGET_SELECTOR =
     RouterLinkActive,
     CalloutComponent,
     CommandPaletteComponent,
+    HumanizePipe,
   ],
   host: {
     '(document:keydown)': 'onDocumentKeydown($event)',

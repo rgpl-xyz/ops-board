@@ -67,46 +67,66 @@ export interface ConfirmDialogSettleOptions {
   `,
   styles: `
     .confirm {
-      border: 1px solid var(--ob-border);
+      border: 1px solid var(--ob-rule-strong);
+      border-radius: var(--ob-radius);
       background: var(--ob-surface);
       color: var(--ob-ink);
       padding: 0;
-      max-width: 24rem;
+      max-width: 26rem;
       width: calc(100% - 2rem);
     }
     .confirm::backdrop {
-      background: rgb(28 27 25 / 45%);
+      background: rgb(25 25 23 / 40%);
     }
     .confirm__form {
       margin: 0;
-      padding: 1rem;
+      padding: 1.25rem 1.25rem 1rem;
     }
     .confirm__title {
       margin: 0 0 0.5rem;
       font-size: 1.05rem;
+      font-weight: 600;
     }
     .confirm__body {
-      margin: 0 0 0.85rem;
-      color: var(--ob-muted);
-      line-height: 1.45;
+      margin: 0 0 1.25rem;
+      color: var(--ob-ink-2);
+      line-height: 1.5;
     }
     .confirm__actions {
       display: flex;
       justify-content: flex-end;
-      gap: 0.45rem;
+      gap: 0.5rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--ob-rule);
     }
     .confirm__btn {
       appearance: none;
-      border: 1px solid var(--ob-border);
+      min-height: 2.25rem;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--ob-rule-strong);
+      border-radius: var(--ob-radius);
       background: var(--ob-surface);
       color: var(--ob-ink);
-      padding: 0.4rem 0.7rem;
       font: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
     }
+    .confirm__btn:hover:not(:disabled) {
+      border-color: var(--ob-ink-2);
+    }
     .confirm__btn--danger {
-      border-color: var(--ob-danger, #8f1d1d);
-      color: var(--ob-danger, #8f1d1d);
+      background: var(--ob-danger);
+      border-color: var(--ob-danger);
+      color: #fff;
+    }
+    .confirm__btn--danger:hover:not(:disabled) {
+      background: #761616;
+      border-color: #761616;
+    }
+    .confirm__btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   `,
 })

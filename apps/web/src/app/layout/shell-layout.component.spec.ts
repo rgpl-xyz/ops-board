@@ -68,7 +68,7 @@ describe('ShellLayoutComponent', () => {
     expect(el.textContent).toContain('Demo Environment');
     expect(el.textContent).toContain('Incidents');
     expect(el.textContent).toContain('Services');
-    expect(el.textContent).toContain('IncidentManager');
+    expect(el.textContent).toContain('Incident manager');
     expect(el.textContent).toContain('Acme Cloud');
   });
 

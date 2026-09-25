@@ -1,79 +1,97 @@
 .palette {
-  border: 1px solid var(--ob-border);
+  width: calc(100% - 2rem);
+  max-width: 36rem;
+  margin-top: 10vh;
+  padding: 0;
+  border: 1px solid var(--ob-rule-strong);
+  border-radius: var(--ob-radius);
   background: var(--ob-surface);
   color: var(--ob-ink);
-  padding: 0.85rem 1rem 1rem;
-  width: calc(100% - 2rem);
-  max-width: 34rem;
-  margin-top: 8vh;
 }
 
 .palette::backdrop {
-  background: rgb(28 27 25 / 45%);
+  background: rgb(25 25 23 / 40%);
 }
 
 .palette__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  padding: 0.85rem 1rem 0;
 }
 
 .palette__title {
   margin: 0;
-  font-size: 1.05rem;
-  letter-spacing: -0.02em;
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-muted);
 }
 
 .palette__close {
   appearance: none;
-  border: 1px solid var(--ob-border);
-  background: var(--ob-surface);
-  color: var(--ob-ink);
-  padding: 0.25rem 0.55rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--ob-rule-strong);
+  border-radius: var(--ob-radius);
+  background: transparent;
+  color: var(--ob-muted);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
 }
 
+.palette__close:hover {
+  color: var(--ob-ink);
+  border-color: var(--ob-ink-2);
+}
+
 .palette__help {
-  margin: 0.35rem 0 0.5rem;
+  margin: 0.25rem 1rem 0.6rem;
   color: var(--ob-muted);
   font-size: 0.85rem;
 }
 
 .palette__search {
-  width: 100%;
-  border: 1px solid var(--ob-border);
-  background: var(--ob-bg);
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0 1rem;
+  min-height: 2.6rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--ob-rule-strong);
+  border-radius: var(--ob-radius);
+  background: var(--ob-field);
   color: var(--ob-ink);
-  padding: 0.45rem 0.55rem;
   font: inherit;
+  font-size: 1rem;
+}
+
+.palette__search::-webkit-search-cancel-button {
+  appearance: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  cursor: pointer;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' stroke='%236a655c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center;
 }
 
 .palette__results {
   list-style: none;
-  margin: 0.6rem 0 0;
-  padding: 0;
+  margin: 0.5rem 0 0;
+  padding: 0 0.5rem;
   max-height: 22rem;
   overflow-y: auto;
 }
 
-.palette__hint {
-  margin: 0.75rem 0 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--ob-border);
-  color: var(--ob-muted);
-  font-size: 0.8125rem;
-}
-
 .palette__group {
-  margin: 0.55rem 0 0.15rem;
-  color: var(--ob-muted);
-  font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  margin: 0.7rem 0.5rem 0.25rem;
+  font-family: var(--ob-font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--ob-muted);
 }
 
 .palette__option {
@@ -81,35 +99,48 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  border-left: 3px solid transparent;
-  padding: 0.3rem 0.4rem 0.3rem 0.35rem;
+  padding: 0.45rem 0.5rem 0.45rem 0.6rem;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
   cursor: pointer;
+}
+
+.palette__option:hover {
+  background: color-mix(in srgb, var(--ob-rule) 45%, transparent);
 }
 
 .palette__option--active {
   border-left-color: var(--ob-accent);
-  background: color-mix(in srgb, var(--ob-accent) 12%, white);
+  background: var(--ob-accent-wash);
+}
+
+.palette__option--active .palette__option-label {
   font-weight: 600;
 }
 
-.palette__option--active .palette__option-label::before {
-  content: "\25B8\00A0";
-}
-
 .palette__option-detail {
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
   color: var(--ob-muted);
-  font-size: 0.8125rem;
-  font-weight: 400;
   white-space: nowrap;
 }
 
 .palette__note,
 .palette__summary {
-  margin: 0.5rem 0 0;
+  margin: 0.5rem 1rem 0;
   color: var(--ob-muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .palette__summary:empty {
   margin: 0;
+}
+
+.palette__hint {
+  margin: 0.75rem 0 0;
+  padding: 0.55rem 1rem 0.7rem;
+  border-top: 1px solid var(--ob-rule);
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+  color: var(--ob-muted);
 }

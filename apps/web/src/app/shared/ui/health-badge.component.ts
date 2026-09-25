@@ -5,24 +5,39 @@ import type { ServiceHealth } from '../../data-access';
 @Component({
   selector: 'ob-health-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span class="badge" [attr.data-health]="health()">{{
-    health()
-  }}</span>`,
+  template: `<span class="health" [attr.data-health]="health()"
+    ><span class="health__bar" aria-hidden="true"></span>{{ health() }}</span
+  >`,
   styles: `
-    .badge {
-      display: inline-block;
-      font-size: 0.82rem;
-      padding: 0.1rem 0.35rem;
-      border: 1px solid var(--ob-border);
-      background: var(--ob-surface);
+    .health {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: var(--ob-font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--ob-ink-2);
+      white-space: nowrap;
     }
-    .badge[data-health='Outage'] {
-      border-color: var(--ob-danger, #8f1d1d);
-      color: var(--ob-danger, #8f1d1d);
+    .health__bar {
+      width: 3px;
+      height: 0.95em;
+      border-radius: 1px;
+      background: var(--ob-ok);
     }
-    .badge[data-health='Degraded'] {
-      border-color: var(--ob-warn, #8a4b12);
-      color: var(--ob-warn, #8a4b12);
+    .health[data-health='Outage'] {
+      color: var(--ob-critical);
+      font-weight: 600;
+    }
+    .health[data-health='Outage'] .health__bar {
+      background: var(--ob-critical);
+    }
+    .health[data-health='Degraded'] {
+      color: var(--ob-high);
+      font-weight: 600;
+    }
+    .health[data-health='Degraded'] .health__bar {
+      background: var(--ob-high);
     }
   `,
 })
