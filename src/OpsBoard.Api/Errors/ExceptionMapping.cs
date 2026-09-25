@@ -11,7 +11,6 @@ public static class ExceptionMapping
     {
         var (status, code, title, detail, errors) = Map(exception);
         httpContext.Response.StatusCode = status;
-        httpContext.Response.ContentType = "application/problem+json";
 
         var problem = new ProblemDetails
         {
@@ -28,7 +27,8 @@ public static class ExceptionMapping
             problem.Extensions["errors"] = errors;
         }
 
-        await httpContext.Response.WriteAsJsonAsync(problem);
+        // A null options argument keeps the configured HTTP JSON options.
+        await httpContext.Response.WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json");
     }
 
     public static (int Status, string Code, string Title, string Detail, IDictionary<string, string[]>? Errors) Map(

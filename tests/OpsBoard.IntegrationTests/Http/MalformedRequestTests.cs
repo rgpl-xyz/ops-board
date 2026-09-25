@@ -51,10 +51,8 @@ public sealed class MalformedRequestTests(PostgresFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
         Assert.Equal("validation_failed", problem.GetProperty("code").GetString());
-        // Problem bodies are currently served as application/json: WriteAsJsonAsync
-        // replaces the problem+json content type set before it. Asserted as it is,
-        // rather than changing a public media type from a test-hardening change.
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        // Problem bodies carry the RFC 9457 media type.
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
