@@ -317,7 +317,7 @@ describe('IncidentDetailPage', () => {
     expect(text).toContain('Critical');
     expect(text).toContain('Veyo R');
     expect(text).toContain('Written update');
-    expect(text).toContain('System · IncidentCreated');
+    expect(text).toContain('System · Incident created');
   });
 
   it('marks its loading branch as a named route-focus context', () => {

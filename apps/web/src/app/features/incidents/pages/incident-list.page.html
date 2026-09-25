@@ -1,4 +1,4 @@
-<ob-page-header title="Incidents">
+<ob-page-header title="Incidents" [count]="incidents.data()?.totalCount ?? null">
   @if (canCreate()) {
     <a actions class="btn btn--primary" routerLink="/incidents/new"
       >Create incident</a
@@ -114,20 +114,21 @@
         <th scope="col">Status</th>
         <th scope="col" class="col-wide">Service</th>
         <th scope="col" class="col-wide">Team</th>
-        <th scope="col" class="col-wide">Updated</th>
+        <th scope="col" class="col-wide">Updated (UTC)</th>
       </tr>
     </thead>
     <tbody>
       @for (row of incidents.data()!.items; track row.id) {
-        <tr>
+        <tr [class.row--resolved]="row.status === 'Resolved'">
           <td>
             <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
+            <span class="row__meta">{{ row.serviceName }} · {{ row.teamName }}</span>
           </td>
-          <td><ob-severity-badge [severity]="row.severity" /></td>
+          <td><ob-severity-badge [severity]="row.severity" [muted]="row.status === 'Resolved'" /></td>
           <td><ob-status-badge [status]="row.status" /></td>
           <td class="col-wide">{{ row.serviceName }}</td>
           <td class="col-wide">{{ row.teamName }}</td>
-          <td class="col-wide">{{ row.updatedAt }}</td>
+          <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
         </tr>
       }
     </tbody>

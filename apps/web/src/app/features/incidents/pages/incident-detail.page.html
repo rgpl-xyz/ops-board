@@ -28,12 +28,12 @@
     </section>
   } @else if (detail.data(); as incident) {
     <ob-page-header [title]="incident.title">
-      <a actions routerLink="/incidents" class="back">Incidents</a>
+      <a crumb routerLink="/incidents" class="back">Incidents</a>
     </ob-page-header>
 
     <div class="layout">
-      <section class="panel" aria-labelledby="summary-h">
-        <h2 id="summary-h">Summary</h2>
+      <section class="section area-summary" aria-labelledby="summary-h">
+        <h2 id="summary-h" class="section__title">Summary</h2>
         <dl class="meta">
           <dt>Severity</dt>
           <dd><ob-severity-badge [severity]="incident.severity" /></dd>
@@ -44,12 +44,12 @@
           <dt>Team</dt>
           <dd>{{ incident.teamName }}</dd>
           <dt>Updated</dt>
-          <dd>{{ incident.updatedAt }}</dd>
+          <dd><time [attr.datetime]="incident.updatedAt">{{ incident.updatedAt | obTimestamp: true }}</time></dd>
         </dl>
-        <p>{{ incident.description }}</p>
+        <p class="description">{{ incident.description }}</p>
 
         @if (canEdit()) {
-          <h2>Edit details</h2>
+          <h2 class="section__title edit-title">Edit details</h2>
           @if (conflictOpen()) {
             <ob-callout variant="conflict" semantic="alert">
               This incident changed since you loaded it. Your save was not
@@ -147,20 +147,13 @@
         }
       </section>
 
-      <section class="panel" aria-labelledby="life-h">
-        <h2 #lifecycleHeading id="life-h" tabindex="-1">Lifecycle</h2>
-        <p class="muted">
-          Status-aware: resolve available while active; reopen only when
-          resolved. Status select excludes Resolved (use Resolve).
-        </p>
+      <section class="section area-lifecycle" aria-labelledby="life-h">
+        <h2 #lifecycleHeading id="life-h" class="section__title" tabindex="-1">Lifecycle</h2>
         @if (lifecycleError()) {
           <ob-callout variant="error" semantic="alert">{{ lifecycleError() }}</ob-callout>
         }
         @if (conflictOpen()) {
-          <p class="muted">
-            Server data changed. Dismiss the recovery message in Edit details
-            before applying lifecycle changes.
-          </p>
+          <p class="muted">Dismiss the conflict in Edit details before applying lifecycle changes.</p>
         }
         <div class="actions lifecycle-actions">
           @if (showSeverity()) {
@@ -243,8 +236,8 @@
         />
       </section>
 
-      <section class="panel" aria-labelledby="resp-h">
-        <h2 #respondersHeading id="resp-h" tabindex="-1">Responders</h2>
+      <section class="section area-responders" aria-labelledby="resp-h">
+        <h2 #respondersHeading id="resp-h" class="section__title" tabindex="-1">Responders</h2>
         @if (collabError()) {
           <ob-callout variant="error" semantic="alert">{{ collabError() }}</ob-callout>
         }
@@ -283,7 +276,7 @@
             @for (r of responders.data()!.items; track r.userId) {
               <li>
                 <span>{{ r.displayName }}</span>
-                <span class="muted">{{ r.joinedAt }}</span>
+                <time class="muted" [attr.datetime]="r.joinedAt">{{ r.joinedAt | obTimestamp }}</time>
               </li>
             }
           </ul>
@@ -291,8 +284,8 @@
       </section>
 
       @if (showWrittenUpdate()) {
-        <section class="panel" aria-labelledby="upd-h">
-          <h2 id="upd-h">Written update</h2>
+        <section class="section area-update" aria-labelledby="upd-h">
+          <h2 id="upd-h" class="section__title">Written update</h2>
           <form
             class="form"
             (submit)="$event.preventDefault(); postWrittenUpdate()"
@@ -320,8 +313,8 @@
         </section>
       }
 
-      <section class="panel" aria-labelledby="tl-h">
-        <h2 id="tl-h">Timeline</h2>
+      <section class="section area-timeline" aria-labelledby="tl-h">
+        <h2 id="tl-h" class="section__title">Timeline</h2>
         @if (timeline.isPending()) {
           <ob-callout variant="loading">Loading timeline…</ob-callout>
         } @else if (timeline.isError()) {
@@ -335,12 +328,14 @@
                 @if (entry.kind === 'writtenUpdate') {
                   <div class="kind kind--written">Written update</div>
                 } @else {
-                  <div class="kind">System · {{ entry.type }}</div>
+                  <div class="kind">System · {{ entry.type | obHumanize }}</div>
                 }
-                <strong>{{ entry.actorDisplayName }}</strong>
-                <span class="muted"> · {{ entry.occurredAt }}</span>
+                <div class="entry__byline">
+                  <strong>{{ entry.actorDisplayName }}</strong>
+                  <time class="muted" [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | obTimestamp }}</time>
+                </div>
                 @if (entry.body) {
-                  <div>{{ entry.body }}</div>
+                  <p class="entry__body">{{ entry.body }}</p>
                 }
               </li>
             }

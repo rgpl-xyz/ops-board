@@ -75,6 +75,8 @@ import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
+import { HumanizePipe } from '../../../shared/pipes/humanize.pipe';
+import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 type ConfirmKind = 'resolve' | 'reopen' | 'leave';
 
@@ -98,6 +100,8 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
     PaginationComponent,
     SeverityBadgeComponent,
     StatusBadgeComponent,
+    TimestampPipe,
+    HumanizePipe,
   ],
   templateUrl: './incident-detail.page.html',
   styleUrl: './incident-detail.page.scss',
@@ -363,7 +367,7 @@ export class IncidentDetailPage {
       case 'leave':
         return 'You will be removed from the responder list for this active incident.';
       default:
-        return 'This records resolution time and ends active collaboration intent.';
+        return 'This records the resolution time. Updates and new responders are closed until the incident is reopened.';
     }
   });
 

@@ -36,6 +36,7 @@ import {
   navigateIncidentListQuery,
   withPageResetOnFilterChange,
 } from '../../../shared/url/list-query.sync';
+import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 @Component({
   selector: 'ob-incident-list-page',
@@ -48,9 +49,9 @@ import {
     PaginationComponent,
     SeverityBadgeComponent,
     StatusBadgeComponent,
+    TimestampPipe,
   ],
   templateUrl: './incident-list.page.html',
-  styleUrl: './incident-list.page.scss',
 })
 export class IncidentListPage {
   private readonly route = inject(ActivatedRoute);

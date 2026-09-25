@@ -27,7 +27,7 @@
   </section>
 } @else if (detail.data(); as service) {
   <ob-page-header [title]="service.name">
-    <a actions routerLink="/services" class="back">Services</a>
+    <a crumb routerLink="/services" class="back">Services</a>
     <a
       actions
       class="btn"
@@ -37,22 +37,23 @@
     >
   </ob-page-header>
 
-  <section class="panel" aria-labelledby="summary-h">
-    <h2 id="summary-h">Summary</h2>
+  <div class="layout">
+  <section class="section" aria-labelledby="summary-h">
+    <h2 id="summary-h" class="section__title">Summary</h2>
     <dl class="meta">
       <dt>Health</dt>
       <dd><ob-health-badge [health]="service.health" /></dd>
       <dt>Team</dt>
       <dd>{{ service.teamName }}</dd>
       <dt>Updated</dt>
-      <dd>{{ service.updatedAt }}</dd>
+      <dd><time [attr.datetime]="service.updatedAt">{{ service.updatedAt | obTimestamp: true }}</time></dd>
     </dl>
-    <p>{{ service.description }}</p>
+    <p class="description">{{ service.description }}</p>
   </section>
 
   @if (canEdit()) {
-    <section class="panel" aria-labelledby="edit-h">
-      <h2 id="edit-h">Update service</h2>
+    <section class="section" aria-labelledby="edit-h">
+      <h2 id="edit-h" class="section__title">Update service</h2>
       @if (conflictOpen()) {
         <ob-callout variant="conflict" semantic="alert">
           This service changed since you loaded it. Your save was not applied.
@@ -168,4 +169,5 @@
       </form>
     </section>
   }
+</div>
 }

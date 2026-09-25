@@ -13,7 +13,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   injectMutation,
   injectQuery,
@@ -52,6 +52,7 @@ const SUMMARY_ID = 'create-form-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     CalloutComponent,
     PageHeaderComponent,
   ],

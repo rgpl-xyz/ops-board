@@ -1,4 +1,6 @@
-<ob-page-header title="Create incident" eyebrow="Incidents / new" />
+<ob-page-header title="Create incident">
+  <a crumb routerLink="/incidents" class="back">Incidents</a>
+</ob-page-header>
 
 @if (!canCreate() && currentUser.isSuccess()) {
   <ob-callout variant="forbidden" semantic="alert">You cannot create incidents.</ob-callout>

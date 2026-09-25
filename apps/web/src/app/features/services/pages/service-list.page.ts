@@ -29,6 +29,7 @@ import {
   serviceListQueryFromParamMap,
   withServicePageResetOnFilterChange,
 } from '../../../shared/url/list-query.sync';
+import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 @Component({
   selector: 'ob-service-list-page',
@@ -40,9 +41,9 @@ import {
     HealthBadgeComponent,
     PageHeaderComponent,
     PaginationComponent,
+    TimestampPipe,
   ],
   templateUrl: './service-list.page.html',
-  styleUrl: './service-list.page.scss',
 })
 export class ServiceListPage {
   private readonly route = inject(ActivatedRoute);

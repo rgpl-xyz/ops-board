@@ -1,4 +1,4 @@
-<ob-page-header title="Services" />
+<ob-page-header title="Services" [count]="services.data()?.totalCount ?? null" />
 
 <form class="filters" aria-label="Service filters">
   <label>
@@ -69,7 +69,7 @@
         <th scope="col">Name</th>
         <th scope="col">Health</th>
         <th scope="col" class="col-wide">Team</th>
-        <th scope="col" class="col-wide">Updated</th>
+        <th scope="col" class="col-wide">Updated (UTC)</th>
       </tr>
     </thead>
     <tbody>
@@ -77,10 +77,11 @@
         <tr>
           <td>
             <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
+            <span class="row__meta">{{ row.teamName }}</span>
           </td>
           <td><ob-health-badge [health]="row.health" /></td>
           <td class="col-wide">{{ row.teamName }}</td>
-          <td class="col-wide">{{ row.updatedAt }}</td>
+          <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
         </tr>
       }
     </tbody>

@@ -50,6 +50,7 @@ import {
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { HealthBadgeComponent } from '../../../shared/ui/health-badge.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 const EDIT_FIELDS: readonly FormFieldRef[] = [
   { name: 'name', id: 'svc-name', label: 'Name' },
@@ -69,6 +70,7 @@ const EDIT_SUMMARY_ID = 'svc-edit-error';
     CalloutComponent,
     HealthBadgeComponent,
     PageHeaderComponent,
+    TimestampPipe,
   ],
   templateUrl: './service-detail.page.html',
   styleUrl: './service-detail.page.scss',
