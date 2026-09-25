@@ -27,9 +27,24 @@ public static class ExceptionMapping
             problem.Extensions["errors"] = errors;
         }
 
+        if (status < StatusCodes.Status500InternalServerError)
+        {
+            httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(ExceptionMapping).FullName!)
+                .LogInformation(
+                    "Request {Method} {Path} answered {Status} {Code}",
+                    httpContext.Request.Method,
+                    httpContext.Request.Path,
+                    status,
+                    code);
+        }
+
         // A null options argument keeps the configured HTTP JSON options.
         await httpContext.Response.WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json");
     }
+
+    public static bool IsClientError(Exception exception) =>
+        Map(exception).Status < StatusCodes.Status500InternalServerError;
 
     public static (int Status, string Code, string Title, string Detail, IDictionary<string, string[]>? Errors) Map(
         Exception exception) =>

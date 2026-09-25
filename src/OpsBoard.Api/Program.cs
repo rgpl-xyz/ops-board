@@ -75,16 +75,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseExceptionHandler(errorApp =>
+app.UseExceptionHandler(new ExceptionHandlerOptions
 {
-    errorApp.Run(async context =>
+    ExceptionHandler = async context =>
     {
         var feature = context.Features.Get<IExceptionHandlerFeature>();
         if (feature?.Error is not null)
         {
             await ExceptionMapping.WriteProblemAsync(context, feature.Error);
         }
-    });
+    },
+    // An answered client error is not a fault; only server failures are logged
+    // as errors, with their exception.
+    SuppressDiagnosticsCallback = context => ExceptionMapping.IsClientError(context.Exception),
 });
 app.UseStatusCodePages();
 app.UseCors("Frontend");
