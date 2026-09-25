@@ -9,7 +9,7 @@ import {
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { asRevisionString } from '../../../data-access';
+import { asRevisionString, opsboardKeys } from '../../../data-access';
 import { IdentityApi } from '../../../data-access/http/identity.api';
 import { LookupsApi } from '../../../data-access/http/lookups.api';
 import { ServicesApi } from '../../../data-access/http/services.api';
@@ -113,7 +113,7 @@ describe('ServiceDetailPage', () => {
     expect(target.getAttribute('aria-label')).toBe('Loading service details');
   });
 
-  it('saves with expectedVersion from Query and recovers from 409', async () => {
+  it('saves with the version the form was loaded from and recovers from 409', async () => {
     update.mockRejectedValueOnce({
       type: 'urn:opsboard:problem:concurrency_conflict',
       title: 'Conflict',
@@ -167,6 +167,133 @@ describe('ServiceDetailPage', () => {
       health: 'Degraded',
       expectedVersion: asRevisionString('9'),
     });
+  });
+
+  async function mountEditable() {
+    const fixture = TestBed.createComponent(ServiceDetailPage);
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Update service');
+    });
+    return fixture;
+  }
+
+  /** Mirrors a background refetch landing in the cache. */
+  function passiveDetail(overrides: Record<string, unknown>) {
+    TestBed.inject(QueryClient).setQueryData(
+      opsboardKeys.services.detail('s1'),
+      serviceDto(overrides),
+    );
+  }
+
+  function typeName(fixture: { nativeElement: HTMLElement; detectChanges(): void }, value: string) {
+    const input = fixture.nativeElement.querySelector('#svc-name') as HTMLInputElement;
+    input.focus();
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    return input;
+  }
+
+  it('keeps unsaved edits, dirty state, and focus across a passive refresh', async () => {
+    const fixture = await mountEditable();
+    const input = typeName(fixture, 'Half typed name');
+    fixture.componentInstance.editForm.controls.health.setValue('Degraded');
+    fixture.componentInstance.editForm.controls.health.markAsDirty();
+    expect(fixture.componentInstance.editForm.dirty).toBe(true);
+
+    passiveDetail({
+      name: 'Server renamed',
+      description: 'Server description',
+      health: 'Operational',
+      version: asRevisionString('5'),
+    });
+    // The refresh really landed: the page header shows the new name.
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Server renamed');
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue()).toEqual({
+      name: 'Half typed name',
+      description: 'Authorizes checkout payments',
+      teamId: 't1',
+      health: 'Degraded',
+    });
+    expect(fixture.componentInstance.editForm.dirty).toBe(true);
+    expect(input.value).toBe('Half typed name');
+    expect(document.activeElement).toBe(input);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('adopts fresh server values while the edit form is pristine', async () => {
+    const fixture = await mountEditable();
+
+    passiveDetail({
+      name: 'Server renamed',
+      health: 'Operational',
+      version: asRevisionString('5'),
+    });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.componentInstance.editForm.getRawValue().name).toBe('Server renamed');
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue().health).toBe('Operational');
+    expect(fixture.componentInstance.editForm.pristine).toBe(true);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('saves a dirty form with the version it was loaded from after a passive refresh', async () => {
+    update.mockResolvedValue(serviceDto({ version: asRevisionString('6') }));
+    const fixture = await mountEditable();
+    typeName(fixture, 'Half typed name');
+
+    passiveDetail({ name: 'Server renamed', version: asRevisionString('5') });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Server renamed');
+    });
+
+    await fixture.componentInstance.save();
+
+    // Loaded at 2: the server must still be able to reject this as stale.
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      name: 'Half typed name',
+      expectedVersion: asRevisionString('2'),
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('bases the next save on the version a successful save returned', async () => {
+    update
+      .mockResolvedValueOnce(serviceDto({ name: 'First edit', version: asRevisionString('3') }))
+      .mockResolvedValueOnce(serviceDto({ name: 'Second edit', version: asRevisionString('4') }));
+    const fixture = await mountEditable();
+
+    fixture.componentInstance.editForm.controls.name.setValue('First edit');
+    fixture.componentInstance.editForm.markAsDirty();
+    await fixture.componentInstance.save();
+    fixture.detectChanges();
+
+    fixture.componentInstance.editForm.controls.name.setValue('Second edit');
+    fixture.componentInstance.editForm.markAsDirty();
+    await fixture.componentInstance.save();
+
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(update.mock.calls[0]?.[1]?.expectedVersion).toEqual(asRevisionString('2'));
+    expect(update.mock.calls[1]?.[1]?.expectedVersion).toEqual(asRevisionString('3'));
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('focuses its conflict recovery action and returns focus on dismiss', async () => {

@@ -34,6 +34,7 @@ import {
   serviceQuery,
   teamsQuery,
   updateServiceMutation,
+  type RevisionString,
   type ServiceDto,
   type ServiceHealth,
 } from '../../../data-access';
@@ -141,7 +142,7 @@ export class ServiceDetailPage {
     return user ? canManage(user.role) : false;
   });
 
-  private lastBoundVersion = signal<string | null>(null);
+  private lastBoundVersion = signal<RevisionString | null>(null);
 
   constructor() {
     effect(() => {
@@ -151,17 +152,23 @@ export class ServiceDetailPage {
       }
       const version = String(service.version);
       untracked(() => {
-        if (this.lastBoundVersion() === version) {
+        // A passive refresh never overwrites unsaved edits; only a pristine
+        // form adopts new server values.
+        if (this.lastBoundVersion() === version || this.editForm.dirty) {
           return;
         }
-        this.lastBoundVersion.set(version);
-        this.editForm.reset({
-          name: service.name,
-          description: service.description,
-          teamId: service.teamId,
-          health: service.health,
-        });
+        this.bindEditForm(service);
       });
+    });
+  }
+
+  private bindEditForm(service: ServiceDto): void {
+    this.lastBoundVersion.set(service.version);
+    this.editForm.reset({
+      name: service.name,
+      description: service.description,
+      teamId: service.teamId,
+      health: service.health,
     });
   }
 
@@ -196,22 +203,22 @@ export class ServiceDetailPage {
     const options = runInInjectionContext(this.injector, () =>
       serviceQuery(id),
     );
-    const service =
-      this.queryClient.getQueryData<ServiceDto>(options.queryKey) ??
-      this.detail.data();
-    if (!service) {
+    // The version the form was loaded from, so a change made elsewhere since
+    // then is rejected as a conflict instead of overwritten.
+    const baseline = this.lastBoundVersion();
+    if (!baseline) {
       return;
     }
     const value = this.editForm.getRawValue();
     try {
-      await this.updateMut.mutateAsync({
+      const saved = await this.updateMut.mutateAsync({
         id,
         body: {
           ...value,
-          expectedVersion: service.version,
+          expectedVersion: baseline,
         },
       });
-      this.editForm.markAsPristine();
+      this.bindEditForm(saved);
     } catch (error) {
       if (isConcurrencyConflict(error)) {
         this.conflictOpen.set(true);
@@ -223,13 +230,7 @@ export class ServiceDetailPage {
           ...options,
           staleTime: 0,
         });
-        this.lastBoundVersion.set(String(fresh.version));
-        this.editForm.reset({
-          name: fresh.name,
-          description: fresh.description,
-          teamId: fresh.teamId,
-          health: fresh.health,
-        });
+        this.bindEditForm(fresh);
         return;
       }
       if (isValidationFailed(error)) {
