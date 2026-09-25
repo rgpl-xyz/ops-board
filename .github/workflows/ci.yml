@@ -69,3 +69,22 @@ jobs:
       - name: Browser journeys and accessibility checks
         working-directory: apps/web
         run: npm run test:e2e
+
+      - name: Build container images
+        run: docker compose build
+
+      - name: Start container stack on an empty database
+        run: |
+          docker compose down -v
+          docker compose up -d --wait
+
+      - name: Container stack check
+        run: ./scripts/check-stack.sh
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop container stack
+        if: always()
+        run: docker compose down -v
