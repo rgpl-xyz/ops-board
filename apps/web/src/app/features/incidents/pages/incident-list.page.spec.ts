@@ -146,6 +146,22 @@ describe('IncidentListPage', () => {
     });
   });
 
+  it('shows when each incident was created, the order the list defaults to', async () => {
+    const fixture = await mountList();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Checkout timeouts');
+    });
+    const el = fixture.nativeElement as HTMLElement;
+    const headers = [...el.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
+
+    expect(headers).toContain('Created (UTC)');
+    expect(headers).not.toContain('Updated (UTC)');
+    expect(el.querySelector('tbody time')?.getAttribute('datetime')).toBe(
+      '2026-08-01T00:00:00Z',
+    );
+  });
+
   it('commits filter changes through router navigate helpers', async () => {
     const router = TestBed.inject(Router);
     const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);

@@ -114,7 +114,7 @@
         <th scope="col">Status</th>
         <th scope="col" class="col-wide">Service</th>
         <th scope="col" class="col-wide">Team</th>
-        <th scope="col" class="col-wide">Updated (UTC)</th>
+        <th scope="col" class="col-wide">Created (UTC)</th>
       </tr>
     </thead>
     <tbody>
@@ -128,7 +128,7 @@
           <td><ob-status-badge [status]="row.status" /></td>
           <td class="col-wide">{{ row.serviceName }}</td>
           <td class="col-wide">{{ row.teamName }}</td>
-          <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
+          <td class="col-wide"><time [attr.datetime]="row.createdAt">{{ row.createdAt | obTimestamp }}</time></td>
         </tr>
       }
     </tbody>
