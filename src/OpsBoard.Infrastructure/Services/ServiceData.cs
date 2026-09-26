@@ -42,9 +42,10 @@ public sealed class ServiceData(OpsBoardDbContext db) : IServiceData
             "updatedAt" => desc
                 ? itemsQuery.OrderByDescending(x => x.s.UpdatedAt).ThenBy(x => x.s.Id)
                 : itemsQuery.OrderBy(x => x.s.UpdatedAt).ThenBy(x => x.s.Id),
+            // lower() keeps name order case-insensitive whatever the database collation.
             _ => desc
-                ? itemsQuery.OrderByDescending(x => x.s.Name).ThenBy(x => x.s.Id)
-                : itemsQuery.OrderBy(x => x.s.Name).ThenBy(x => x.s.Id),
+                ? itemsQuery.OrderByDescending(x => x.s.Name.ToLower()).ThenBy(x => x.s.Id)
+                : itemsQuery.OrderBy(x => x.s.Name.ToLower()).ThenBy(x => x.s.Id),
         };
 
         var rows = await itemsQuery.Skip(offset).Take(query.PageSize)

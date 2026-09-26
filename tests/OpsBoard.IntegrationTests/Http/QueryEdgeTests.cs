@@ -424,6 +424,31 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
         Assert.Equal(expected, times);
     }
 
+    // The database collation compares bytes on Alpine, so this pins case-insensitive order.
+    [Theory]
+    [InlineData("desc")]
+    [InlineData("asc")]
+    public async Task Services_sort_by_name_ignoring_case(string direction)
+    {
+        var client = await ClientAsync();
+
+        var response = await client.GetAsync($"/api/services?sort=name&direction={direction}&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        var names = page.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("name").GetString()!)
+            .ToList();
+        var byCase = names.Order(StringComparer.Ordinal).ToList();
+        var ignoringCase = names.OrderBy(n => n.ToLowerInvariant(), StringComparer.Ordinal).ToList();
+        Assert.NotEqual(byCase, ignoringCase);
+        var expected = direction == "desc"
+            ? names.OrderByDescending(n => n.ToLowerInvariant(), StringComparer.Ordinal)
+                .Select(n => n.ToLowerInvariant()).ToList()
+            : ignoringCase.Select(n => n.ToLowerInvariant()).ToList();
+        Assert.Equal(expected, names.Select(n => n.ToLowerInvariant()).ToList());
+    }
+
     private async Task<HttpClient> ClientAsync()
     {
         var factory = new OpsBoardWebApplicationFactory(fixture.ConnectionString);

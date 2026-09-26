@@ -72,6 +72,7 @@ Filtering, searching and sorting happen in the database, before paging. Pages ar
 - `search` is trimmed, matched case-insensitively as a substring, and limited to 200 characters. A blank search is ignored.
 - Filters combine with *and*.
 - Sorting by severity, status or health follows the domain's order, not the alphabet. For severity, `desc` puts `Critical` first. For status, `desc` runs from `Investigating` to `Resolved`. For health, `desc` runs from `Outage` to `Operational`.
+- Sorting services by name ignores case, so `SMS Delivery` sorts after `Session Store`.
 - Every sort ends with the record identifier as a tie-breaker, so rows with equal keys keep a stable order across pages.
 - The timeline is always in the order things happened.
 
