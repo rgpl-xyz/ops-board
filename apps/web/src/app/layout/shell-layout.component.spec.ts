@@ -65,7 +65,9 @@ describe('ShellLayoutComponent', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('OpsBoard');
-    expect(el.textContent).toContain('Demo Environment');
+    expect(el.textContent).toContain(
+      'Demo Environment — Shared demo data. Changes are reset daily.',
+    );
     expect(el.textContent).toContain('Incidents');
     expect(el.textContent).toContain('Services');
     expect(el.textContent).toContain('Incident manager');

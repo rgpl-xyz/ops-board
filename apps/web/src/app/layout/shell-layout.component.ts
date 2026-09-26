@@ -57,7 +57,7 @@ export class ShellLayoutComponent {
   );
 
   protected readonly demoBanner =
-    'Demo Environment — data may be periodically reset.';
+    'Demo Environment — Shared demo data. Changes are reset daily.';
   protected readonly realtimeStatus = this.realtimeConnection.status;
   protected readonly realtimeStatusText = computed(() => {
     switch (this.realtimeStatus()) {
