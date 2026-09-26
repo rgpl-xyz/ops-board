@@ -384,6 +384,8 @@ export class IncidentDetailPage {
 
   private lastBoundVersion = signal<string | null>(null);
   private lastFormVersion = signal<RevisionString | null>(null);
+  // Versions are per incident, so a reused page must also compare the id.
+  private boundIncidentId = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -393,7 +395,9 @@ export class IncidentDetailPage {
       }
       const version = String(incident.version);
       untracked(() => {
-        if (this.lastBoundVersion() !== version) {
+        const movedIncident = this.boundIncidentId() !== incident.id;
+        if (movedIncident || this.lastBoundVersion() !== version) {
+          this.boundIncidentId.set(incident.id);
           this.lastBoundVersion.set(version);
           this.severityDraft.set(incident.severity);
           this.statusDraft.set(
@@ -406,7 +410,10 @@ export class IncidentDetailPage {
          * form adopts new server values. Explicit conflict recovery is the one
          * path that replaces typed values.
          */
-        if (this.editForm.dirty || this.lastFormVersion() === version) {
+        if (
+          !movedIncident &&
+          (this.editForm.dirty || this.lastFormVersion() === version)
+        ) {
           return;
         }
         this.bindEditForm(incident);

@@ -562,6 +562,48 @@ describe('IncidentDetailPage', () => {
     fixture.nativeElement.remove();
   });
 
+  it('rebinds its controls when the route moves to another incident at the same version', async () => {
+    getById.mockImplementation(async (id: string) =>
+      id === 'i2'
+        ? detailDto({
+            id: 'i2',
+            title: 'Queue backlog',
+            description: 'Consumers lagging',
+            severity: 'Low',
+            status: 'Identified',
+          })
+        : detailDto(),
+    );
+    const fixture = await mountEditable();
+    expect(fixture.componentInstance.editForm.getRawValue().title).toBe(
+      'Checkout timeouts',
+    );
+
+    // The router reuses the page; both incidents are at version 2.
+    params$.next(convertToParamMap({ id: 'i2' }));
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Queue backlog');
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue()).toEqual({
+      title: 'Queue backlog',
+      description: 'Consumers lagging',
+      serviceId: 's1',
+    });
+    expect(
+      (fixture.nativeElement.querySelector('#life-sev') as HTMLSelectElement)
+        .value,
+    ).toBe('Low');
+    expect(
+      (fixture.nativeElement.querySelector('#life-st') as HTMLSelectElement)
+        .value,
+    ).toBe('Identified');
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   it('resolves with confirm path using expectedVersion and resets timeline page', async () => {
     resolve.mockResolvedValue(
       detailDto({ status: 'Resolved', version: asRevisionString('5') }),
