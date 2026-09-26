@@ -562,6 +562,36 @@ describe('IncidentDetailPage', () => {
     fixture.nativeElement.remove();
   });
 
+  it('keeps a chosen lifecycle value across a passive change and adopts untouched ones', async () => {
+    const fixture = await mountEditable();
+    const severity = fixture.nativeElement.querySelector(
+      '#life-sev',
+    ) as HTMLSelectElement;
+    const status = fixture.nativeElement.querySelector(
+      '#life-st',
+    ) as HTMLSelectElement;
+    severity.value = 'Low';
+    severity.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    passiveDetail({
+      title: 'Server retitled',
+      status: 'Monitoring',
+      version: asRevisionString('6'),
+    });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Server retitled');
+    });
+
+    expect(severity.value).toBe('Low');
+    expect(fixture.componentInstance.severityDraft()).toBe('Low');
+    expect(status.value).toBe('Monitoring');
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   it('rebinds its controls when the route moves to another incident at the same version', async () => {
     getById.mockImplementation(async (id: string) =>
       id === 'i2'

@@ -144,6 +144,9 @@ export class IncidentDetailPage {
   protected readonly collabError = signal<string | null>(null);
   readonly severityDraft = signal<IncidentSeverity>('Low');
   protected readonly statusDraft = signal<IncidentStatus>('Investigating');
+  // A picked but unapplied lifecycle value survives passive refreshes.
+  private readonly severityChosen = signal(false);
+  private readonly statusChosen = signal(false);
   protected readonly confirmKind = signal<ConfirmKind | null>(null);
   readonly updateBody = signal('');
 
@@ -399,10 +402,18 @@ export class IncidentDetailPage {
         if (movedIncident || this.lastBoundVersion() !== version) {
           this.boundIncidentId.set(incident.id);
           this.lastBoundVersion.set(version);
-          this.severityDraft.set(incident.severity);
-          this.statusDraft.set(
-            incident.status === 'Resolved' ? 'Investigating' : incident.status,
-          );
+          if (movedIncident) {
+            this.severityChosen.set(false);
+            this.statusChosen.set(false);
+          }
+          if (!this.severityChosen()) {
+            this.severityDraft.set(incident.severity);
+          }
+          if (!this.statusChosen()) {
+            this.statusDraft.set(
+              incident.status === 'Resolved' ? 'Investigating' : incident.status,
+            );
+          }
         }
 
         /**
@@ -445,10 +456,12 @@ export class IncidentDetailPage {
 
   onSeverityDraft(value: string): void {
     this.severityDraft.set(value as IncidentSeverity);
+    this.severityChosen.set(true);
   }
 
   onStatusDraft(value: string): void {
     this.statusDraft.set(value as IncidentStatus);
+    this.statusChosen.set(true);
   }
 
   openResolveConfirm(event: Event): void {
@@ -609,6 +622,7 @@ export class IncidentDetailPage {
           expectedVersion: incident.version,
         },
       });
+      this.severityChosen.set(false);
       this.resetTimelinePage();
     } catch (error) {
       await this.handleMutationError(error, 'lifecycle');
@@ -633,6 +647,7 @@ export class IncidentDetailPage {
           expectedVersion: incident.version,
         },
       });
+      this.statusChosen.set(false);
       this.resetTimelinePage();
     } catch (error) {
       await this.handleMutationError(error, 'lifecycle');
@@ -649,6 +664,7 @@ export class IncidentDetailPage {
     if (!incident || !id) {
       return;
     }
+    this.statusChosen.set(false);
     try {
       await this.resolveMut.mutateAsync({
         id,
@@ -670,6 +686,7 @@ export class IncidentDetailPage {
     if (!incident || !id) {
       return;
     }
+    this.statusChosen.set(false);
     try {
       await this.reopenMut.mutateAsync({
         id,
@@ -789,6 +806,8 @@ export class IncidentDetailPage {
       });
       this.lastBoundVersion.set(String(fresh.version));
       this.bindEditForm(fresh);
+      this.severityChosen.set(false);
+      this.statusChosen.set(false);
       this.severityDraft.set(fresh.severity);
       this.statusDraft.set(
         fresh.status === 'Resolved' ? 'Investigating' : fresh.status,
