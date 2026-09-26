@@ -323,7 +323,9 @@ describe('IncidentDetailPage', () => {
     expect(text).toContain('Critical');
     expect(text).toContain('Veyo R');
     expect(text).toContain('Written update');
-    expect(text).toContain('System · Incident created');
+    // An event names what happened; the byline says who, so no actor prefix.
+    expect(text).toContain('Incident created');
+    expect(text).not.toContain('System ·');
   });
 
   it('marks its loading branch as a named route-focus context', () => {

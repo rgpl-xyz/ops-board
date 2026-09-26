@@ -327,7 +327,7 @@
                 @if (entry.kind === 'writtenUpdate') {
                   <div class="kind kind--written">Written update</div>
                 } @else {
-                  <div class="kind">System · {{ entry.type | obHumanize }}</div>
+                  <div class="kind">{{ entry.type | obHumanize }}</div>
                 }
                 <div class="entry__byline">
                   <strong>{{ entry.actorDisplayName }}</strong>
