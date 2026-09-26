@@ -38,6 +38,13 @@ describe('service query param mappers', () => {
     });
   });
 
+  it('keeps each supported sort in both directions', () => {
+    for (const sort of ['health', 'updatedAt']) {
+      expect(serviceQueryToParams({ sort, direction: 'desc' })).toEqual({ sort, direction: 'desc' });
+      expect(serviceQueryFromParams({ sort, direction: 'desc' })).toEqual({ sort, direction: 'desc' });
+    }
+  });
+
   it('ignores unknown keys and invalid allowlist values on parse', () => {
     expect(
       serviceQueryFromParams({

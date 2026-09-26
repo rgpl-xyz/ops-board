@@ -134,8 +134,8 @@ describe('ServiceListPage', () => {
     return fixture;
   }
 
-  /// Services allow one sort field, `name`, which is also the default, so only
-  /// the direction and page size can vary here.
+  /// `name` is the default sort, so it is omitted and only the direction and
+  /// page size vary here.
   it('requests the direction and page size it is given', async () => {
     queryParams$.next(convertToParamMap({ direction: 'desc', pageSize: '10' }));
     await mountList();
@@ -147,6 +147,33 @@ describe('ServiceListPage', () => {
         pageSize: 10,
       });
     });
+  });
+
+  it('reads health and recency most-urgent first and names from A to Z', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = await mountList();
+
+    fixture.componentInstance.commitSort('health');
+    expect(navigateSpy).toHaveBeenLastCalledWith(
+      ['/services'],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ sort: 'health', direction: 'desc' }),
+      }),
+    );
+
+    fixture.componentInstance.commitSort('updatedAt');
+    expect(navigateSpy).toHaveBeenLastCalledWith(
+      ['/services'],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ sort: 'updatedAt', direction: 'desc' }),
+      }),
+    );
+
+    fixture.componentInstance.commitSort('name');
+    const last = navigateSpy.mock.calls.at(-1)?.[1]?.queryParams as Record<string, unknown>;
+    expect(last['sort']).toBeUndefined();
+    expect(last['direction']).toBeUndefined();
   });
 
   it('moves page while preserving the active filters', async () => {

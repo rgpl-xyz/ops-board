@@ -107,6 +107,11 @@ export class ServiceListPage {
     void this.commitQuery({ ...this.listQuery(), ...patch });
   }
 
+  /** Health and recency read most-urgent first; names read from A to Z. */
+  commitSort(sort: string): void {
+    this.commitFilter({ sort, direction: sort === 'name' ? undefined : 'desc' });
+  }
+
   onPage(delta: -1 | 1): void {
     const page = this.listQuery().page ?? 1;
     void this.commitQuery({ ...this.listQuery(), page: page + delta });

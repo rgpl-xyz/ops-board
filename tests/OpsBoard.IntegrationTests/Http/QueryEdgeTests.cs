@@ -34,6 +34,7 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
         "/api/incidents?pageSize=0",
         "/api/incidents?pageSize=101",
         "/api/incidents?page=0",
+        "/api/services?sort=createdAt",
     };
 
     [Theory]
@@ -378,6 +379,49 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
     {
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
         return problem.GetProperty("code").GetString();
+    }
+
+    // Health is stored as text, so this proves the domain ranking, not the alphabet.
+    [Theory]
+    [InlineData("desc")]
+    [InlineData("asc")]
+    public async Task Services_sort_by_health_in_domain_order(string direction)
+    {
+        var client = await ClientAsync();
+
+        var response = await client.GetAsync($"/api/services?sort=health&direction={direction}&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        var rank = new Dictionary<string, int> { ["Operational"] = 0, ["Degraded"] = 1, ["Outage"] = 2 };
+        var ranks = page.GetProperty("items").EnumerateArray()
+            .Select(item => rank[item.GetProperty("health").GetString()!])
+            .ToList();
+        Assert.True(ranks.Distinct().Count() > 1, "the seed should hold more than one health state");
+        var expected = direction == "desc"
+            ? ranks.OrderByDescending(r => r).ToList()
+            : ranks.OrderBy(r => r).ToList();
+        Assert.Equal(expected, ranks);
+    }
+
+    [Theory]
+    [InlineData("desc")]
+    [InlineData("asc")]
+    public async Task Services_sort_by_last_update(string direction)
+    {
+        var client = await ClientAsync();
+
+        var response = await client.GetAsync($"/api/services?sort=updatedAt&direction={direction}&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        var times = page.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("updatedAt").GetDateTimeOffset())
+            .ToList();
+        var expected = direction == "desc"
+            ? times.OrderByDescending(t => t).ToList()
+            : times.OrderBy(t => t).ToList();
+        Assert.Equal(expected, times);
     }
 
     private async Task<HttpClient> ClientAsync()

@@ -46,7 +46,7 @@
     Sort
     <select
       [ngModel]="listQuery().sort ?? 'name'"
-      (ngModelChange)="commitFilter({ sort: $event })"
+      (ngModelChange)="commitSort($event)"
       name="sort"
     >
       <option value="name">Name</option>

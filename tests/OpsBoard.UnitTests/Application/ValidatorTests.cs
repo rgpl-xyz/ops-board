@@ -32,6 +32,17 @@ public class ValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Status);
     }
 
+    [Theory]
+    [InlineData("name")]
+    [InlineData("health")]
+    [InlineData("updatedAt")]
+    public void ServiceQuery_accepts_each_supported_sort(string sort)
+    {
+        var validator = new ServiceQueryValidator();
+        var result = validator.TestValidate(new ServiceQuery(Sort: sort));
+        result.ShouldNotHaveValidationErrorFor(x => x.Sort);
+    }
+
     [Fact]
     public void ServiceQuery_rejects_unknown_sort()
     {

@@ -138,7 +138,7 @@ public sealed class ServiceQueryValidator : AbstractValidator<ServiceQuery>
         RuleFor(x => x.PageSize).InclusiveBetween(1, 100);
         RuleFor(x => x.Search).Must(s => s is null || TextLimits.ScalarLength(s.Trim()) <= 200)
             .WithMessage("Search must be at most 200 characters.");
-        RuleFor(x => x.Sort).Equal("name");
+        RuleFor(x => x.Sort).Must(s => s is "name" or "health" or "updatedAt");
         RuleFor(x => x.Direction).Must(d => d is "asc" or "desc");
         RuleFor(x => x.Health).Must(h => h is null || Enum.IsDefined(h.Value));
     }

@@ -28,9 +28,24 @@ public sealed class ServiceData(OpsBoardDbContext db) : IServiceData
             join t in db.Teams.AsNoTracking() on new { s.OrganizationId, Id = s.TeamId } equals new { t.OrganizationId, t.Id }
             select new { s, t.Name };
 
-        itemsQuery = query.Direction == "desc"
-            ? itemsQuery.OrderByDescending(x => x.s.Name).ThenBy(x => x.s.Id)
-            : itemsQuery.OrderBy(x => x.s.Name).ThenBy(x => x.s.Id);
+        var desc = query.Direction == "desc";
+        itemsQuery = query.Sort switch
+        {
+            // Health is stored as text, so rank it explicitly: desc puts outages first.
+            "health" => desc
+                ? itemsQuery.OrderByDescending(x => x.s.Health == ServiceHealth.Outage)
+                    .ThenByDescending(x => x.s.Health == ServiceHealth.Degraded)
+                    .ThenBy(x => x.s.Id)
+                : itemsQuery.OrderByDescending(x => x.s.Health == ServiceHealth.Operational)
+                    .ThenByDescending(x => x.s.Health == ServiceHealth.Degraded)
+                    .ThenBy(x => x.s.Id),
+            "updatedAt" => desc
+                ? itemsQuery.OrderByDescending(x => x.s.UpdatedAt).ThenBy(x => x.s.Id)
+                : itemsQuery.OrderBy(x => x.s.UpdatedAt).ThenBy(x => x.s.Id),
+            _ => desc
+                ? itemsQuery.OrderByDescending(x => x.s.Name).ThenBy(x => x.s.Id)
+                : itemsQuery.OrderBy(x => x.s.Name).ThenBy(x => x.s.Id),
+        };
 
         var rows = await itemsQuery.Skip(offset).Take(query.PageSize)
             .Select(x => new ServiceDto(

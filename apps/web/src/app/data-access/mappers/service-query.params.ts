@@ -6,7 +6,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 const DEFAULT_SORT = 'name';
 const DEFAULT_DIRECTION = 'asc';
-const ALLOWED_SORT = new Set(['name']);
+const ALLOWED_SORT = new Set(['name', 'health', 'updatedAt']);
 const ALLOWED_DIRECTION = new Set(['asc', 'desc']);
 const ALLOWED_HEALTH = new Set<string>(SERVICE_HEALTHS);
 
