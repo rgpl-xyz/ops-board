@@ -1,7 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import {
+  ActivatedRoute,
+  convertToParamMap,
+  type ParamMap,
+  provideRouter,
+} from '@angular/router';
 import {
   provideTanStackQuery,
   QueryClient,
@@ -46,6 +51,7 @@ describe('IncidentDetailPage', () => {
   const leaveMock = vi.fn();
   const addUpdateMock = vi.fn();
   const getById = vi.fn();
+  let params$: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
     updateMock.mockReset();
@@ -59,7 +65,7 @@ describe('IncidentDetailPage', () => {
     getById.mockReset();
     getById.mockResolvedValue(detailDto());
 
-    const params$ = new BehaviorSubject(convertToParamMap({ id: 'i1' }));
+    params$ = new BehaviorSubject(convertToParamMap({ id: 'i1' }));
 
     await TestBed.configureTestingModule({
       imports: [IncidentDetailPage],
@@ -521,6 +527,39 @@ describe('IncidentDetailPage', () => {
       severity: 'High',
       expectedVersion: asRevisionString('2'),
     });
+  });
+
+  it('shows the loaded severity and status in the lifecycle controls', async () => {
+    // Not the first option of either list, so a select that fell back to its
+    // first option would show Critical / Investigating instead.
+    getById.mockResolvedValue(
+      detailDto({ severity: 'Medium', status: 'Monitoring' }),
+    );
+    changeSeverity.mockResolvedValue(
+      detailDto({ severity: 'Low', status: 'Monitoring' }),
+    );
+    const fixture = await mountEditable();
+    const severity = fixture.nativeElement.querySelector(
+      '#life-sev',
+    ) as HTMLSelectElement;
+    const status = fixture.nativeElement.querySelector(
+      '#life-st',
+    ) as HTMLSelectElement;
+
+    expect(severity.value).toBe('Medium');
+    expect(status.value).toBe('Monitoring');
+
+    // What the control shows is what Apply sends.
+    severity.value = 'Low';
+    severity.dispatchEvent(new Event('change'));
+    await fixture.componentInstance.applySeverity();
+    expect(changeSeverity).toHaveBeenCalledWith('i1', {
+      severity: 'Low',
+      expectedVersion: asRevisionString('2'),
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('resolves with confirm path using expectedVersion and resets timeline page', async () => {

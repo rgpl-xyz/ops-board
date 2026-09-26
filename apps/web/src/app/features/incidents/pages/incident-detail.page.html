@@ -161,12 +161,12 @@
               Severity
               <select
                 id="life-sev"
-                [value]="severityDraft()"
                 (change)="onSeverityDraft($any($event.target).value)"
                 [disabled]="lifecyclePending() || conflictOpen()"
               >
+                <!-- Selected per option: a select [value] binding lands before the options exist. -->
                 @for (sev of severities; track sev) {
-                  <option [value]="sev">{{ sev }}</option>
+                  <option [value]="sev" [selected]="sev === severityDraft()">{{ sev }}</option>
                 }
               </select>
             </label>
@@ -185,12 +185,11 @@
               Status
               <select
                 id="life-st"
-                [value]="statusDraft()"
                 (change)="onStatusDraft($any($event.target).value)"
                 [disabled]="lifecyclePending() || conflictOpen()"
               >
                 @for (st of activeStatusOptions; track st) {
-                  <option [value]="st">{{ st }}</option>
+                  <option [value]="st" [selected]="st === statusDraft()">{{ st }}</option>
                 }
               </select>
             </label>
