@@ -4,11 +4,13 @@ Real-time incident and service operations management platform. Portfolio applica
 
 ## Screenshots
 
-_Placeholder — add incident list / incident detail captures._
+![Incident list with filters, severity and status cues](docs/screenshots/incident-list.png)
+
+![Incident detail with lifecycle controls, responders and timeline](docs/screenshots/incident-detail.png)
 
 ## Live demo
 
-_Placeholder — deploy URL TBD._
+[opsboard.app.rgpl.xyz](https://opsboard.app.rgpl.xyz) is a shared public instance of the demonstration stack. There is no sign-in: every visitor acts as the seeded Acme Cloud incident manager, so changes are visible to everyone else using it. The data returns to the seeded state every day at 18:00 UTC.
 
 ## Technology stack
 
@@ -212,4 +214,4 @@ The stack and the local development setup share the same PostgreSQL container an
 
 ## License
 
-Private portfolio project — all rights reserved unless otherwise stated.
+OpsBoard is licensed under the MIT License. See [LICENSE](LICENSE).
