@@ -134,6 +134,53 @@ describe('ServiceListPage', () => {
     return fixture;
   }
 
+  function clearButton(fixture: { nativeElement: HTMLElement }): HTMLButtonElement {
+    return [...fixture.nativeElement.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Clear filters',
+    ) as HTMLButtonElement;
+  }
+
+  it('keeps Clear filters in place but disabled when nothing is filtered', async () => {
+    queryParams$.next(convertToParamMap({ sort: 'health', direction: 'desc' }));
+    const fixture = await mountList();
+    fixture.detectChanges();
+
+    expect(clearButton(fixture).disabled).toBe(true);
+  });
+
+  it('clears filters and search but keeps the sort, then focuses the first filter', async () => {
+    queryParams$.next(
+      convertToParamMap({
+        health: 'Outage',
+        teamId: 't1',
+        search: 'pay',
+        sort: 'health',
+        direction: 'desc',
+      }),
+    );
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+
+    const clear = clearButton(fixture);
+    expect(clear.disabled).toBe(false);
+    clear.click();
+
+    const params = navigateSpy.mock.calls.at(-1)?.[1]?.queryParams as Record<string, unknown>;
+    expect(params).toMatchObject({ sort: 'health', direction: 'desc' });
+    for (const key of ['health', 'teamId', 'search', 'page']) {
+      expect(params[key] ?? null).toBeNull();
+    }
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('select[name="health"]'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   /// `name` is the default sort, so it is omitted and only the direction and
   /// page size vary here.
   it('requests the direction and page size it is given', async () => {

@@ -3,10 +3,12 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   Injector,
   runInInjectionContext,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -92,6 +94,14 @@ export class IncidentListPage {
   protected readonly severities = INCIDENT_SEVERITIES;
 
   protected readonly searchDraft = signal(this.listQuery().search ?? '');
+  private readonly firstFilter =
+    viewChild<ElementRef<HTMLSelectElement>>('firstFilter');
+
+  /** Sort is a view choice, not a filter, so it does not count. */
+  protected readonly hasActiveFilters = computed(() => {
+    const q = this.listQuery();
+    return !!(q.status || q.severity || q.serviceId || q.teamId || q.search || this.searchDraft());
+  });
 
   protected readonly canCreate = computed(() => {
     const user = this.currentUser.data();
@@ -129,6 +139,13 @@ export class IncidentListPage {
 
   commitFilter(patch: Partial<IncidentQuery>): void {
     void this.commitQuery({ ...this.listQuery(), ...patch });
+  }
+
+  /** Focus moves to the first filter because the pressed button becomes disabled. */
+  clearFilters(): void {
+    this.searchDraft.set('');
+    this.commitFilter({ status: null, severity: null, serviceId: null, teamId: null, search: null });
+    this.firstFilter()?.nativeElement.focus();
   }
 
   onPage(delta: -1 | 1): void {

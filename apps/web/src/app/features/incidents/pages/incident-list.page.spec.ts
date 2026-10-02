@@ -184,6 +184,53 @@ describe('IncidentListPage', () => {
     );
   });
 
+  function clearButton(fixture: { nativeElement: HTMLElement }): HTMLButtonElement {
+    return [...fixture.nativeElement.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Clear filters',
+    ) as HTMLButtonElement;
+  }
+
+  it('keeps Clear filters in place but disabled when nothing is filtered', async () => {
+    queryParams$.next(convertToParamMap({ sort: 'severity' }));
+    const fixture = await mountList();
+    fixture.detectChanges();
+
+    expect(clearButton(fixture).disabled).toBe(true);
+  });
+
+  it('clears filters and search but keeps the sort, then focuses the first filter', async () => {
+    queryParams$.next(
+      convertToParamMap({
+        status: 'Investigating',
+        severity: 'High',
+        search: 'checkout',
+        sort: 'severity',
+        direction: 'asc',
+      }),
+    );
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    fixture.detectChanges();
+
+    const clear = clearButton(fixture);
+    expect(clear.disabled).toBe(false);
+    clear.click();
+
+    const params = navigateSpy.mock.calls.at(-1)?.[1]?.queryParams as Record<string, unknown>;
+    expect(params).toMatchObject({ sort: 'severity', direction: 'asc' });
+    for (const key of ['status', 'severity', 'serviceId', 'teamId', 'search', 'page']) {
+      expect(params[key] ?? null).toBeNull();
+    }
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('select[name="status"]'),
+    );
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   async function mountList() {
     const fixture = TestBed.createComponent(IncidentListPage);
     fixture.detectChanges();
