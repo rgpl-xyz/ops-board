@@ -1,7 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import {
+  ActivatedRoute,
+  convertToParamMap,
+  type ParamMap,
+  provideRouter,
+} from '@angular/router';
 import {
   provideTanStackQuery,
   QueryClient,
@@ -33,13 +38,14 @@ function serviceDto(overrides: Record<string, unknown> = {}) {
 describe('ServiceDetailPage', () => {
   const getById = vi.fn();
   const update = vi.fn();
+  let params$: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
     getById.mockReset();
     update.mockReset();
     getById.mockResolvedValue(serviceDto());
 
-    const params$ = new BehaviorSubject(convertToParamMap({ id: 's1' }));
+    params$ = new BehaviorSubject(convertToParamMap({ id: 's1' }));
 
     await TestBed.configureTestingModule({
       imports: [ServiceDetailPage],
@@ -196,6 +202,33 @@ describe('ServiceDetailPage', () => {
     fixture.detectChanges();
     return input;
   }
+
+  it('rebinds the edit form when the route moves to another service at the same version', async () => {
+    getById.mockImplementation(async (id: string) =>
+      id === 's2'
+        ? serviceDto({ id: 's2', name: 'Session Store', description: 'Holds user sessions', health: 'Operational' })
+        : serviceDto(),
+    );
+    const fixture = await mountEditable();
+    expect(fixture.componentInstance.editForm.getRawValue().name).toBe('Payment Processor');
+
+    // The router reuses the page; both services are at version 2.
+    params$.next(convertToParamMap({ id: 's2' }));
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Session Store');
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue()).toEqual({
+      name: 'Session Store',
+      description: 'Holds user sessions',
+      teamId: 't1',
+      health: 'Operational',
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 
   it('keeps unsaved edits, dirty state, and focus across a passive refresh', async () => {
     const fixture = await mountEditable();

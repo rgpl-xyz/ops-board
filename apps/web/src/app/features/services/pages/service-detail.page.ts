@@ -145,6 +145,8 @@ export class ServiceDetailPage {
   });
 
   private lastBoundVersion = signal<RevisionString | null>(null);
+  // Versions are per service, so a reused page must also compare the id.
+  private boundServiceId = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -155,8 +157,9 @@ export class ServiceDetailPage {
       const version = String(service.version);
       untracked(() => {
         // A passive refresh never overwrites unsaved edits; only a pristine
-        // form adopts new server values.
-        if (this.lastBoundVersion() === version || this.editForm.dirty) {
+        // form adopts new server values. Moving to another service always rebinds.
+        const movedService = this.boundServiceId() !== service.id;
+        if (!movedService && (this.lastBoundVersion() === version || this.editForm.dirty)) {
           return;
         }
         this.bindEditForm(service);
@@ -165,6 +168,7 @@ export class ServiceDetailPage {
   }
 
   private bindEditForm(service: ServiceDto): void {
+    this.boundServiceId.set(service.id);
     this.lastBoundVersion.set(service.version);
     this.editForm.reset({
       name: service.name,
