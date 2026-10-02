@@ -117,33 +117,35 @@
 } @else if ((incidents.data()?.items.length ?? 0) === 0) {
   <ob-callout variant="empty">No incidents match these filters.</ob-callout>
 } @else {
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Title</th>
-        <th scope="col">Severity</th>
-        <th scope="col">Status</th>
-        <th scope="col" class="col-wide">Service</th>
-        <th scope="col" class="col-wide">Team</th>
-        <th scope="col" class="col-wide">Created (UTC)</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of incidents.data()!.items; track row.id) {
-        <tr [class.row--resolved]="row.status === 'Resolved'">
-          <td>
-            <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
-            <span class="row__meta">{{ row.serviceName }} · {{ row.teamName }}</span>
-          </td>
-          <td><ob-severity-badge [severity]="row.severity" [muted]="row.status === 'Resolved'" /></td>
-          <td><ob-status-badge [status]="row.status" /></td>
-          <td class="col-wide">{{ row.serviceName }}</td>
-          <td class="col-wide">{{ row.teamName }}</td>
-          <td class="col-wide"><time [attr.datetime]="row.createdAt">{{ row.createdAt | obTimestamp }}</time></td>
+  <div class="list-page__rows">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Severity</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="col-wide">Service</th>
+          <th scope="col" class="col-wide">Team</th>
+          <th scope="col" class="col-wide">Created (UTC)</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (row of incidents.data()!.items; track row.id) {
+          <tr [class.row--resolved]="row.status === 'Resolved'">
+            <td>
+              <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
+              <span class="row__meta">{{ row.serviceName }} · {{ row.teamName }}</span>
+            </td>
+            <td><ob-severity-badge [severity]="row.severity" [muted]="row.status === 'Resolved'" /></td>
+            <td><ob-status-badge [status]="row.status" /></td>
+            <td class="col-wide">{{ row.serviceName }}</td>
+            <td class="col-wide">{{ row.teamName }}</td>
+            <td class="col-wide"><time [attr.datetime]="row.createdAt">{{ row.createdAt | obTimestamp }}</time></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 
   <ob-pagination
     [page]="incidents.data()!.page"

@@ -75,29 +75,31 @@
 } @else if ((services.data()?.items.length ?? 0) === 0) {
   <ob-callout variant="empty">No services match these filters.</ob-callout>
 } @else {
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Health</th>
-        <th scope="col" class="col-wide">Team</th>
-        <th scope="col" class="col-wide">Updated (UTC)</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of services.data()!.items; track row.id) {
+  <div class="list-page__rows">
+    <table class="table">
+      <thead>
         <tr>
-          <td>
-            <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
-            <span class="row__meta">{{ row.teamName }}</span>
-          </td>
-          <td><ob-health-badge [health]="row.health" /></td>
-          <td class="col-wide">{{ row.teamName }}</td>
-          <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
+          <th scope="col">Name</th>
+          <th scope="col">Health</th>
+          <th scope="col" class="col-wide">Team</th>
+          <th scope="col" class="col-wide">Updated (UTC)</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (row of services.data()!.items; track row.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
+              <span class="row__meta">{{ row.teamName }}</span>
+            </td>
+            <td><ob-health-badge [health]="row.health" /></td>
+            <td class="col-wide">{{ row.teamName }}</td>
+            <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 
   <ob-pagination
     [page]="services.data()!.page"

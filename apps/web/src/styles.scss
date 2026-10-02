@@ -312,6 +312,57 @@ time {
   vertical-align: baseline;
 }
 
+/* With room on screen, a list page fits the viewport and scrolls only its rows;
+   the shell, header, filters and pagination stay in view. Phones and short
+   screens keep ordinary page scrolling. */
+@media (min-width: 721px) and (min-height: 560px) {
+  .shell:has(.list-page) {
+    height: 100dvh;
+  }
+
+  .shell:has(.list-page) .shell__body {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .shell:has(.list-page) .shell__content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 1rem;
+  }
+
+  .list-page {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Only as tall as its rows, shrinking to scroll when space runs out, so the
+     pagination sits right under a short list. */
+  .list-page__rows {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: auto;
+    /* Keeps a focused row from scrolling in under the sticky header. */
+    scroll-padding-top: 2.5rem;
+  }
+
+  /* Separate borders, so the header rule travels with the sticky cells and
+     scrolled-under rows cannot paint through them. */
+  .list-page__rows .table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .list-page__rows thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--ob-bg);
+  }
+}
+
 .table th:first-child,
 .table td:first-child {
   padding-left: 0;
