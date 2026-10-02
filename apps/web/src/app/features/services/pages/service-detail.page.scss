@@ -1,13 +1,13 @@
-/* One column, the width of the incident page's main column, so the
-   header actions align with the content beneath them. */
+/* The page spans the available width like the lists; its single column of
+   content keeps the readable measure the incident page's forms use. */
 :host {
   display: block;
-  max-width: 44rem;
 }
 
 .layout {
   display: grid;
   gap: 2rem;
+  max-width: var(--ob-measure);
 }
 
 .layout .form {

@@ -41,6 +41,8 @@
   --ob-font-display: var(--ob-font-sans);
 
   --ob-radius: 3px;
+  /* Readable width for forms and running text in a wide page. */
+  --ob-measure: 44rem;
 }
 
 *,
