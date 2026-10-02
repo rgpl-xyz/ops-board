@@ -30,6 +30,7 @@ import {
 import { canCreateIncident } from '../utils/incident-actions';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { focusAfterRender } from '../../../shared/a11y/focus';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
@@ -95,6 +96,7 @@ export class IncidentListPage {
   protected readonly severities = INCIDENT_SEVERITIES;
 
   protected readonly searchDraft = signal(this.listQuery().search ?? '');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly firstFilter =
     viewChild<ElementRef<HTMLSelectElement>>('firstFilter');
 
@@ -140,6 +142,14 @@ export class IncidentListPage {
 
   commitFilter(patch: Partial<IncidentQuery>): void {
     void this.commitQuery({ ...this.listQuery(), ...patch });
+  }
+
+  /** Refetches a failed filter lookup, then moves focus to its restored control. */
+  protected async retryLookup(lookup: { refetch(): Promise<unknown> }, name: string): Promise<void> {
+    await lookup.refetch();
+    focusAfterRender(this.injector, () =>
+      this.host.nativeElement.querySelector<HTMLSelectElement>(`select[name="${name}"]:not(:disabled)`),
+    );
   }
 
   /** Focus moves to the first filter because the pressed button becomes disabled. */

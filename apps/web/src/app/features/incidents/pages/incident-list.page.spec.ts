@@ -18,10 +18,13 @@ import { IncidentListPage } from './incident-list.page';
 
 describe('IncidentListPage', () => {
   const listMock = vi.fn();
+  const teamsMock = vi.fn();
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     listMock.mockReset();
+    teamsMock.mockReset();
+    teamsMock.mockResolvedValue({ items: [{ id: 't1', name: 'Payments' }], nextAfter: null });
     listMock.mockResolvedValue({
       items: [
         {
@@ -73,10 +76,7 @@ describe('IncidentListPage', () => {
         {
           provide: LookupsApi,
           useValue: {
-            listTeams: async () => ({
-              items: [{ id: 't1', name: 'Payments' }],
-              nextAfter: null,
-            }),
+            listTeams: teamsMock,
             listUsers: async () => ({ items: [], nextAfter: null }),
           },
         },
@@ -312,6 +312,46 @@ describe('IncidentListPage', () => {
     });
     const alert = fixture.nativeElement.querySelector('[role="alert"]');
     expect(alert?.textContent).toContain('Could not load incidents');
+  });
+
+  it('keeps a failed filter lookup in line as an unavailable field with a retry', async () => {
+    teamsMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:unavailable',
+      title: 'Unavailable',
+      status: 503,
+      detail: 'Database is down.',
+      code: 'unavailable',
+    });
+    const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    const el = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Could not load teams.');
+    });
+
+    const team = el.querySelector('select[name="teamId"]') as HTMLSelectElement;
+    expect(team.disabled).toBe(true);
+    expect(team.selectedOptions[0]?.textContent?.trim()).toBe('Unavailable');
+    expect(el.querySelector(`#${team.getAttribute('aria-describedby')}`)?.textContent).toContain(
+      'Could not load teams.',
+    );
+    // The page's own failure state is untouched by a lookup failure.
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+
+    const retry = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Retry')!;
+    retry.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      const restored = el.querySelector('select[name="teamId"]') as HTMLSelectElement;
+      expect(restored.disabled).toBe(false);
+      expect(restored.textContent).toContain('Payments');
+      expect(document.activeElement).toBe(restored);
+    });
+    expect(teamsMock).toHaveBeenCalledTimes(2);
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('shows the committed search text in its search field', async () => {

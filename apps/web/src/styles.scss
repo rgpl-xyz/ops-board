@@ -281,6 +281,7 @@ time {
 
 .filters label {
   display: grid;
+  align-content: start;
   gap: 0.25rem;
   font-family: var(--ob-font-mono);
   font-size: 0.7rem;
@@ -295,6 +296,38 @@ time {
   font-family: var(--ob-font-sans);
   letter-spacing: 0;
   text-transform: none;
+}
+
+/* A filter whose options could not load keeps its slot: the control stays in
+   line, disabled, with the reason and a retry beneath it. */
+.filters__field {
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+}
+
+.filters__error {
+  margin: 0;
+  color: var(--ob-danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* An inline action that reads as a link. */
+.link-button {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ob-accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--ob-accent-ink);
 }
 
 /* Data tables: rules between rows, no outer box. */

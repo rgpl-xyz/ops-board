@@ -25,6 +25,7 @@ import {
 import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { HealthBadgeComponent } from '../../../shared/ui/health-badge.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { focusAfterRender } from '../../../shared/a11y/focus';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import {
   navigateServiceListQuery,
@@ -76,6 +77,7 @@ export class ServiceListPage {
 
   protected readonly healths = SERVICE_HEALTHS;
   protected readonly searchDraft = signal(this.listQuery().search ?? '');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly firstFilter =
     viewChild<ElementRef<HTMLSelectElement>>('firstFilter');
 
@@ -121,6 +123,14 @@ export class ServiceListPage {
   /** Health and recency read most-urgent first; names read from A to Z. */
   commitSort(sort: string): void {
     this.commitFilter({ sort, direction: sort === 'name' ? undefined : 'desc' });
+  }
+
+  /** Refetches a failed filter lookup, then moves focus to its restored control. */
+  protected async retryLookup(lookup: { refetch(): Promise<unknown> }, name: string): Promise<void> {
+    await lookup.refetch();
+    focusAfterRender(this.injector, () =>
+      this.host.nativeElement.querySelector<HTMLSelectElement>(`select[name="${name}"]:not(:disabled)`),
+    );
   }
 
   /** Focus moves to the first filter because the pressed button becomes disabled. */

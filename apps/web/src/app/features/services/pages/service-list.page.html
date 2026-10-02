@@ -26,24 +26,34 @@
       }
     </select>
   </label>
-  <label>
-    Team
+  <div class="filters__field">
+    <label>
+      Team
+      @if (teams.isError()) {
+        <select name="teamId" disabled aria-describedby="teams-unavailable">
+          <option>Unavailable</option>
+        </select>
+      } @else {
+        <select
+          [ngModel]="listQuery().teamId ?? ''"
+          (ngModelChange)="commitFilter({ teamId: $event || null })"
+          name="teamId"
+          [disabled]="teams.isPending()"
+        >
+          <option value="">{{ teams.isPending() ? 'Loading…' : 'Any' }}</option>
+          @for (team of teams.data()?.items ?? []; track team.id) {
+            <option [value]="team.id">{{ team.name }}</option>
+          }
+        </select>
+      }
+    </label>
     @if (teams.isError()) {
-      <ob-callout variant="error">Could not load teams.</ob-callout>
-    } @else {
-      <select
-        [ngModel]="listQuery().teamId ?? ''"
-        (ngModelChange)="commitFilter({ teamId: $event || null })"
-        name="teamId"
-        [disabled]="teams.isPending()"
-      >
-        <option value="">{{ teams.isPending() ? 'Loading…' : 'Any' }}</option>
-        @for (team of teams.data()?.items ?? []; track team.id) {
-          <option [value]="team.id">{{ team.name }}</option>
-        }
-      </select>
+      <p class="filters__error" id="teams-unavailable">
+        Could not load teams.
+        <button type="button" class="link-button" (click)="retryLookup(teams, 'teamId')">Retry</button>
+      </p>
     }
-  </label>
+  </div>
   <label>
     Search
     <input

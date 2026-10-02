@@ -21,10 +21,13 @@ import { ServiceListPage } from './service-list.page';
 
 describe('ServiceListPage', () => {
   const listMock = vi.fn();
+  const teamsMock = vi.fn();
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     listMock.mockReset();
+    teamsMock.mockReset();
+    teamsMock.mockResolvedValue({ items: [{ id: 't1', name: 'Payments' }], nextAfter: null });
     listMock.mockResolvedValue({
       items: [
         {
@@ -70,10 +73,7 @@ describe('ServiceListPage', () => {
         {
           provide: LookupsApi,
           useValue: {
-            listTeams: async () => ({
-              items: [{ id: 't1', name: 'Payments' }],
-              nextAfter: null,
-            }),
+            listTeams: teamsMock,
             listUsers: async () => ({ items: [], nextAfter: null }),
           },
         },
@@ -237,6 +237,38 @@ describe('ServiceListPage', () => {
         queryParams: expect.objectContaining({ page: '2' }),
       }),
     );
+  });
+
+  it('keeps a failed team lookup in line as an unavailable field with a retry', async () => {
+    teamsMock.mockRejectedValueOnce({
+      type: 'urn:opsboard:problem:unavailable',
+      title: 'Unavailable',
+      status: 503,
+      detail: 'Database is down.',
+      code: 'unavailable',
+    });
+    const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    const el = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Could not load teams.');
+    });
+
+    const team = el.querySelector('select[name="teamId"]') as HTMLSelectElement;
+    expect(team.disabled).toBe(true);
+    expect(team.getAttribute('aria-describedby')).toBe('teams-unavailable');
+
+    [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Retry')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      const restored = el.querySelector('select[name="teamId"]') as HTMLSelectElement;
+      expect(restored.disabled).toBe(false);
+      expect(document.activeElement).toBe(restored);
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
   it('renders its empty state when no service matches', async () => {
