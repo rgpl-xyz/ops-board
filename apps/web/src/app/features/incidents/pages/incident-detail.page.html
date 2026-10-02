@@ -31,323 +31,325 @@
       <a crumb routerLink="/incidents" class="back">Incidents</a>
     </ob-page-header>
 
-    <div class="layout">
-      <section class="section area-summary" aria-labelledby="summary-h">
-        <h2 id="summary-h" class="section__title">Summary</h2>
-        <dl class="meta">
-          <dt>Severity</dt>
-          <dd><ob-severity-badge [severity]="incident.severity" /></dd>
-          <dt>Status</dt>
-          <dd><ob-status-badge [status]="incident.status" /></dd>
-          <dt>Service</dt>
-          <dd>{{ incident.serviceName }}</dd>
-          <dt>Team</dt>
-          <dd>{{ incident.teamName }}</dd>
-          <dt>Updated</dt>
-          <dd><time [attr.datetime]="incident.updatedAt">{{ incident.updatedAt | obTimestamp: true }}</time></dd>
-        </dl>
-        <p class="description">{{ incident.description }}</p>
+    <div class="viewport-page__body" #pageBody>
+      <div class="layout">
+        <section class="section area-summary" aria-labelledby="summary-h">
+          <h2 id="summary-h" class="section__title">Summary</h2>
+          <dl class="meta">
+            <dt>Severity</dt>
+            <dd><ob-severity-badge [severity]="incident.severity" /></dd>
+            <dt>Status</dt>
+            <dd><ob-status-badge [status]="incident.status" /></dd>
+            <dt>Service</dt>
+            <dd>{{ incident.serviceName }}</dd>
+            <dt>Team</dt>
+            <dd>{{ incident.teamName }}</dd>
+            <dt>Updated</dt>
+            <dd><time [attr.datetime]="incident.updatedAt">{{ incident.updatedAt | obTimestamp: true }}</time></dd>
+          </dl>
+          <p class="description">{{ incident.description }}</p>
 
-        @if (canEdit()) {
-          <h2 class="section__title edit-title">Edit details</h2>
-          @if (conflictOpen()) {
-            <ob-callout variant="conflict" semantic="alert">
-              This incident changed since you loaded it. Your save was not
-              applied. The form now shows the latest server data. Review the
-              fields, then dismiss and submit again if your change is still
-              needed.
-              <div class="actions">
-                <button
-                  #conflictDismiss
-                  type="button"
-                  class="btn btn--primary"
-                  (click)="dismissConflict()"
-                >
-                  Dismiss and continue editing
-                </button>
-              </div>
-            </ob-callout>
-          }
-          @if (editError()) {
-            <ob-callout id="edit-form-error" tabindex="-1" variant="error" semantic="alert">{{
-              editError()
-            }}</ob-callout>
-          }
-          <form class="form" [formGroup]="editForm" (ngSubmit)="saveDetails()">
-            <div class="field">
-              <label for="edit-title">Title</label>
-              <input
-                #editTitle
-                id="edit-title"
-                formControlName="title"
-                [attr.aria-invalid]="
-                  editForm.controls.title.invalid &&
-                  editForm.controls.title.touched
-                "
-                [attr.aria-describedby]="
-                  editFieldError('title') ? 'edit-title-error' : null
-                "
-              />
-              @if (editFieldError('title'); as msg) {
-                <p id="edit-title-error" class="field__error">{{ msg }}</p>
-              }
-            </div>
-            <div class="field">
-              <label for="edit-description">Description</label>
-              <textarea
-                id="edit-description"
-                formControlName="description"
-                rows="4"
-                [attr.aria-invalid]="
-                  editForm.controls.description.invalid &&
-                  editForm.controls.description.touched
-                "
-                [attr.aria-describedby]="
-                  editFieldError('description') ? 'edit-description-error' : null
-                "
-              ></textarea>
-              @if (editFieldError('description'); as msg) {
-                <p id="edit-description-error" class="field__error">{{ msg }}</p>
-              }
-            </div>
-            <div class="field">
-              <label for="edit-service">Service</label>
-              @if (services.isError()) {
-                <ob-callout variant="error">Could not load services.</ob-callout>
-              } @else {
-                <select
-                  id="edit-service"
-                  formControlName="serviceId"
+          @if (canEdit()) {
+            <h2 class="section__title edit-title">Edit details</h2>
+            @if (conflictOpen()) {
+              <ob-callout variant="conflict" semantic="alert">
+                This incident changed since you loaded it. Your save was not
+                applied. The form now shows the latest server data. Review the
+                fields, then dismiss and submit again if your change is still
+                needed.
+                <div class="actions">
+                  <button
+                    #conflictDismiss
+                    type="button"
+                    class="btn btn--primary"
+                    (click)="dismissConflict()"
+                  >
+                    Dismiss and continue editing
+                  </button>
+                </div>
+              </ob-callout>
+            }
+            @if (editError()) {
+              <ob-callout id="edit-form-error" tabindex="-1" variant="error" semantic="alert">{{
+                editError()
+              }}</ob-callout>
+            }
+            <form class="form" [formGroup]="editForm" (ngSubmit)="saveDetails()">
+              <div class="field">
+                <label for="edit-title">Title</label>
+                <input
+                  #editTitle
+                  id="edit-title"
+                  formControlName="title"
                   [attr.aria-invalid]="
-                    editForm.controls.serviceId.invalid &&
-                    editForm.controls.serviceId.touched
+                    editForm.controls.title.invalid &&
+                    editForm.controls.title.touched
                   "
                   [attr.aria-describedby]="
-                    editFieldError('serviceId') ? 'edit-service-error' : null
+                    editFieldError('title') ? 'edit-title-error' : null
                   "
+                />
+                @if (editFieldError('title'); as msg) {
+                  <p id="edit-title-error" class="field__error">{{ msg }}</p>
+                }
+              </div>
+              <div class="field">
+                <label for="edit-description">Description</label>
+                <textarea
+                  id="edit-description"
+                  formControlName="description"
+                  rows="4"
+                  [attr.aria-invalid]="
+                    editForm.controls.description.invalid &&
+                    editForm.controls.description.touched
+                  "
+                  [attr.aria-describedby]="
+                    editFieldError('description') ? 'edit-description-error' : null
+                  "
+                ></textarea>
+                @if (editFieldError('description'); as msg) {
+                  <p id="edit-description-error" class="field__error">{{ msg }}</p>
+                }
+              </div>
+              <div class="field">
+                <label for="edit-service">Service</label>
+                @if (services.isError()) {
+                  <ob-callout variant="error">Could not load services.</ob-callout>
+                } @else {
+                  <select
+                    id="edit-service"
+                    formControlName="serviceId"
+                    [attr.aria-invalid]="
+                      editForm.controls.serviceId.invalid &&
+                      editForm.controls.serviceId.touched
+                    "
+                    [attr.aria-describedby]="
+                      editFieldError('serviceId') ? 'edit-service-error' : null
+                    "
+                  >
+                    @for (svc of services.data()?.items ?? []; track svc.id) {
+                      <option [value]="svc.id">{{ svc.name }}</option>
+                    }
+                  </select>
+                }
+                @if (editFieldError('serviceId'); as msg) {
+                  <p id="edit-service-error" class="field__error">{{ msg }}</p>
+                }
+              </div>
+              <button
+                type="submit"
+                class="btn btn--primary"
+                [disabled]="updateMut.isPending() || conflictOpen()"
+                [attr.aria-busy]="updateMut.isPending()"
+              >
+                Save details
+              </button>
+            </form>
+          }
+        </section>
+
+        <section class="section area-lifecycle" aria-labelledby="life-h">
+          <h2 #lifecycleHeading id="life-h" class="section__title" tabindex="-1">Lifecycle</h2>
+          @if (lifecycleError()) {
+            <ob-callout variant="error" semantic="alert">{{ lifecycleError() }}</ob-callout>
+          }
+          @if (conflictOpen()) {
+            <p class="muted">Dismiss the conflict in Edit details before applying lifecycle changes.</p>
+          }
+          <div class="actions lifecycle-actions">
+            @if (showSeverity()) {
+              <label class="inline-field" for="life-sev">
+                Severity
+                <select
+                  id="life-sev"
+                  (change)="onSeverityDraft($any($event.target).value)"
+                  [disabled]="lifecyclePending() || conflictOpen()"
                 >
-                  @for (svc of services.data()?.items ?? []; track svc.id) {
-                    <option [value]="svc.id">{{ svc.name }}</option>
+                  <!-- Selected per option: a select [value] binding lands before the options exist. -->
+                  @for (sev of severities; track sev) {
+                    <option [value]="sev" [selected]="sev === severityDraft()">{{ sev }}</option>
                   }
                 </select>
-              }
-              @if (editFieldError('serviceId'); as msg) {
-                <p id="edit-service-error" class="field__error">{{ msg }}</p>
-              }
-            </div>
-            <button
-              type="submit"
-              class="btn btn--primary"
-              [disabled]="updateMut.isPending() || conflictOpen()"
-              [attr.aria-busy]="updateMut.isPending()"
-            >
-              Save details
-            </button>
-          </form>
-        }
-      </section>
-
-      <section class="section area-lifecycle" aria-labelledby="life-h">
-        <h2 #lifecycleHeading id="life-h" class="section__title" tabindex="-1">Lifecycle</h2>
-        @if (lifecycleError()) {
-          <ob-callout variant="error" semantic="alert">{{ lifecycleError() }}</ob-callout>
-        }
-        @if (conflictOpen()) {
-          <p class="muted">Dismiss the conflict in Edit details before applying lifecycle changes.</p>
-        }
-        <div class="actions lifecycle-actions">
-          @if (showSeverity()) {
-            <label class="inline-field" for="life-sev">
-              Severity
-              <select
-                id="life-sev"
-                (change)="onSeverityDraft($any($event.target).value)"
+              </label>
+              <button
+                #resolveAction
+                type="button"
+                class="btn"
                 [disabled]="lifecyclePending() || conflictOpen()"
+                (click)="applySeverity()"
               >
-                <!-- Selected per option: a select [value] binding lands before the options exist. -->
-                @for (sev of severities; track sev) {
-                  <option [value]="sev" [selected]="sev === severityDraft()">{{ sev }}</option>
-                }
-              </select>
-            </label>
-            <button
-              #resolveAction
-              type="button"
-              class="btn"
-              [disabled]="lifecyclePending() || conflictOpen()"
-              (click)="applySeverity()"
-            >
-              Apply severity
-            </button>
-          }
-          @if (showStatus()) {
-            <label class="inline-field" for="life-st">
-              Status
-              <select
-                id="life-st"
-                (change)="onStatusDraft($any($event.target).value)"
+                Apply severity
+              </button>
+            }
+            @if (showStatus()) {
+              <label class="inline-field" for="life-st">
+                Status
+                <select
+                  id="life-st"
+                  (change)="onStatusDraft($any($event.target).value)"
+                  [disabled]="lifecyclePending() || conflictOpen()"
+                >
+                  @for (st of activeStatusOptions; track st) {
+                    <option [value]="st" [selected]="st === statusDraft()">{{ st }}</option>
+                  }
+                </select>
+              </label>
+              <button
+                #reopenAction
+                type="button"
+                class="btn"
                 [disabled]="lifecyclePending() || conflictOpen()"
+                (click)="applyStatus()"
               >
-                @for (st of activeStatusOptions; track st) {
-                  <option [value]="st" [selected]="st === statusDraft()">{{ st }}</option>
-                }
-              </select>
-            </label>
-            <button
-              #reopenAction
-              type="button"
-              class="btn"
-              [disabled]="lifecyclePending() || conflictOpen()"
-              (click)="applyStatus()"
-            >
-              Apply status
-            </button>
-          }
-          @if (showResolve()) {
-            <button
-              type="button"
-              class="btn btn--danger"
-              [disabled]="lifecyclePending() || conflictOpen()"
-              (click)="openResolveConfirm($event)"
-            >
-              Resolve…
-            </button>
-          }
-          @if (showReopen()) {
-            <button
-              type="button"
-              class="btn"
-              [disabled]="lifecyclePending() || conflictOpen()"
-              (click)="openReopenConfirm($event)"
-            >
-              Reopen…
-            </button>
-          }
-        </div>
-        <ob-confirm-dialog
-          #lifecycleConfirm
-          [title]="confirmTitle()"
-          [body]="confirmBody()"
-          [confirmLabel]="confirmLabel()"
-          [danger]="confirmKind() === 'resolve' || confirmKind() === 'leave'"
-          (confirmRequested)="onLifecycleConfirmed()"
-          (cancelled)="onLifecycleCancelled()"
-        />
-      </section>
-
-      <section class="section area-responders" aria-labelledby="resp-h">
-        <h2 #respondersHeading id="resp-h" class="section__title" tabindex="-1">Responders</h2>
-        @if (collabError()) {
-          <ob-callout variant="error" semantic="alert">{{ collabError() }}</ob-callout>
-        }
-        <div class="actions">
-          @if (showJoin()) {
-            <button
-              #joinAction
-              type="button"
-              class="btn btn--primary"
-              [disabled]="collabPending() || conflictOpen()"
-              (click)="joinIncident()"
-            >
-              Join incident
-            </button>
-          }
-          @if (showLeave()) {
-            <button
-              #leaveAction
-              type="button"
-              class="btn"
-              [disabled]="collabPending() || conflictOpen()"
-              (click)="openLeaveConfirm($event)"
-            >
-              Leave…
-            </button>
-          }
-        </div>
-        @if (responders.isPending()) {
-          <ob-callout variant="loading">Loading responders…</ob-callout>
-        } @else if (responders.isError()) {
-          <ob-callout variant="error" semantic="alert">Could not load responders.</ob-callout>
-        } @else if ((responders.data()?.items.length ?? 0) === 0) {
-          <ob-callout variant="empty">No responders yet.</ob-callout>
-        } @else {
-          <ul class="responders">
-            @for (r of responders.data()!.items; track r.userId) {
-              <li>
-                <span>{{ r.displayName }}</span>
-                <time class="muted" [attr.datetime]="r.joinedAt">{{ r.joinedAt | obTimestamp }}</time>
-              </li>
+                Apply status
+              </button>
             }
-          </ul>
-        }
-      </section>
-
-      @if (showWrittenUpdate()) {
-        <section class="section area-update" aria-labelledby="upd-h">
-          <h2 id="upd-h" class="section__title">Written update</h2>
-          <form
-            class="form"
-            (submit)="$event.preventDefault(); postWrittenUpdate()"
-          >
-            <div class="field">
-              <label for="update-body">Update</label>
-              <textarea
-                id="update-body"
-                rows="3"
-                [value]="updateBody()"
-                (input)="updateBody.set($any($event.target).value)"
-                [disabled]="collabPending() || conflictOpen()"
-              ></textarea>
-            </div>
-            <button
-              type="submit"
-              class="btn btn--primary"
-              [disabled]="
-                collabPending() || conflictOpen() || !updateBody().trim()
-              "
-            >
-              Post update
-            </button>
-          </form>
-        </section>
-      }
-
-      <section class="section area-timeline" aria-labelledby="tl-h">
-        <h2 id="tl-h" class="section__title">Timeline</h2>
-        @if (timeline.isPending()) {
-          <ob-callout variant="loading">Loading timeline…</ob-callout>
-        } @else if (timeline.isError()) {
-          <ob-callout variant="error" semantic="alert">Could not load timeline.</ob-callout>
-        } @else if ((timeline.data()?.items.length ?? 0) === 0) {
-          <ob-callout variant="empty">No timeline entries.</ob-callout>
-        } @else {
-          <ol class="timeline">
-            @for (entry of timeline.data()!.items; track entry.id) {
-              <li>
-                @if (entry.kind === 'writtenUpdate') {
-                  <div class="kind kind--written">Written update</div>
-                } @else {
-                  <div class="kind">{{ entry.type | obHumanize }}</div>
-                }
-                <div class="entry__byline">
-                  <strong>{{ entry.actorDisplayName }}</strong>
-                  <time class="muted" [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | obTimestamp }}</time>
-                </div>
-                @if (entry.body) {
-                  <p class="entry__body">{{ entry.body }}</p>
-                }
-              </li>
+            @if (showResolve()) {
+              <button
+                type="button"
+                class="btn btn--danger"
+                [disabled]="lifecyclePending() || conflictOpen()"
+                (click)="openResolveConfirm($event)"
+              >
+                Resolve…
+              </button>
             }
-          </ol>
-          <ob-pagination
-            [page]="timeline.data()!.page"
-            [totalPages]="timeline.data()!.totalPages"
-            [totalCount]="timeline.data()!.totalCount"
-            (previous)="onTimelinePage(-1)"
-            (next)="onTimelinePage(1)"
+            @if (showReopen()) {
+              <button
+                type="button"
+                class="btn"
+                [disabled]="lifecyclePending() || conflictOpen()"
+                (click)="openReopenConfirm($event)"
+              >
+                Reopen…
+              </button>
+            }
+          </div>
+          <ob-confirm-dialog
+            #lifecycleConfirm
+            [title]="confirmTitle()"
+            [body]="confirmBody()"
+            [confirmLabel]="confirmLabel()"
+            [danger]="confirmKind() === 'resolve' || confirmKind() === 'leave'"
+            (confirmRequested)="onLifecycleConfirmed()"
+            (cancelled)="onLifecycleCancelled()"
           />
+        </section>
+
+        <section class="section area-responders" aria-labelledby="resp-h">
+          <h2 #respondersHeading id="resp-h" class="section__title" tabindex="-1">Responders</h2>
+          @if (collabError()) {
+            <ob-callout variant="error" semantic="alert">{{ collabError() }}</ob-callout>
+          }
+          <div class="actions">
+            @if (showJoin()) {
+              <button
+                #joinAction
+                type="button"
+                class="btn btn--primary"
+                [disabled]="collabPending() || conflictOpen()"
+                (click)="joinIncident()"
+              >
+                Join incident
+              </button>
+            }
+            @if (showLeave()) {
+              <button
+                #leaveAction
+                type="button"
+                class="btn"
+                [disabled]="collabPending() || conflictOpen()"
+                (click)="openLeaveConfirm($event)"
+              >
+                Leave…
+              </button>
+            }
+          </div>
+          @if (responders.isPending()) {
+            <ob-callout variant="loading">Loading responders…</ob-callout>
+          } @else if (responders.isError()) {
+            <ob-callout variant="error" semantic="alert">Could not load responders.</ob-callout>
+          } @else if ((responders.data()?.items.length ?? 0) === 0) {
+            <ob-callout variant="empty">No responders yet.</ob-callout>
+          } @else {
+            <ul class="responders">
+              @for (r of responders.data()!.items; track r.userId) {
+                <li>
+                  <span>{{ r.displayName }}</span>
+                  <time class="muted" [attr.datetime]="r.joinedAt">{{ r.joinedAt | obTimestamp }}</time>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        @if (showWrittenUpdate()) {
+          <section class="section area-update" aria-labelledby="upd-h">
+            <h2 id="upd-h" class="section__title">Written update</h2>
+            <form
+              class="form"
+              (submit)="$event.preventDefault(); postWrittenUpdate()"
+            >
+              <div class="field">
+                <label for="update-body">Update</label>
+                <textarea
+                  id="update-body"
+                  rows="3"
+                  [value]="updateBody()"
+                  (input)="updateBody.set($any($event.target).value)"
+                  [disabled]="collabPending() || conflictOpen()"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                class="btn btn--primary"
+                [disabled]="
+                  collabPending() || conflictOpen() || !updateBody().trim()
+                "
+              >
+                Post update
+              </button>
+            </form>
+          </section>
         }
-      </section>
+
+        <section class="section area-timeline" aria-labelledby="tl-h">
+          <h2 id="tl-h" class="section__title">Timeline</h2>
+          @if (timeline.isPending()) {
+            <ob-callout variant="loading">Loading timeline…</ob-callout>
+          } @else if (timeline.isError()) {
+            <ob-callout variant="error" semantic="alert">Could not load timeline.</ob-callout>
+          } @else if ((timeline.data()?.items.length ?? 0) === 0) {
+            <ob-callout variant="empty">No timeline entries.</ob-callout>
+          } @else {
+            <ol class="timeline">
+              @for (entry of timeline.data()!.items; track entry.id) {
+                <li>
+                  @if (entry.kind === 'writtenUpdate') {
+                    <div class="kind kind--written">Written update</div>
+                  } @else {
+                    <div class="kind">{{ entry.type | obHumanize }}</div>
+                  }
+                  <div class="entry__byline">
+                    <strong>{{ entry.actorDisplayName }}</strong>
+                    <time class="muted" [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | obTimestamp }}</time>
+                  </div>
+                  @if (entry.body) {
+                    <p class="entry__body">{{ entry.body }}</p>
+                  }
+                </li>
+              }
+            </ol>
+            <ob-pagination
+              [page]="timeline.data()!.page"
+              [totalPages]="timeline.data()!.totalPages"
+              [totalCount]="timeline.data()!.totalCount"
+              (previous)="onTimelinePage(-1)"
+              (next)="onTimelinePage(1)"
+            />
+          }
+        </section>
+      </div>
     </div>
   }
 }

@@ -63,6 +63,7 @@ const EDIT_SUMMARY_ID = 'svc-edit-error';
 
 @Component({
   selector: 'ob-service-detail-page',
+  host: { class: 'viewport-page' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
@@ -147,6 +148,7 @@ export class ServiceDetailPage {
   private lastBoundVersion = signal<RevisionString | null>(null);
   // Versions are per service, so a reused page must also compare the id.
   private boundServiceId = signal<string | null>(null);
+  private readonly pageBody = viewChild<ElementRef<HTMLElement>>('pageBody');
 
   constructor() {
     effect(() => {
@@ -161,6 +163,13 @@ export class ServiceDetailPage {
         const movedService = this.boundServiceId() !== service.id;
         if (!movedService && (this.lastBoundVersion() === version || this.editForm.dirty)) {
           return;
+        }
+        if (movedService) {
+          // A reused page keeps its scroll container, so start the new service at the top.
+          const body = this.pageBody()?.nativeElement;
+          if (body) {
+            body.scrollTop = 0;
+          }
         }
         this.bindEditForm(service);
       });

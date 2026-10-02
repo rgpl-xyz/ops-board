@@ -42,7 +42,7 @@ import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 @Component({
   selector: 'ob-incident-list-page',
-  host: { class: 'list-page' },
+  host: { class: 'viewport-page' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,

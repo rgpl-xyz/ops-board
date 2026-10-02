@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
  */
 function overflow(page: Page) {
   return page.evaluate(() => {
-    const rows = document.querySelector('.list-page__rows') as HTMLElement;
+    const rows = document.querySelector('.viewport-page__body') as HTMLElement;
     return {
       page: document.documentElement.scrollHeight - innerHeight,
       rows: rows.scrollHeight - rows.clientHeight,
@@ -27,7 +27,7 @@ for (const path of ['/incidents', '/services']) {
     expect(before.page).toBeLessThanOrEqual(0);
     expect(before.rows).toBeGreaterThan(0);
 
-    const rows = page.locator('.list-page__rows');
+    const rows = page.locator('.viewport-page__body');
     await rows.evaluate((el) => el.scrollTo(0, el.scrollHeight));
     const header = page.locator('thead th').first();
     expect(Math.abs((await header.boundingBox())!.y - (await rows.boundingBox())!.y)).toBeLessThanOrEqual(1);

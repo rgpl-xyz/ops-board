@@ -37,137 +37,139 @@
     >
   </ob-page-header>
 
-  <div class="layout">
-  <section class="section" aria-labelledby="summary-h">
-    <h2 id="summary-h" class="section__title">Summary</h2>
-    <dl class="meta">
-      <dt>Health</dt>
-      <dd><ob-health-badge [health]="service.health" /></dd>
-      <dt>Team</dt>
-      <dd>{{ service.teamName }}</dd>
-      <dt>Updated</dt>
-      <dd><time [attr.datetime]="service.updatedAt">{{ service.updatedAt | obTimestamp: true }}</time></dd>
-    </dl>
-    <p class="description">{{ service.description }}</p>
-  </section>
+  <div class="viewport-page__body" #pageBody>
+    <div class="layout">
+    <section class="section" aria-labelledby="summary-h">
+      <h2 id="summary-h" class="section__title">Summary</h2>
+      <dl class="meta">
+        <dt>Health</dt>
+        <dd><ob-health-badge [health]="service.health" /></dd>
+        <dt>Team</dt>
+        <dd>{{ service.teamName }}</dd>
+        <dt>Updated</dt>
+        <dd><time [attr.datetime]="service.updatedAt">{{ service.updatedAt | obTimestamp: true }}</time></dd>
+      </dl>
+      <p class="description">{{ service.description }}</p>
+    </section>
 
-  @if (canEdit()) {
-    <section class="section" aria-labelledby="edit-h">
-      <h2 id="edit-h" class="section__title">Update service</h2>
-      @if (conflictOpen()) {
-        <ob-callout variant="conflict" semantic="alert">
-          This service changed since you loaded it. Your save was not applied.
-          The form now shows the latest server data. Review the fields, then
-          dismiss and submit again if your change is still needed.
-          <div class="actions">
-            <button
-              #conflictDismiss
-              type="button"
-              class="btn btn--primary"
-              (click)="dismissConflict()"
-            >
-              Dismiss and continue editing
-            </button>
-          </div>
-        </ob-callout>
-      }
-      @if (editError()) {
-        <ob-callout id="svc-edit-error" tabindex="-1" variant="error" semantic="alert">{{
-          editError()
-        }}</ob-callout>
-      }
-      <form class="form" [formGroup]="editForm" (ngSubmit)="save()">
-        <div class="field">
-          <label for="svc-name">Name</label>
-          <input
-            #editName
-            id="svc-name"
-            formControlName="name"
-            [attr.aria-invalid]="
-              editForm.controls.name.invalid && editForm.controls.name.touched
-            "
-            [attr.aria-describedby]="
-              editFieldError('name') ? 'svc-name-error' : null
-            "
-          />
-          @if (editFieldError('name'); as msg) {
-            <p id="svc-name-error" class="field__error">{{ msg }}</p>
-          }
-        </div>
-        <div class="field">
-          <label for="svc-desc">Description</label>
-          <textarea
-            id="svc-desc"
-            formControlName="description"
-            rows="4"
-            [attr.aria-invalid]="
-              editForm.controls.description.invalid &&
-              editForm.controls.description.touched
-            "
-            [attr.aria-describedby]="
-              editFieldError('description') ? 'svc-desc-error' : null
-            "
-          ></textarea>
-          @if (editFieldError('description'); as msg) {
-            <p id="svc-desc-error" class="field__error">{{ msg }}</p>
-          }
-        </div>
-        <div class="field">
-          <label for="svc-team">Team</label>
-          @if (teams.isError()) {
-            <ob-callout variant="error">Could not load teams.</ob-callout>
-          } @else {
-            <select
-              id="svc-team"
-              formControlName="teamId"
+    @if (canEdit()) {
+      <section class="section" aria-labelledby="edit-h">
+        <h2 id="edit-h" class="section__title">Update service</h2>
+        @if (conflictOpen()) {
+          <ob-callout variant="conflict" semantic="alert">
+            This service changed since you loaded it. Your save was not applied.
+            The form now shows the latest server data. Review the fields, then
+            dismiss and submit again if your change is still needed.
+            <div class="actions">
+              <button
+                #conflictDismiss
+                type="button"
+                class="btn btn--primary"
+                (click)="dismissConflict()"
+              >
+                Dismiss and continue editing
+              </button>
+            </div>
+          </ob-callout>
+        }
+        @if (editError()) {
+          <ob-callout id="svc-edit-error" tabindex="-1" variant="error" semantic="alert">{{
+            editError()
+          }}</ob-callout>
+        }
+        <form class="form" [formGroup]="editForm" (ngSubmit)="save()">
+          <div class="field">
+            <label for="svc-name">Name</label>
+            <input
+              #editName
+              id="svc-name"
+              formControlName="name"
               [attr.aria-invalid]="
-                editForm.controls.teamId.invalid &&
-                editForm.controls.teamId.touched
+                editForm.controls.name.invalid && editForm.controls.name.touched
               "
               [attr.aria-describedby]="
-                editFieldError('teamId') ? 'svc-team-error' : null
+                editFieldError('name') ? 'svc-name-error' : null
+              "
+            />
+            @if (editFieldError('name'); as msg) {
+              <p id="svc-name-error" class="field__error">{{ msg }}</p>
+            }
+          </div>
+          <div class="field">
+            <label for="svc-desc">Description</label>
+            <textarea
+              id="svc-desc"
+              formControlName="description"
+              rows="4"
+              [attr.aria-invalid]="
+                editForm.controls.description.invalid &&
+                editForm.controls.description.touched
+              "
+              [attr.aria-describedby]="
+                editFieldError('description') ? 'svc-desc-error' : null
+              "
+            ></textarea>
+            @if (editFieldError('description'); as msg) {
+              <p id="svc-desc-error" class="field__error">{{ msg }}</p>
+            }
+          </div>
+          <div class="field">
+            <label for="svc-team">Team</label>
+            @if (teams.isError()) {
+              <ob-callout variant="error">Could not load teams.</ob-callout>
+            } @else {
+              <select
+                id="svc-team"
+                formControlName="teamId"
+                [attr.aria-invalid]="
+                  editForm.controls.teamId.invalid &&
+                  editForm.controls.teamId.touched
+                "
+                [attr.aria-describedby]="
+                  editFieldError('teamId') ? 'svc-team-error' : null
+                "
+              >
+                @for (team of teams.data()?.items ?? []; track team.id) {
+                  <option [value]="team.id">{{ team.name }}</option>
+                }
+              </select>
+            }
+            @if (editFieldError('teamId'); as msg) {
+              <p id="svc-team-error" class="field__error">{{ msg }}</p>
+            }
+          </div>
+          <div class="field">
+            <label for="svc-health">Health</label>
+            <select
+              id="svc-health"
+              formControlName="health"
+              [attr.aria-invalid]="
+                editForm.controls.health.invalid &&
+                editForm.controls.health.touched
+              "
+              [attr.aria-describedby]="
+                editFieldError('health') ? 'svc-health-error' : null
               "
             >
-              @for (team of teams.data()?.items ?? []; track team.id) {
-                <option [value]="team.id">{{ team.name }}</option>
+              @for (h of healths; track h) {
+                <option [value]="h">{{ h }}</option>
               }
             </select>
-          }
-          @if (editFieldError('teamId'); as msg) {
-            <p id="svc-team-error" class="field__error">{{ msg }}</p>
-          }
-        </div>
-        <div class="field">
-          <label for="svc-health">Health</label>
-          <select
-            id="svc-health"
-            formControlName="health"
-            [attr.aria-invalid]="
-              editForm.controls.health.invalid &&
-              editForm.controls.health.touched
-            "
-            [attr.aria-describedby]="
-              editFieldError('health') ? 'svc-health-error' : null
-            "
-          >
-            @for (h of healths; track h) {
-              <option [value]="h">{{ h }}</option>
+            @if (editFieldError('health'); as msg) {
+              <p id="svc-health-error" class="field__error">{{ msg }}</p>
             }
-          </select>
-          @if (editFieldError('health'); as msg) {
-            <p id="svc-health-error" class="field__error">{{ msg }}</p>
-          }
-        </div>
-        <button
-          type="submit"
-          class="btn btn--primary"
-          [disabled]="updateMut.isPending() || conflictOpen()"
-          [attr.aria-busy]="updateMut.isPending()"
-        >
-          Save service
-        </button>
-      </form>
-    </section>
-  }
-</div>
+          </div>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="updateMut.isPending() || conflictOpen()"
+            [attr.aria-busy]="updateMut.isPending()"
+          >
+            Save service
+          </button>
+        </form>
+      </section>
+    }
+    </div>
+  </div>
 }

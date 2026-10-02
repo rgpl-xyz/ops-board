@@ -90,6 +90,7 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
 
 @Component({
   selector: 'ob-incident-detail-page',
+  host: { class: 'viewport-page' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
@@ -112,6 +113,7 @@ export class IncidentDetailPage {
   private readonly queryClient = inject(QueryClient);
   private readonly fb = inject(FormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly pageBody = viewChild<ElementRef<HTMLElement>>('pageBody');
 
   private readonly confirmDialog =
     viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
@@ -405,6 +407,11 @@ export class IncidentDetailPage {
           if (movedIncident) {
             this.severityChosen.set(false);
             this.statusChosen.set(false);
+            // A reused page keeps its scroll container, so start the new incident at the top.
+            const body = this.pageBody()?.nativeElement;
+            if (body) {
+              body.scrollTop = 0;
+            }
           }
           if (!this.severityChosen()) {
             this.severityDraft.set(incident.severity);
