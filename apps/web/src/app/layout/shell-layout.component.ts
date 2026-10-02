@@ -16,6 +16,7 @@ import {
 } from '../data-access';
 import { IncidentRealtimeConnection } from '../core/realtime/incident-realtime-connection';
 import { RouteFocusService } from '../core/a11y/route-focus.service';
+import { BUILD_COMMIT, buildLabel } from '../core/build/build-commit';
 import { CalloutComponent } from '../shared/ui/callout.component';
 import { CommandPaletteComponent } from './command-palette.component';
 import { HumanizePipe } from '../shared/pipes/humanize.pipe';
@@ -56,6 +57,7 @@ export class ShellLayoutComponent {
     () => organizationQuery(),
   );
 
+  protected readonly build = buildLabel(inject(BUILD_COMMIT));
   protected readonly demoBanner =
     'Demo Environment — Shared demo data. Changes are reset daily.';
   protected readonly realtimeStatus = this.realtimeConnection.status;

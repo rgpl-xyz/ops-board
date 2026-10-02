@@ -182,6 +182,8 @@ docker compose up -d --wait   # builds the images, applies the schema, seeds the
 docker compose down
 ```
 
+To have the application name the commit it was built from, pass the full commit: `GIT_SHA=$(git rev-parse HEAD) docker compose up -d --wait`. Without it the build reads `dev`.
+
 `--wait` returns once the application answers. The stack runs a one-shot step that applies the schema and then the demo seed, which only runs in the `Development` environment, so that step, and only that step, runs as Development. The API only starts once that step has succeeded. It is a demonstration, not a production configuration. [Deployment](docs/deployment.md) describes what changes in a real deployment.
 
 The stack and the local development setup share the same PostgreSQL container and volume. `docker compose down -v` also deletes that volume, and with it the local development database.

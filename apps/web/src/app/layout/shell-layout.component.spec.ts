@@ -16,6 +16,7 @@ import {
   type RealtimeConnectionStatus,
 } from '../core/realtime/incident-realtime-connection';
 import { RouteFocusService } from '../core/a11y/route-focus.service';
+import { BUILD_COMMIT } from '../core/build/build-commit';
 import { CommandPaletteComponent } from './command-palette.component';
 import { ShellLayoutComponent } from './shell-layout.component';
 
@@ -72,6 +73,28 @@ describe('ShellLayoutComponent', () => {
     expect(el.textContent).toContain('Services');
     expect(el.textContent).toContain('Incident manager');
     expect(el.textContent).toContain('Acme Cloud');
+  });
+
+  it('names the build it is serving and links the full commit', () => {
+    const sha = '188b12b3f0c94a1e8d2b7c6a5f4e3d2c1b0a9f8e';
+    TestBed.overrideProvider(BUILD_COMMIT, { useValue: sha });
+    const fixture = TestBed.createComponent(ShellLayoutComponent);
+    fixture.detectChanges();
+
+    const build = fixture.nativeElement.querySelector('.shell__build') as HTMLElement;
+    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build 188b12b');
+    expect(build.querySelector('a')?.getAttribute('href')).toBe(
+      `https://github.com/rgpl-xyz/ops-board/commit/${sha}`,
+    );
+  });
+
+  it('shows an unlinked dev build when no commit was built in', () => {
+    const fixture = TestBed.createComponent(ShellLayoutComponent);
+    fixture.detectChanges();
+
+    const build = fixture.nativeElement.querySelector('.shell__build') as HTMLElement;
+    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build dev');
+    expect(build.querySelector('a')).toBeNull();
   });
 
   it('renders and announces each realtime transport status without LIVE language', () => {

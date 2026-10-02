@@ -56,6 +56,14 @@
         } @else {
           <ob-callout variant="loading">Loading identity…</ob-callout>
         }
+        <span class="shell__build"
+          >Build
+          @if (build.href) {
+            <a [href]="build.href">{{ build.text }}</a>
+          } @else {
+            {{ build.text }}
+          }</span
+        >
       </div>
     </nav>
 
