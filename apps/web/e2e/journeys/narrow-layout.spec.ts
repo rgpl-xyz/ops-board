@@ -12,7 +12,7 @@ for (const path of ['/incidents', '/services']) {
     await page.goto(path);
     const filters = page.locator('form.filters');
     await expect(filters).toBeVisible();
-    await expect(page.locator('table tbody tr').first()).toBeVisible();
+    await expect(page.locator('table tbody tr:not(.row--placeholder)').first()).toBeVisible();
 
     const overflow = await filters.evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

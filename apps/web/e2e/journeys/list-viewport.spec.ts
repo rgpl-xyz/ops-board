@@ -21,7 +21,7 @@ for (const path of ['/incidents', '/services']) {
   }) => {
     await page.setViewportSize({ width: 1440, height: 640 });
     await page.goto(path);
-    await expect(page.locator('table tbody tr').first()).toBeVisible();
+    await expect(page.locator('table tbody tr:not(.row--placeholder)').first()).toBeVisible();
 
     const before = await overflow(page);
     expect(before.page).toBeLessThanOrEqual(0);
@@ -49,7 +49,7 @@ for (const path of ['/incidents', '/services']) {
 test('a phone keeps ordinary page scrolling for a long list', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/incidents');
-  await expect(page.locator('table tbody tr').first()).toBeVisible();
+  await expect(page.locator('table tbody tr:not(.row--placeholder)').first()).toBeVisible();
 
   const result = await overflow(page);
   expect(result.page).toBeGreaterThan(0);
