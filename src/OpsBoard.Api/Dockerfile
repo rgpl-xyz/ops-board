@@ -19,6 +19,11 @@ RUN ConnectionStrings__OpsBoard="Host=unused" dotnet ef migrations bundle \
       --output /app/efbundle
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# The full commit the image is built from, reported by /api/health; `dev` when not given.
+ARG GIT_SHA=dev
+RUN echo "$GIT_SHA" | grep -Eqx 'dev|[0-9a-f]{40}' \
+      || { echo "GIT_SHA must be dev or a full 40-character commit" >&2; exit 1; }
+ENV Build__Commit=$GIT_SHA
 WORKDIR /app
 COPY --from=build /app/publish .
 COPY --from=build /app/efbundle .

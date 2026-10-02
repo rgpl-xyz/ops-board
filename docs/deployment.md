@@ -58,7 +58,7 @@ The web image already does all of this. It proxies to a host named `api` on port
 
 ## Health and readiness
 
-`/api/health` reports only that the API process is up. It touches neither the identity nor the database, so it suits a liveness probe and says nothing about whether the application works. A meaningful readiness check has to make an authenticated application request. The repository's stack check shows the shape: health through the proxy, the current user, and the application shell. It takes a base URL, so the same check can be pointed at any deployment.
+`/api/health` reports that the API process is up and which commit its image was built from (`dev` when built without `GIT_SHA`). It touches neither the identity nor the database, so it suits a liveness probe and says nothing about whether the application works. A meaningful readiness check has to make an authenticated application request. The repository's stack check shows the shape: health through the proxy, the current user, and the application shell. It takes a base URL, so the same check can be pointed at any deployment.
 
 ## What would still need deciding
 

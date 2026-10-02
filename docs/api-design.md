@@ -16,7 +16,7 @@ Every application endpoint lives under `/api` and exchanges JSON. The web applic
 | Responders | `GET /api/incidents/{id}/responders`, `POST …/responders/join`, `POST …/responders/leave` | Who is working an incident; the caller joining or leaving |
 | Timeline | `GET /api/incidents/{id}/timeline`, `POST /api/incidents/{id}/updates` | The incident's history; posting a written update |
 
-`GET /api/health` sits outside this model. It reports that the process is up, with no identity and no database access, so it is suitable for a liveness probe. It says nothing about whether application requests will succeed.
+`GET /api/health` sits outside this model. It reports that the process is up and the commit it was built from, with no identity and no database access, so it is suitable for a liveness probe. It says nothing about whether application requests will succeed.
 
 Lifecycle changes are explicit commands rather than generic edits. `PUT` on an incident changes only its title, description and service. Severity and status have their own endpoints, and resolving and reopening are separate actions, because each has its own rules and its own timeline entry. A status change accepts only the active states (`Investigating`, `Identified`, `Monitoring`). Moving to `Resolved`, or back out of it, goes through resolve and reopen. Joining and leaving always act on the caller, never on another user.
 

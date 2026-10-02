@@ -98,6 +98,8 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "Healthy",
     service = "OpsBoard.Api",
     environment = app.Environment.EnvironmentName,
+    // The full commit the image was built from (Build:Commit); `dev` otherwise.
+    commit = app.Configuration["Build:Commit"] ?? "dev",
     utc = DateTime.UtcNow
 }))
 .WithName("GetHealth");
