@@ -275,7 +275,7 @@ describe('IncidentListPage', () => {
     );
   });
 
-  it('renders its empty state when no incident matches', async () => {
+  it('renders its empty state with a way out when no incident matches', async () => {
     listMock.mockResolvedValue({
       items: [],
       page: 1,
@@ -287,15 +287,16 @@ describe('IncidentListPage', () => {
 
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain(
-        'No incidents match these filters',
-      );
+      expect(fixture.nativeElement.textContent).toContain('No incidents match these filters');
     });
-    expect(fixture.nativeElement.textContent).not.toContain('Checkout timeouts');
+    const state = fixture.nativeElement.querySelector('.list-state') as HTMLElement;
+    expect(state.getAttribute('role')).toBe('status');
+    // The fixture route carries a filter, so the state offers to clear it.
+    expect(state.querySelector('button')?.textContent?.trim()).toBe('Clear filters');
   });
 
-  it('renders its error state when the list cannot be loaded', async () => {
-    listMock.mockRejectedValue({
+  it('renders its error state with a retry that recovers the list', async () => {
+    listMock.mockRejectedValueOnce({
       type: 'urn:opsboard:problem:unavailable',
       title: 'Unavailable',
       status: 503,
@@ -303,17 +304,41 @@ describe('IncidentListPage', () => {
       code: 'unavailable',
     });
     const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    const el = fixture.nativeElement as HTMLElement;
 
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain(
-        'Could not load incidents',
-      );
+      expect(el.querySelector('[role="alert"]')?.textContent).toContain('Could not load incidents');
     });
-    const alert = fixture.nativeElement.querySelector('[role="alert"]');
-    expect(alert?.textContent).toContain('Could not load incidents');
+    const retry = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Try again')!;
+    retry.click();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Checkout timeouts');
+      expect(document.activeElement).toBe(el.querySelector('tbody a'));
+    });
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
   });
 
+  it('shows placeholder rows under the real header while the list loads', async () => {
+    listMock.mockReturnValue(new Promise(() => undefined));
+    const fixture = TestBed.createComponent(IncidentListPage);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelectorAll('thead th').length).toBeGreaterThan(0);
+    const rows = el.querySelectorAll('tbody tr');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading incidents…');
+  });
   it('keeps a failed filter lookup in line as an unavailable field with a retry', async () => {
     teamsMock.mockRejectedValueOnce({
       type: 'urn:opsboard:problem:unavailable',

@@ -78,15 +78,22 @@
   </label>
 </form>
 
-@if (services.isPending()) {
-  <ob-callout variant="loading">Loading services…</ob-callout>
-} @else if (services.isError()) {
-  <ob-callout variant="error" semantic="alert">Could not load services.</ob-callout>
-} @else if ((services.data()?.items.length ?? 0) === 0) {
-  <ob-callout variant="empty">No services match these filters.</ob-callout>
+@if (services.isError()) {
+  <section class="list-state" role="alert" aria-labelledby="list-error-h">
+    <h2 id="list-error-h" class="list-state__title">Could not load services</h2>
+    <p class="list-state__text">The service list could not be retrieved.</p>
+    <button type="button" class="btn" (click)="retryList()">Try again</button>
+  </section>
+} @else if (!services.isPending() && (services.data()?.items.length ?? 0) === 0) {
+  <section class="list-state" role="status">
+    <p class="list-state__title">No services match these filters.</p>
+    @if (hasActiveFilters()) {
+      <button type="button" class="btn" (click)="clearFilters()">Clear filters</button>
+    }
+  </section>
 } @else {
   <div class="viewport-page__body">
-    <table class="table">
+    <table class="table" [attr.aria-busy]="services.isPending() || null">
       <thead>
         <tr>
           <th scope="col">Name</th>
@@ -96,26 +103,41 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of services.data()!.items; track row.id) {
-          <tr>
-            <td>
-              <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
-              <span class="row__meta">{{ row.teamName }}</span>
-            </td>
-            <td><ob-health-badge [health]="row.health" /></td>
-            <td class="col-wide">{{ row.teamName }}</td>
-            <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
-          </tr>
+        @if (services.isPending()) {
+          @for (placeholder of placeholderRows; track placeholder) {
+            <tr class="row--placeholder" aria-hidden="true">
+              <td><span class="skeleton"></span></td>
+              <td><span class="skeleton"></span></td>
+              <td class="col-wide"><span class="skeleton"></span></td>
+              <td class="col-wide"><span class="skeleton"></span></td>
+            </tr>
+          }
+        } @else {
+          @for (row of services.data()!.items; track row.id) {
+            <tr>
+              <td>
+                <a [routerLink]="['/services', row.id]">{{ row.name }}</a>
+                <span class="row__meta">{{ row.teamName }}</span>
+              </td>
+              <td><ob-health-badge [health]="row.health" /></td>
+              <td class="col-wide">{{ row.teamName }}</td>
+              <td class="col-wide"><time [attr.datetime]="row.updatedAt">{{ row.updatedAt | obTimestamp }}</time></td>
+            </tr>
+          }
         }
       </tbody>
     </table>
   </div>
 
-  <ob-pagination
-    [page]="services.data()!.page"
-    [totalPages]="services.data()!.totalPages"
-    [totalCount]="services.data()!.totalCount"
-    (previous)="onPage(-1)"
-    (next)="onPage(1)"
-  />
+  @if (services.isPending()) {
+    <p class="visually-hidden" role="status">Loading services…</p>
+  } @else {
+    <ob-pagination
+      [page]="services.data()!.page"
+      [totalPages]="services.data()!.totalPages"
+      [totalCount]="services.data()!.totalCount"
+      (previous)="onPage(-1)"
+      (next)="onPage(1)"
+    />
+  }
 }

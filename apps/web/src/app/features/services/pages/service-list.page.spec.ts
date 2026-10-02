@@ -271,7 +271,7 @@ describe('ServiceListPage', () => {
     fixture.nativeElement.remove();
   });
 
-  it('renders its empty state when no service matches', async () => {
+  it('renders its empty state with a way out when no service matches', async () => {
     listMock.mockResolvedValue({
       items: [],
       page: 1,
@@ -283,14 +283,16 @@ describe('ServiceListPage', () => {
 
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain(
-        'No services match these filters',
-      );
+      expect(fixture.nativeElement.textContent).toContain('No services match these filters');
     });
+    const state = fixture.nativeElement.querySelector('.list-state') as HTMLElement;
+    expect(state.getAttribute('role')).toBe('status');
+    // The fixture route carries a filter, so the state offers to clear it.
+    expect(state.querySelector('button')?.textContent?.trim()).toBe('Clear filters');
   });
 
-  it('renders its error state when the list cannot be loaded', async () => {
-    listMock.mockRejectedValue({
+  it('renders its error state with a retry that recovers the list', async () => {
+    listMock.mockRejectedValueOnce({
       type: 'urn:opsboard:problem:unavailable',
       title: 'Unavailable',
       status: 503,
@@ -298,12 +300,39 @@ describe('ServiceListPage', () => {
       code: 'unavailable',
     });
     const fixture = await mountList();
+    document.body.append(fixture.nativeElement);
+    const el = fixture.nativeElement as HTMLElement;
 
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain(
-        'Could not load services',
-      );
+      expect(el.querySelector('[role="alert"]')?.textContent).toContain('Could not load services');
     });
+    const retry = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Try again')!;
+    retry.click();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Payment Processor');
+      expect(document.activeElement).toBe(el.querySelector('tbody a'));
+    });
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('shows placeholder rows under the real header while the list loads', async () => {
+    listMock.mockReturnValue(new Promise(() => undefined));
+    const fixture = TestBed.createComponent(ServiceListPage);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelectorAll('thead th').length).toBeGreaterThan(0);
+    const rows = el.querySelectorAll('tbody tr');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading services…');
   });
 });

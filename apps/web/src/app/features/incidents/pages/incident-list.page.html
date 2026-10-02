@@ -130,15 +130,22 @@
   </label>
 </form>
 
-@if (incidents.isPending()) {
-  <ob-callout variant="loading">Loading incidents…</ob-callout>
-} @else if (incidents.isError()) {
-  <ob-callout variant="error" semantic="alert">Could not load incidents.</ob-callout>
-} @else if ((incidents.data()?.items.length ?? 0) === 0) {
-  <ob-callout variant="empty">No incidents match these filters.</ob-callout>
+@if (incidents.isError()) {
+  <section class="list-state" role="alert" aria-labelledby="list-error-h">
+    <h2 id="list-error-h" class="list-state__title">Could not load incidents</h2>
+    <p class="list-state__text">The incident list could not be retrieved.</p>
+    <button type="button" class="btn" (click)="retryList()">Try again</button>
+  </section>
+} @else if (!incidents.isPending() && (incidents.data()?.items.length ?? 0) === 0) {
+  <section class="list-state" role="status">
+    <p class="list-state__title">No incidents match these filters.</p>
+    @if (hasActiveFilters()) {
+      <button type="button" class="btn" (click)="clearFilters()">Clear filters</button>
+    }
+  </section>
 } @else {
   <div class="viewport-page__body">
-    <table class="table">
+    <table class="table" [attr.aria-busy]="incidents.isPending() || null">
       <thead>
         <tr>
           <th scope="col">Title</th>
@@ -150,28 +157,45 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of incidents.data()!.items; track row.id) {
-          <tr [class.row--resolved]="row.status === 'Resolved'">
-            <td>
-              <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
-              <span class="row__meta">{{ row.serviceName }} · {{ row.teamName }}</span>
-            </td>
-            <td><ob-severity-badge [severity]="row.severity" [muted]="row.status === 'Resolved'" /></td>
-            <td><ob-status-badge [status]="row.status" /></td>
-            <td class="col-wide">{{ row.serviceName }}</td>
-            <td class="col-wide">{{ row.teamName }}</td>
-            <td class="col-wide"><time [attr.datetime]="row.createdAt">{{ row.createdAt | obTimestamp }}</time></td>
-          </tr>
+        @if (incidents.isPending()) {
+          @for (placeholder of placeholderRows; track placeholder) {
+            <tr class="row--placeholder" aria-hidden="true">
+              <td><span class="skeleton"></span></td>
+              <td><span class="skeleton"></span></td>
+              <td><span class="skeleton"></span></td>
+              <td class="col-wide"><span class="skeleton"></span></td>
+              <td class="col-wide"><span class="skeleton"></span></td>
+              <td class="col-wide"><span class="skeleton"></span></td>
+            </tr>
+          }
+        } @else {
+          @for (row of incidents.data()!.items; track row.id) {
+            <tr [class.row--resolved]="row.status === 'Resolved'">
+              <td>
+                <a [routerLink]="['/incidents', row.id]">{{ row.title }}</a>
+                <span class="row__meta">{{ row.serviceName }} · {{ row.teamName }}</span>
+              </td>
+              <td><ob-severity-badge [severity]="row.severity" [muted]="row.status === 'Resolved'" /></td>
+              <td><ob-status-badge [status]="row.status" /></td>
+              <td class="col-wide">{{ row.serviceName }}</td>
+              <td class="col-wide">{{ row.teamName }}</td>
+              <td class="col-wide"><time [attr.datetime]="row.createdAt">{{ row.createdAt | obTimestamp }}</time></td>
+            </tr>
+          }
         }
       </tbody>
     </table>
   </div>
 
-  <ob-pagination
-    [page]="incidents.data()!.page"
-    [totalPages]="incidents.data()!.totalPages"
-    [totalCount]="incidents.data()!.totalCount"
-    (previous)="onPage(-1)"
-    (next)="onPage(1)"
-  />
+  @if (incidents.isPending()) {
+    <p class="visually-hidden" role="status">Loading incidents…</p>
+  } @else {
+    <ob-pagination
+      [page]="incidents.data()!.page"
+      [totalPages]="incidents.data()!.totalPages"
+      [totalCount]="incidents.data()!.totalCount"
+      (previous)="onPage(-1)"
+      (next)="onPage(1)"
+    />
+  }
 }

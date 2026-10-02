@@ -28,9 +28,8 @@ import {
   INCIDENT_STATUSES,
 } from '../../../data-access/contracts/enums';
 import { canCreateIncident } from '../utils/incident-actions';
-import { CalloutComponent } from '../../../shared/ui/callout.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
-import { focusAfterRender } from '../../../shared/a11y/focus';
+import { focusWhenReady } from '../../../shared/a11y/focus';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import { SeverityBadgeComponent } from '../../../shared/ui/severity-badge.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
@@ -48,7 +47,6 @@ import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
   imports: [
     FormsModule,
     RouterLink,
-    CalloutComponent,
     PageHeaderComponent,
     PaginationComponent,
     SeverityBadgeComponent,
@@ -144,11 +142,40 @@ export class IncidentListPage {
     void this.commitQuery({ ...this.listQuery(), ...patch });
   }
 
+  /** Placeholder rows shown under the real header while the list loads. */
+  protected readonly placeholderRows = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  /** Retries the list; on success focus moves to its first row, or the page heading. */
+  protected async retryList(): Promise<void> {
+    const result = await this.incidents.refetch();
+    if (!result.isSuccess) {
+      return;
+    }
+    const host = this.host.nativeElement;
+    focusWhenReady(
+      this.injector,
+      () => this.incidents.isSuccess(),
+      // Wait for the first row when rows came back; an empty list goes to the heading.
+      () =>
+        (this.incidents.data()?.items.length ?? 0) > 0
+          ? host.querySelector<HTMLElement>('tbody a')
+          : host.querySelector<HTMLElement>('h1'),
+    );
+  }
+
   /** Refetches a failed filter lookup, then moves focus to its restored control. */
-  protected async retryLookup(lookup: { refetch(): Promise<unknown> }, name: string): Promise<void> {
-    await lookup.refetch();
-    focusAfterRender(this.injector, () =>
-      this.host.nativeElement.querySelector<HTMLSelectElement>(`select[name="${name}"]:not(:disabled)`),
+  protected async retryLookup(
+    lookup: { refetch(): Promise<{ isSuccess: boolean }>; isSuccess(): boolean },
+    name: string,
+  ): Promise<void> {
+    const result = await lookup.refetch();
+    if (!result.isSuccess) {
+      return;
+    }
+    focusWhenReady(
+      this.injector,
+      () => lookup.isSuccess(),
+      () => this.host.nativeElement.querySelector<HTMLSelectElement>(`select[name="${name}"]:not(:disabled)`),
     );
   }
 
