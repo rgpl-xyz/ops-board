@@ -13,8 +13,10 @@ public static class SeedIds
     public static readonly Guid Acme = D(1, 1);
     public static readonly Guid DemoUser = D(3, 1);
 
+    // The key stays fixed: databases already holding its marker skip the seed
+    // instead of refusing to merge. FixtureVersion records which content they got.
     public const string SeedKey = "acme-v1";
-    public const string FixtureVersion = "acme-v1";
+    public const string FixtureVersion = "acme-v2";
     public static readonly DateTimeOffset Epoch = new(2026, 8, 1, 8, 0, 0, TimeSpan.Zero);
     public static readonly DateTimeOffset ActiveEpoch = new(2026, 9, 10, 8, 0, 0, TimeSpan.Zero);
 }
