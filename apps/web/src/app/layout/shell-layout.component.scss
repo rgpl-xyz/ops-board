@@ -66,11 +66,44 @@
   border-right: 1px solid var(--ob-rule);
 }
 
+/*
+ * The RGPL compact lockup, composed here rather than shipped as artwork: the approved g mark plus the product
+ * name as live text, because no product-label typeface is approved yet. The numbers are the RGPL brand
+ * specification v1.0 compact layout in canvas units: the 40-unit canvas renders at the compact lockup's 32 px
+ * minimum, or 2rem if that is larger (the root size here is 15px); see docs/brand.md. The name follows a zero-width strut as tall as the spec's baseline, so its
+ * baseline lands there in any font.
+ */
 .shell__brand {
+  --brand-unit: calc(max(32px, 2rem) / 40);
+  position: relative;
+  display: inline-block;
+  align-self: flex-start;
+  height: calc(40 * var(--brand-unit));
   margin: 0 0 1.1rem 0.6rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  padding: 0 calc(4 * var(--brand-unit)) 0 calc(46 * var(--brand-unit));
+  line-height: 0;
+  white-space: nowrap;
+  color: var(--ob-brand-ink);
+}
+
+.shell__brand-mark {
+  position: absolute;
+  top: calc(4 * var(--brand-unit));
+  left: calc(4 * var(--brand-unit));
+  width: calc(32 * var(--brand-unit));
+  height: calc(32 * var(--brand-unit));
+}
+
+.shell__brand-strut {
+  display: inline-block;
+  width: 0;
+  height: calc(25.5 * var(--brand-unit));
+}
+
+.shell__brand-name {
+  font-size: calc(14 * var(--brand-unit));
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .shell__link {
@@ -231,5 +264,14 @@
 
   .shell__content {
     padding: 1.1rem 0.85rem 2rem;
+  }
+}
+
+/* Forced colours keep the approved black lockup on its own light ground, sized to the lockup alone. */
+@media (forced-colors: active) {
+  .shell__brand {
+    background: var(--ob-brand-ground);
+    color: var(--ob-brand-ink);
+    forced-color-adjust: none;
   }
 }

@@ -41,6 +41,10 @@ Data refreshed by realtime updates is not announced. It changes on screen quietl
 
 Severity, incident status and service health are always rendered as their words, such as "Critical", "Investigating" or "Degraded". Colour reinforces the words but never replaces them. Nothing in the interface depends on distinguishing colours alone.
 
+## Forced colours
+
+In forced-colours mode the system recolours the interface. The sidebar logo is the exception: it keeps its own colours, the Iris mark and the black name, on the brand's light ground, so it stays legible on dark high-contrast themes. Everything else follows the system colours. `npm run brand:verify` checks the logo's contrast on the page background and on that ground.
+
 ## What is checked automatically
 
 | Contract | Component tests | Browser journeys |

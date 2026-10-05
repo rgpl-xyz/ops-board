@@ -1,0 +1,6 @@
+# Brand assets are verified byte for byte (apps/web/brand-assets.json): never convert their line endings.
+apps/web/public/brand/** -text
+apps/web/public/icons/** -text
+apps/web/public/favicon.svg -text
+apps/web/public/favicon.ico -text
+apps/web/public/*.png -text

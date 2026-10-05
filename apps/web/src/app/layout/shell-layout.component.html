@@ -16,7 +16,10 @@
 
   <div class="shell__body">
     <nav class="shell__nav" aria-label="Primary">
-      <p class="shell__brand">OpsBoard</p>
+      <div class="shell__brand" role="img" aria-label="OpsBoard">
+        <img class="shell__brand-mark" src="brand/g-compact-iris.svg" width="32" height="32" alt="" />
+        <span class="shell__brand-strut"></span><span class="shell__brand-name">opsboard</span>
+      </div>
       <a
         routerLink="/incidents"
         routerLinkActive="shell__link--active"

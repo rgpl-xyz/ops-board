@@ -67,6 +67,7 @@ OpsBoard/
 - [API design](docs/api-design.md): resources, paging, filtering, the error contract and optimistic concurrency
 - [Testing strategy](docs/testing-strategy.md): what each test tier owns, and what coverage means here
 - [Accessibility](docs/accessibility.md): the contracts the application keeps and which are verified
+- [Brand integration](docs/brand.md): approved RGPL assets, product naming and favicon/PWA packaging
 - [Deployment](docs/deployment.md): what changes outside the demonstration stack
 - Decision records: [server state](docs/adr/0001-server-state-ownership.md), [client state](docs/adr/0002-client-state-ownership.md), [realtime orchestration](docs/adr/0003-realtime-orchestration.md)
 
@@ -153,6 +154,9 @@ cd apps/web && npm run test:e2e
 # Coverage, reported rather than gated
 dotnet test OpsBoard.sln --collect:"XPlat Code Coverage"
 cd apps/web && npm test -- --coverage
+
+# Brand asset hashes and logo contrast (no install or build needed)
+cd apps/web && npm run brand:verify
 ```
 
 **Backend.** The integration tests create a uniquely named database per run, apply migrations, and drop it afterwards. They use `OpsBoardTests__AdminConnection` or `ConnectionStrings__OpsBoard` when either is set, and otherwise start `postgres:17-alpine` themselves for the run, so a clean checkout needs no manual step. With neither a connection nor a container runtime available they fail immediately and name both remedies.
@@ -216,4 +220,6 @@ The stack and the local development setup share the same PostgreSQL container an
 
 ## License
 
-OpsBoard is licensed under the MIT License. See [LICENSE](LICENSE).
+The MIT License applies to the source code in this repository. See [LICENSE](LICENSE).
+
+The RGPL and OpsBoard names, logos, wordmarks and other brand assets, including the files in `apps/web/public/brand/` and the favicon and app icons in `apps/web/public/`, are not licensed for reuse under the MIT License and remain subject to applicable trademark and brand rights. See [docs/brand.md](docs/brand.md).

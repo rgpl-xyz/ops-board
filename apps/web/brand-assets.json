@@ -1,0 +1,16 @@
+{
+  "description": "Expected SHA-256 of each RGPL brand file copied into this app. Paths are relative to `directory`, which is relative to apps/web. Never edit the files here; docs/brand.md, 'Updating the copies', describes how they change. npm run brand:verify checks them.",
+  "directory": "public",
+  "files": {
+    "apple-touch-icon.png": "9dd3f1567bf9f46cfab91422546d7efce1896671f91e033e925576d52555fea7",
+    "brand/g-compact-iris.svg": "85975e3e82eb182f1664e6838cf1b160ab68de5c5c4b4384e030c6b7727a2577",
+    "favicon.ico": "3be1185c1f3b615c0fc083e476350ac7e0d011442e789bf4d02610dfff567221",
+    "favicon.svg": "85975e3e82eb182f1664e6838cf1b160ab68de5c5c4b4384e030c6b7727a2577",
+    "icon-16.png": "ca846cf1b316441aefb25f266019685406a67a80c1cae3faa143520c719ecb0b",
+    "icon-32.png": "6f1c3bbac350e10dcc8ff0b061042b96bcbae896b635d1f4ae7ea601ad8f21b4",
+    "icons/icon-192.png": "de77479cfbaa3e6f163507ef5255bff98df511cc4e9ad3ef7a9a9cb6207c8d34",
+    "icons/icon-512.png": "39e5314a461caef01ac298eb8e380ead6faf4e4b230ac5f197af5b07df4e2f3b",
+    "icons/icon-maskable-192.png": "bc67a166f70c399fcb8a64fb6692df8f64633c5b08a848cf3b75bd46cd07d98b",
+    "icons/icon-maskable-512.png": "a992292b3a89ecc186457845acb7bba698acc13f005d0f757b98f586dafa4955"
+  }
+}
