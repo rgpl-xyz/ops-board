@@ -43,7 +43,7 @@ Severity, incident status and service health are always rendered as their words,
 
 ## Forced colours
 
-In forced-colours mode the system recolours the interface. The sidebar logo is the exception: it keeps its own colours, the Iris mark and the black name, on the brand's light ground, so it stays legible on dark high-contrast themes. Everything else follows the system colours. `npm run brand:verify` checks the logo's contrast on the page background and on that ground.
+In forced-colours mode the system recolours the interface. The sidebar logo is the exception: it keeps its own colours, the Iris rgpl tile and the black name, on the brand's light ground, so it stays legible on dark high-contrast themes. Everything else follows the system colours. `npm run brand:verify` checks the logo's contrast on the page background and on that ground.
 
 ## What is checked automatically
 

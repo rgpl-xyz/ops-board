@@ -2,15 +2,15 @@
   "description": "Expected SHA-256 of each RGPL brand file copied into this app. Paths are relative to `directory`, which is relative to apps/web. Never edit the files here; docs/brand.md, 'Updating the copies', describes how they change. npm run brand:verify checks them.",
   "directory": "public",
   "files": {
-    "apple-touch-icon.png": "9dd3f1567bf9f46cfab91422546d7efce1896671f91e033e925576d52555fea7",
-    "brand/g-compact-iris.svg": "85975e3e82eb182f1664e6838cf1b160ab68de5c5c4b4384e030c6b7727a2577",
-    "favicon.ico": "3be1185c1f3b615c0fc083e476350ac7e0d011442e789bf4d02610dfff567221",
-    "favicon.svg": "85975e3e82eb182f1664e6838cf1b160ab68de5c5c4b4384e030c6b7727a2577",
-    "icon-16.png": "ca846cf1b316441aefb25f266019685406a67a80c1cae3faa143520c719ecb0b",
-    "icon-32.png": "6f1c3bbac350e10dcc8ff0b061042b96bcbae896b635d1f4ae7ea601ad8f21b4",
-    "icons/icon-192.png": "de77479cfbaa3e6f163507ef5255bff98df511cc4e9ad3ef7a9a9cb6207c8d34",
-    "icons/icon-512.png": "39e5314a461caef01ac298eb8e380ead6faf4e4b230ac5f197af5b07df4e2f3b",
-    "icons/icon-maskable-192.png": "bc67a166f70c399fcb8a64fb6692df8f64633c5b08a848cf3b75bd46cd07d98b",
-    "icons/icon-maskable-512.png": "a992292b3a89ecc186457845acb7bba698acc13f005d0f757b98f586dafa4955"
+    "apple-touch-icon.png": "dc6f5ddbfd7f51a461fcab561fe8e1c4c0f4ff6ed5c0d8c2ed760f67a5c3e9eb",
+    "brand/rgpl-tile-iris.svg": "6dd5c0467a40df63456ef83a88b34211a0ba2c43f4a255f19562f29eef6db1ba",
+    "favicon.ico": "1f8e45996f2e6bd7a19ee2f54416de9bae01a476a2c578b817c3d92a6483c974",
+    "favicon.svg": "e1f62d833a65e3df071a7e492cbfe2cdd29551c16eea4842bcb4094f208facd6",
+    "icon-16.png": "d1f87da2e9959619ea3cb22e3d7f304e29cf97c6d81e6a0cb52209e8b5e9f9ac",
+    "icon-32.png": "e91c9f5564473f3f88de3fb76d7d580cbe1b811fd80f45ac01da4eeeca0f15e2",
+    "icons/icon-192.png": "fa62f50cbcce9617615a10f174855fe34f12515138c28e6f4a204e3de5ef7f8a",
+    "icons/icon-512.png": "fa4fdb0b0d6a28501b79873ecd753a7add21f969db62e7e5c95aad8b77c0d7d4",
+    "icons/icon-maskable-192.png": "84d6031094e793784d46b90e8f471080bca61ee3f780a487040f7d4f1ec8223a",
+    "icons/icon-maskable-512.png": "cf74dc57f986970489430b1d26b7f978910e6e3a01f76df5727caf1919ac827e"
   }
 }

@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-label="RGPL lowercase g compact mark, iris">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-label="RGPL canonical lowercase rgpl wordmark, edge to edge, iris">
   <defs>
+    <path id="source-r" data-canonical-glyph="r" d="M60 0 L180 0 L180 -360 L540 -360 L540 -480 L180 -480 L60 -360 Z"/>
     <path id="source-g" data-canonical-glyph="g" d="M180 0 L420 0 L420 60 L60 60 L60 180 L420 180 L540 60 L540 -480 L180 -480 L60 -360 L60 -120 Z M204 -120 Q180 -120 180 -144 L180 -336 Q180 -360 204 -360 L396 -360 Q420 -360 420 -336 L420 -144 Q420 -120 396 -120 Z"/>
+    <path id="source-p" data-canonical-glyph="p" d="M60 180 L180 180 L180 0 L420 0 L540 -120 L540 -360 L420 -480 L60 -480 Z M204 -120 Q180 -120 180 -144 L180 -336 Q180 -360 204 -360 L396 -360 Q420 -360 420 -336 L420 -144 Q420 -120 396 -120 Z"/>
+    <path id="source-l" data-canonical-glyph="l" d="M120 -720 L300 -720 L300 -120 L480 -120 L480 0 L300 0 L180 -120 L180 -600 L120 -600 Z"/>
   </defs>
   <rect width="1000" height="1000" fill="#4339AB"/>
-  <g data-composition="canonical-glyphs" transform="matrix(1 0 0 1 192 656)">
-    <use href="#source-g" x="0" fill="#FFFFFF" fill-rule="nonzero"/>
+  <g data-composition="canonical-glyphs" transform="matrix(0.5241 0 0 0.5241 -31.446 641.507)">
+    <use href="#source-r" x="0" fill="#FFFFFF" fill-rule="nonzero"/>
+    <use href="#source-g" x="516" fill="#FFFFFF" fill-rule="nonzero"/>
+    <use href="#source-p" x="1032" fill="#FFFFFF" fill-rule="nonzero"/>
+    <use href="#source-l" x="1488" fill="#FFFFFF" fill-rule="nonzero"/>
   </g>
 </svg>

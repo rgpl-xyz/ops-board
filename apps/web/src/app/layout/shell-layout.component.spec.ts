@@ -67,7 +67,7 @@ describe('ShellLayoutComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const brand = el.querySelector('nav [role="img"]') as HTMLElement;
     expect(brand.getAttribute('aria-label')).toBe('OpsBoard');
-    expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/g-compact-iris.svg');
+    expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/rgpl-tile-iris.svg');
     expect(brand.textContent?.trim()).toBe('opsboard');
     expect(el.textContent).toContain(
       'Demo Environment — Shared demo data. Changes are reset daily.',

@@ -67,9 +67,10 @@
 }
 
 /*
- * The RGPL compact lockup, composed here rather than shipped as artwork: the approved g mark plus the product
+ * The RGPL compact lockup, composed here rather than shipped as artwork: the Iris rgpl tile plus the product
  * name as live text, because no product-label typeface is approved yet. The numbers are the RGPL brand
- * specification v1.0 compact layout in canvas units: the 40-unit canvas renders at the compact lockup's 32 px
+ * specification compact layout in canvas units: the tile 32 tall at 4, 4 (its width follows from the artwork's
+ * 2148 by 1140 proportions), the name at 74.3. The 40-unit canvas renders at the compact lockup's 32 px
  * minimum, or 2rem if that is larger (the root size here is 15px); see docs/brand.md. The name follows a zero-width strut as tall as the spec's baseline, so its
  * baseline lands there in any font.
  */
@@ -80,7 +81,7 @@
   align-self: flex-start;
   height: calc(40 * var(--brand-unit));
   margin: 0 0 1.1rem 0.6rem;
-  padding: 0 calc(4 * var(--brand-unit)) 0 calc(46 * var(--brand-unit));
+  padding: 0 calc(4 * var(--brand-unit)) 0 calc(74.3 * var(--brand-unit));
   line-height: 0;
   white-space: nowrap;
   color: var(--ob-brand-ink);
@@ -90,7 +91,7 @@
   position: absolute;
   top: calc(4 * var(--brand-unit));
   left: calc(4 * var(--brand-unit));
-  width: calc(32 * var(--brand-unit));
+  width: auto;
   height: calc(32 * var(--brand-unit));
 }
 

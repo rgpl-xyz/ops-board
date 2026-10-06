@@ -6,20 +6,20 @@ OpsBoard is part of RGPL, a family of products that share one visual identity, R
 
 ## The sidebar logo
 
-The sidebar shows the RGPL compact lockup: the approved `g` mark on its purple (Iris) square, followed by the product name `opsboard`. Application copy uses the display name `OpsBoard`; the lowercase `opsboard` appears only in the logo, and the logo's accessible name is `OpsBoard`.
+The sidebar shows the RGPL compact lockup: the Iris rgpl tile, the approved white `rgpl` wordmark on a purple (Iris) rectangle with one stroke of padding round it, followed by the product name `opsboard`. Every RGPL product uses the same compact lockup. Application copy uses the display name `OpsBoard`; the lowercase `opsboard` appears only in the logo, and the logo's accessible name is `OpsBoard`.
 
-The lockup is composed in the page, not shipped as artwork. Only the `g` mark is an image; the name is live text in OpsBoard's own font. No product-label typeface is approved yet, and artwork with the name as text would render in a different system font on each operating system. The product-label typeface is deferred by brand-owner decision, so no temporary font is selected or outlined; outlined lockup artwork is reconsidered once RGPL Mono Text or another explicitly approved and licensed companion typeface exists.
+The lockup is composed in the page, not shipped as artwork. Only the tile is an image; the name is live text in OpsBoard's own font. No product-label typeface is approved yet, and artwork with the name as text would render in a different system font on each operating system. The product-label typeface is deferred by brand-owner decision, so no temporary font is selected or outlined; outlined lockup artwork is reconsidered once RGPL Mono Text or another explicitly approved and licensed companion typeface exists.
 
-The composition's numbers in `apps/web/src/app/layout/shell-layout.component.scss` copy the RGPL brand specification v1.0 compact layout: a 40-unit canvas; the mark 32 units square at 4, 4; the name at x 46 with its baseline at 25.5, 14 units, weight 600, letter-spacing 0.02em; a right inset of 4, equal to the mark's left inset (a derived symmetry rule, not a separate metric). The canvas renders at the compact lockup's 32 px minimum, or at 2rem if that is larger (OpsBoard's root size is 15px, so 2rem alone would be 30 px). When the RGPL specification changes, update them together with the files below.
+The composition's numbers in `apps/web/src/app/layout/shell-layout.component.scss` copy the RGPL brand specification's compact layout: a 40-unit canvas; the tile 32 units tall at 4, 4, its width following from the artwork's 2148 by 1140 proportions (about 60.3); the name at x 74.3 with its baseline at 25.5, 14 units, weight 600, letter-spacing 0.02em; a right inset of 4, equal to the tile's left inset (a derived symmetry rule, not a separate metric). The canvas renders at the compact lockup's 32 px minimum, or at 2rem if that is larger (OpsBoard's root size is 15px, so 2rem alone would be 30 px). When the RGPL specification changes, update them together with the files below.
 
 ## Files
 
 | File | Use |
 | --- | --- |
-| `apps/web/public/brand/g-compact-iris.svg` | The `g` mark in the sidebar logo |
-| `apps/web/public/favicon.svg`, `favicon.ico` | Browser tab icons: the same `g` mark |
+| `apps/web/public/brand/rgpl-tile-iris.svg` | The Iris rgpl tile in the sidebar logo |
+| `apps/web/public/favicon.svg`, `favicon.ico` | Browser tab icons: the `rgpl` wordmark, edge to edge on Iris |
 | `apps/web/public/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png` | Home-screen and installed-app icons, `purpose: "any"` |
-| `apps/web/public/icons/icon-maskable-192.png`, `icons/icon-maskable-512.png` | Installed-app icons for launchers that crop to their own shape, `purpose: "maskable"`: the same mark, padded inside the maskable safe zone |
+| `apps/web/public/icons/icon-maskable-192.png`, `icons/icon-maskable-512.png` | Installed-app icons for launchers that crop to their own shape, `purpose: "maskable"`: the same wordmark, scaled inside the maskable safe zone |
 | `apps/web/public/icon-16.png`, `icon-32.png` | Not referenced by the page today; copied so the icon set stays complete for contexts that need PNGs |
 
 Do not stretch, crop, recolour, outline, shadow or redraw any of these files. In forced-colours mode the sidebar keeps the logo's own colours on the brand's light ground (`--ob-brand-ground`) instead of letting the system recolour it.
@@ -28,10 +28,10 @@ The browser and installed-app colours (`theme-color` in `apps/web/src/index.html
 
 ## Colours and contrast
 
-The brand's canonical light background is `#FDFDFF`, but it is not the only permissible light neutral. OpsBoard draws the logo on its page background, `--ob-bg` (`#f6f4ef`), in the brand's black ink (`--ob-brand-ink`), and keeps `#FDFDFF` (`--ob-brand-ground`) for the forced-colours ground. `npm run brand:verify` measures those pairings from `src/styles.scss` and the `g` mark itself:
+The brand's canonical light background is `#FDFDFF`, but it is not the only permissible light neutral. OpsBoard draws the logo on its page background, `--ob-bg` (`#f6f4ef`), in the brand's black ink (`--ob-brand-ink`), and keeps `#FDFDFF` (`--ob-brand-ground`) for the forced-colours ground. `npm run brand:verify` measures those pairings from `src/styles.scss` and the tile itself:
 
 - the name on the page background, at least 4.5:1 (19.1:1 today);
-- the Iris mark against the page background, at least 3:1 (7.9:1);
+- the Iris tile against the page background, at least 3:1 (7.9:1);
 - the name on the forced-colours ground, at least 4.5:1 (20.7:1).
 
 ## Verifying the copies
@@ -49,7 +49,7 @@ Only maintainers with access to the RGPL repository can produce new copies. With
 
    | RGPL source | OpsBoard destination |
    | --- | --- |
-   | `libs/foundation/brand/assets/brand/g-compact-iris.svg` | `apps/web/public/brand/` |
+   | `libs/foundation/brand/assets/brand/rgpl-tile-iris.svg` | `apps/web/public/brand/` |
    | `libs/foundation/brand/assets/root/icons/*` | `apps/web/public/icons/` |
    | the other files in `libs/foundation/brand/assets/root/` | `apps/web/public/` |
 

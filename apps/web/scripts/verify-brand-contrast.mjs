@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const styles = readFileSync(join(webRoot, 'src/styles.scss'), 'utf8');
-const mark = readFileSync(join(webRoot, 'public/brand/g-compact-iris.svg'), 'utf8');
+const mark = readFileSync(join(webRoot, 'public/brand/rgpl-tile-iris.svg'), 'utf8');
 
 function token(name) {
   const match = styles.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\b`));
@@ -29,7 +29,7 @@ const surface = token('ob-bg');
 const ink = token('ob-brand-ink');
 const ground = token('ob-brand-ground');
 const iris = mark.match(/<rect[^>]*fill="(#[0-9a-fA-F]{6})"/)?.[1];
-if (!iris) throw new Error('The g mark has no Iris square');
+if (!iris) throw new Error('The rgpl tile has no Iris ground');
 
 const checks = [
   {
@@ -39,7 +39,7 @@ const checks = [
     minimum: 4.5,
   },
   {
-    what: 'Iris mark against the sidebar surface',
+    what: 'Iris tile against the sidebar surface',
     foreground: iris,
     background: surface,
     minimum: 3,
