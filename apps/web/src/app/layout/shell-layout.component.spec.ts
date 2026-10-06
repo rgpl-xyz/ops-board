@@ -85,7 +85,8 @@ describe('ShellLayoutComponent', () => {
     fixture.detectChanges();
 
     const build = fixture.nativeElement.querySelector('.shell__build') as HTMLElement;
-    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build 188b12b');
+    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build 188b12b · rgpl');
+    expect(build.querySelector('a')?.textContent?.trim()).toBe('188b12b');
     expect(build.querySelector('a')?.getAttribute('href')).toBe(
       `https://github.com/rgpl-xyz/ops-board/commit/${sha}`,
     );
@@ -96,7 +97,7 @@ describe('ShellLayoutComponent', () => {
     fixture.detectChanges();
 
     const build = fixture.nativeElement.querySelector('.shell__build') as HTMLElement;
-    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build dev');
+    expect(build.textContent?.replace(/\s+/g, ' ').trim()).toBe('Build dev · rgpl');
     expect(build.querySelector('a')).toBeNull();
   });
 
