@@ -162,6 +162,26 @@ test('a long description shows a paragraph and the rest on demand', async ({ pag
   expect(Math.round(lines)).toBe(4);
 
   const more = page.getByRole('button', { name: 'More of the description' });
+  // The clamp's own ellipsis is the only one: "more" draws none, and the last
+  // line stops short of it instead of running underneath.
+  const ends = await more.evaluate((button) => {
+    const text = button.closest('ob-clamped-text')!.querySelector('.clamped')!;
+    const box = text.getBoundingClientRect();
+    const lineHeight = parseFloat(getComputedStyle(text).lineHeight);
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const lastLine = [...range.getClientRects()].filter(
+      (rect) => rect.bottom > box.bottom - lineHeight && rect.top < box.bottom,
+    );
+    return {
+      drawn: [button, button.closest('.more')!].map((el) => getComputedStyle(el, '::before').content),
+      textEnd: Math.max(...lastLine.map((rect) => rect.right)),
+      moreStart: button.getBoundingClientRect().left,
+    };
+  });
+  expect(ends.drawn).toEqual(['none', 'none']);
+  expect(ends.textEnd).toBeLessThanOrEqual(ends.moreStart);
+
   const card = page.getByRole('dialog', { name: 'Description' });
   await more.hover();
   await expect(card).toBeVisible();

@@ -25,7 +25,7 @@ import { HoverCardComponent } from './hover-card.component';
   imports: [HoverCardComponent],
   host: { '[style.--clamp-lines]': 'lines()' },
   template: `
-    <p #paragraph class="clamped">{{ text() }}</p>
+    <p #paragraph class="clamped" [class.clamped--cut]="overflows()">{{ text() }}</p>
     @if (overflows()) {
       <ob-hover-card
         class="more"
@@ -39,6 +39,7 @@ import { HoverCardComponent } from './hover-card.component';
   `,
   styles: `
     :host {
+      --more-room: 3em;
       display: block;
       position: relative;
     }
@@ -50,16 +51,24 @@ import { HoverCardComponent } from './hover-card.component';
       overflow: hidden;
       margin: 0;
     }
-    /* Covers the end of the last line, where the clamp's own ellipsis falls. */
+    /*
+     * While the text is cut, its last line stops short of "more", so the clamp's
+     * own ellipsis shows just before it. The float spans every line, but its
+     * shape keeps only the last one clear.
+     */
+    .clamped--cut::before {
+      content: '';
+      float: right;
+      width: var(--more-room);
+      height: calc(var(--clamp-lines) * 1lh);
+      shape-outside: inset(calc((var(--clamp-lines) - 1) * 1lh) 0 0 0);
+    }
     .more {
       position: absolute;
       right: 0;
       bottom: 0;
-      padding-left: 2rem;
-      background: linear-gradient(to right, transparent, var(--ob-bg) 1.25rem);
-    }
-    .more::before {
-      content: '… ';
+      width: var(--more-room);
+      padding-left: 0.3em;
     }
     .full {
       margin: 0;
