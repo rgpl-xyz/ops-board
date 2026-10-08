@@ -69,7 +69,10 @@ import {
   focusFormElement,
   type FormFieldRef,
 } from '../../../shared/a11y/form-focus';
+import { ResponderListComponent } from '../ui/responder-list.component';
+import { ResizeToFitDirective } from '../../../shared/directives/resize-to-fit.directive';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
+import { ClampedTextComponent } from '../../../shared/ui/clamped-text.component';
 import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
@@ -96,9 +99,12 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
     RouterLink,
     ReactiveFormsModule,
     CalloutComponent,
+    ClampedTextComponent,
     ConfirmDialogComponent,
     PageHeaderComponent,
     PaginationComponent,
+    ResizeToFitDirective,
+    ResponderListComponent,
     SeverityBadgeComponent,
     StatusBadgeComponent,
     TimestampPipe,
@@ -114,6 +120,8 @@ export class IncidentDetailPage {
   private readonly fb = inject(FormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly pageBody = viewChild<ElementRef<HTMLElement>>('pageBody');
+  private readonly timelineList =
+    viewChild<ElementRef<HTMLElement>>('timelineList');
 
   private readonly confirmDialog =
     viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
@@ -407,10 +415,11 @@ export class IncidentDetailPage {
           if (movedIncident) {
             this.severityChosen.set(false);
             this.statusChosen.set(false);
-            // A reused page keeps its scroll container, so start the new incident at the top.
-            const body = this.pageBody()?.nativeElement;
-            if (body) {
-              body.scrollTop = 0;
+            // A reused page keeps its scroll containers, so start the new incident at the top.
+            for (const scroller of [this.pageBody(), this.timelineList()]) {
+              if (scroller) {
+                scroller.nativeElement.scrollTop = 0;
+              }
             }
           }
           if (!this.severityChosen()) {

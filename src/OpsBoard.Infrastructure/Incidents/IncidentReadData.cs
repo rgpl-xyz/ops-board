@@ -58,8 +58,8 @@ public sealed class IncidentReadData(OpsBoardDbContext db) : IIncidentReadData
         var total = await query.CountAsync(cancellationToken);
         var offset = PageMath.CheckedOffset(page, pageSize);
         var items = await query
-            .OrderBy(x => x.e.OccurredAt)
-            .ThenBy(x => x.e.Sequence)
+            .OrderByDescending(x => x.e.OccurredAt)
+            .ThenByDescending(x => x.e.Sequence)
             .Skip(offset)
             .Take(pageSize)
             .Select(x => new TimelineEntryDto(

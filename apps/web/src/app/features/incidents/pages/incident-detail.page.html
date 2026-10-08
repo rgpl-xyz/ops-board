@@ -47,7 +47,7 @@
             <dt>Updated</dt>
             <dd><time [attr.datetime]="incident.updatedAt">{{ incident.updatedAt | obTimestamp: true }}</time></dd>
           </dl>
-          <p class="description">{{ incident.description }}</p>
+          <ob-clamped-text class="description" [text]="incident.description" heading="Description" />
 
           @if (canEdit()) {
             <h2 class="section__title edit-title">Edit details</h2>
@@ -96,6 +96,7 @@
               <div class="field">
                 <label for="edit-description">Description</label>
                 <textarea
+                  obResizeToFit
                   id="edit-description"
                   formControlName="description"
                   rows="4"
@@ -272,14 +273,7 @@
           } @else if ((responders.data()?.items.length ?? 0) === 0) {
             <ob-callout variant="empty">No responders yet.</ob-callout>
           } @else {
-            <ul class="responders">
-              @for (r of responders.data()!.items; track r.userId) {
-                <li>
-                  <span>{{ r.displayName }}</span>
-                  <time class="muted" [attr.datetime]="r.joinedAt">{{ r.joinedAt | obTimestamp }}</time>
-                </li>
-              }
-            </ul>
+            <ob-responder-list [responders]="responders.data()!.items" />
           }
         </section>
 
@@ -293,6 +287,7 @@
               <div class="field">
                 <label for="update-body">Update</label>
                 <textarea
+                  obResizeToFit
                   id="update-body"
                   rows="3"
                   [value]="updateBody()"
@@ -322,7 +317,8 @@
           } @else if ((timeline.data()?.items.length ?? 0) === 0) {
             <ob-callout variant="empty">No timeline entries.</ob-callout>
           } @else {
-            <ol class="timeline">
+            <!-- Focusable so a keyboard can scroll it when it runs past its height. -->
+            <ol #timelineList class="timeline" tabindex="0" aria-labelledby="tl-h">
               @for (entry of timeline.data()!.items; track entry.id) {
                 <li>
                   @if (entry.kind === 'writtenUpdate') {

@@ -5,8 +5,9 @@ import { runName } from '../fixtures/names';
 
 /**
  * On a screen with room, a detail page keeps the shell and its header in view
- * and scrolls one body region; dialogs open in full above it. A phone keeps
- * ordinary page scrolling.
+ * and scrolls one body region; dialogs open in full above it. An incident's
+ * long timeline scrolls in place beside the record. A phone keeps ordinary
+ * page scrolling.
  */
 function measure(page: Page) {
   return page.evaluate(() => {
@@ -105,6 +106,94 @@ test('moving to another incident in place starts at the top with that incident',
   await expect(page.getByRole('heading', { level: 1, name: second.title })).toBeVisible();
   await expect(page.locator('#edit-title')).toHaveValue(second.title);
   expect((await measure(page)).bodyTop).toBe(0);
+});
+
+test('a long timeline scrolls in place, newest entry first, clear of the scrollbars', async ({
+  page,
+  request,
+}) => {
+  const incident = await provisionIncident(request, runName('Long timeline incident'));
+  const detail = await (await request.get(`/api/incidents/${incident.id}`)).json();
+  for (let n = 1; n <= 14; n++) {
+    const posted = await request.post(`/api/incidents/${incident.id}/updates`, {
+      data: { body: `Update ${n}`, expectedLifecycleVersion: detail.lifecycleVersion },
+    });
+    expect(posted.ok()).toBe(true);
+  }
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/incidents/${incident.id}`);
+  const timeline = page.getByRole('list', { name: 'Timeline' });
+  await expect(timeline.getByRole('listitem').first()).toContainText('Update 14');
+
+  const result = await page.evaluate(() => {
+    const body = document.querySelector('.viewport-page__body') as HTMLElement;
+    const list = document.querySelector('.timeline') as HTMLElement;
+    const entry = list.querySelector('li')!.getBoundingClientRect();
+    const layout = document.querySelector('.layout')!.getBoundingClientRect();
+    return {
+      body: body.scrollHeight - body.clientHeight,
+      list: list.scrollHeight - list.clientHeight,
+      bodyEdge: innerWidth - body.getBoundingClientRect().right,
+      contentGap: innerWidth - layout.right - parseFloat(getComputedStyle(body).paddingRight),
+      entryGap: list.getBoundingClientRect().right - entry.right,
+    };
+  });
+  expect(result.body).toBeLessThanOrEqual(0);
+  expect(result.list).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeInViewport();
+
+  // Scrollbars sit beside the text, so one that overlays the page cannot cover it.
+  expect(Math.abs(result.bodyEdge)).toBeLessThanOrEqual(1);
+  expect(result.contentGap).toBeGreaterThanOrEqual(-1);
+  expect(result.entryGap).toBeGreaterThanOrEqual(10);
+});
+
+test('a long description shows a paragraph and the rest on demand', async ({ page, request }) => {
+  const description = 'Notification sends stalled while a worker leaked pooled connections. '.repeat(14).trim();
+  const incident = await provisionIncident(request, runName('Long description incident'), description);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/incidents/${incident.id}`);
+  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+
+  const paragraph = page.locator('ob-clamped-text .clamped');
+  const lines = await paragraph.evaluate(
+    (el) => el.clientHeight / parseFloat(getComputedStyle(el).lineHeight),
+  );
+  expect(Math.round(lines)).toBe(4);
+
+  const more = page.getByRole('button', { name: 'More of the description' });
+  const card = page.getByRole('dialog', { name: 'Description' });
+  await more.hover();
+  await expect(card).toBeVisible();
+  await expect(card).toContainText(description);
+  await page.mouse.move(0, 0);
+  await expect(card).toBeHidden();
+
+  await more.focus();
+  await page.keyboard.press('Enter');
+  await expect(card).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(card).toBeHidden();
+  await expect(more).toBeFocused();
+});
+
+test('a text box dragged taller stops before the page would scroll', async ({ page, request }) => {
+  const incident = await provisionIncident(request, runName('Resize limit incident'));
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/incidents/${incident.id}`);
+  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+
+  const update = page.locator('#update-body');
+  const start = (await update.boundingBox())!;
+  await page.mouse.move(start.x + start.width - 3, start.y + start.height - 3);
+  await page.mouse.down();
+  await page.mouse.move(start.x + start.width - 3, start.y + start.height + 600, { steps: 12 });
+  await page.mouse.up();
+
+  const end = (await update.boundingBox())!;
+  expect(end.height).toBeGreaterThan(start.height);
+  expect(end.height).toBeLessThan(start.height + 600);
+  expect((await measure(page)).body).toBeLessThanOrEqual(0);
 });
 
 test('a service keeps its header in view and scrolls one body region', async ({ page }) => {

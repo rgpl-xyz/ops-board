@@ -15,6 +15,7 @@ export interface ProvisionedIncident {
 export async function provisionIncident(
   request: APIRequestContext,
   title: string,
+  description = 'Provisioned for a browser journey.',
 ): Promise<ProvisionedIncident> {
   const services = await request.get('/api/services?pageSize=1&sort=name');
   if (!services.ok()) {
@@ -25,7 +26,7 @@ export async function provisionIncident(
   const created = await request.post('/api/incidents', {
     data: {
       title,
-      description: 'Provisioned for a browser journey.',
+      description,
       serviceId,
       severity: 'High',
     },

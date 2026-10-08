@@ -74,7 +74,7 @@ Filtering, searching and sorting happen in the database, before paging. Pages ar
 - Sorting by severity, status or health follows the domain's order, not the alphabet. For severity, `desc` puts `Critical` first. For status, `desc` runs from `Investigating` to `Resolved`. For health, `desc` runs from `Outage` to `Operational`.
 - Sorting services by name ignores case, so `SMS Delivery` sorts after `Session Store`.
 - Every sort ends with the record identifier as a tie-breaker, so rows with equal keys keep a stable order across pages.
-- The timeline is always in the order things happened.
+- The timeline always lists the newest entry first.
 
 An unsupported sort field or direction, an unknown enum value, or a value that cannot be read, such as `page=notanumber`, is rejected with `400 validation_failed`, in every environment.
 

@@ -425,10 +425,13 @@ time {
     grid-template-rows: minmax(0, 1fr);
   }
 
+  /* The end padding is named so the page body below can take it over. */
   .shell:has(.viewport-page) .shell__content {
+    --ob-content-pad-end: 2rem;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    padding-right: var(--ob-content-pad-end);
     padding-bottom: 1rem;
   }
 
@@ -441,11 +444,16 @@ time {
   }
 
   /* Only as tall as its content, shrinking to scroll when space runs out, so
-     a short list keeps its pagination right underneath. */
+     a short list keeps its pagination right underneath. It takes over the
+     shell's end padding, which puts its scrollbar at the window edge: an
+     overlay scrollbar, which takes no width, then covers that padding rather
+     than the text at the end of a row. */
   .viewport-page__body {
     flex: 0 1 auto;
     min-height: 0;
     overflow: auto;
+    margin-right: calc(-1 * var(--ob-content-pad-end));
+    padding-right: var(--ob-content-pad-end);
   }
 
   /* Keeps a focused row from scrolling in under the sticky table header. */

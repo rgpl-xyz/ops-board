@@ -9,7 +9,9 @@
   .layout {
     /* Both columns share the available width; forms keep a readable measure. */
     grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr);
-    grid-template-rows: min-content min-content 1fr auto;
+    /* Spare height goes to the last row, so the written update follows the
+       record directly and only the timeline runs on below it. */
+    grid-template-rows: min-content min-content auto 1fr;
     grid-template-areas:
       'summary lifecycle'
       'summary responders'
@@ -96,24 +98,14 @@
   gap: 0.6rem;
 }
 
-.responders {
-  list-style: none;
-  margin: 0.25rem 0 0;
-  padding: 0;
+/* A dragged text box stops at a sensible length, and sooner where the page
+   would start to scroll: obResizeToFit sets --ob-resize-max for each drag. */
+#edit-description {
+  max-height: min(var(--ob-resize-max, 100vh), calc(12lh + 0.8rem + 2px));
 }
 
-.responders li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--ob-rule);
-  font-size: 0.92rem;
-}
-
-.responders li:last-child {
-  border-bottom: 0;
+#update-body {
+  max-height: min(var(--ob-resize-max, 100vh), calc(8lh + 0.8rem + 2px));
 }
 
 .timeline {
@@ -186,4 +178,36 @@
 /* The byline is already small mono; its timestamp should not shrink again. */
 .entry__byline time {
   font-size: inherit;
+}
+
+/* With the page fitted to the viewport, the timeline runs to the bottom of the
+   body and scrolls in place instead of lengthening the page. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .viewport-page__body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .layout {
+    flex: 1 0 auto;
+  }
+
+  .area-timeline {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  /* Size containment keeps the entries out of the row heights: the list takes
+     the height the other sections leave and scrolls the rest. */
+  .timeline {
+    flex: 1 1 0;
+    min-height: 12rem;
+    contain: size;
+    overflow-y: auto;
+    /* Room for the entry dots, and for an overlay scrollbar beside the text. */
+    margin-left: -0.25rem;
+    padding: 0 1rem 0 0.25rem;
+  }
 }

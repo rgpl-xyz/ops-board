@@ -234,6 +234,43 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
         Assert.Equal(before, await TimelineCountAsync(client, id));
     }
 
+    [Fact]
+    public async Task The_timeline_lists_the_newest_entry_first_across_pages()
+    {
+        var client = await ClientAsync();
+        var services = await client.GetFromJsonAsync<JsonElement>("/api/services?pageSize=1&sort=name", JsonOptions);
+        var created = await client.PostAsJsonAsync("/api/incidents", new
+        {
+            title = $"Timeline order {Guid.NewGuid():N}",
+            description = "Arranged for timeline order coverage.",
+            serviceId = services.GetProperty("items")[0].GetProperty("id").GetGuid(),
+            severity = "Low"
+        }, JsonOptions);
+        created.EnsureSuccessStatusCode();
+        var incident = await created.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        var id = incident.GetProperty("id").GetGuid();
+        foreach (var body in new[] { "First update", "Second update", "Third update" })
+        {
+            var posted = await client.PostAsJsonAsync($"/api/incidents/{id}/updates", new
+            {
+                body,
+                expectedLifecycleVersion = incident.GetProperty("lifecycleVersion").GetString()
+            }, JsonOptions);
+            posted.EnsureSuccessStatusCode();
+        }
+
+        var first = await client.GetFromJsonAsync<JsonElement>(
+            $"/api/incidents/{id}/timeline?page=1&pageSize=2",
+            JsonOptions);
+        var second = await client.GetFromJsonAsync<JsonElement>(
+            $"/api/incidents/{id}/timeline?page=2&pageSize=2",
+            JsonOptions);
+
+        Assert.Equal(new string?[] { "Third update", "Second update" }, Bodies(first));
+        Assert.Equal(new string?[] { "First update", null }, Bodies(second));
+        Assert.Equal("IncidentCreated", second.GetProperty("items")[1].GetProperty("type").GetString());
+    }
+
     [Theory]
     [InlineData(0, HttpStatusCode.BadRequest)]
     [InlineData(101, HttpStatusCode.BadRequest)]
@@ -357,6 +394,11 @@ public sealed class QueryEdgeTests(PostgresFixture fixture)
     private static List<Guid> Ids(JsonElement page) =>
         page.GetProperty("items").EnumerateArray()
             .Select(item => item.GetProperty("id").GetGuid())
+            .ToList();
+
+    private static List<string?> Bodies(JsonElement page) =>
+        page.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("body").GetString())
             .ToList();
 
     private static async Task<JsonElement> ActiveIncidentAsync(HttpClient client)
