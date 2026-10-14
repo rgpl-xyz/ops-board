@@ -308,42 +308,109 @@
           </section>
         }
 
-        <section class="section area-timeline" aria-labelledby="tl-h">
-          <h2 id="tl-h" class="section__title">Timeline</h2>
-          @if (timeline.isPending()) {
-            <ob-callout variant="loading">Loading timeline…</ob-callout>
-          } @else if (timeline.isError()) {
-            <ob-callout variant="error" semantic="alert">Could not load timeline.</ob-callout>
-          } @else if ((timeline.data()?.items.length ?? 0) === 0) {
-            <ob-callout variant="empty">No timeline entries.</ob-callout>
+        <section
+          class="section area-timeline"
+          [attr.aria-labelledby]="assistantEnabled() ? 'activity-h' : 'tl-h'"
+        >
+          @if (assistantEnabled()) {
+            <h2 id="activity-h" class="visually-hidden">
+              Timeline and {{ assistantSimulated() ? 'simulated brief' : 'AI brief' }}
+            </h2>
+            <div
+              class="activity-tabs"
+              role="tablist"
+              aria-labelledby="activity-h"
+              (keydown)="onActivityTabKeydown($event)"
+            >
+              <button
+                #activityTabButton
+                type="button"
+                role="tab"
+                id="tl-h"
+                aria-controls="tl-panel"
+                [attr.aria-selected]="activityTab() === 'timeline'"
+                [attr.tabindex]="activityTab() === 'timeline' ? 0 : -1"
+                (click)="selectActivityTab('timeline')"
+              >
+                Timeline
+              </button>
+              <button
+                #activityTabButton
+                type="button"
+                role="tab"
+                id="assistant-tab"
+                aria-controls="assistant-panel"
+                [attr.aria-selected]="activityTab() === 'assistant'"
+                [attr.tabindex]="activityTab() === 'assistant' ? 0 : -1"
+                (click)="selectActivityTab('assistant')"
+              >
+                {{ assistantSimulated() ? 'Brief (simulated)' : 'AI brief' }}
+              </button>
+            </div>
+            <div
+              id="tl-panel"
+              class="activity-panel"
+              role="tabpanel"
+              aria-labelledby="tl-h"
+              [hidden]="activityTab() !== 'timeline'"
+            >
+              <ng-container [ngTemplateOutlet]="timelineContent" />
+            </div>
+            <!-- Hidden rather than removed, so a brief survives a look at the timeline. -->
+            <div
+              id="assistant-panel"
+              class="activity-panel activity-panel--assistant"
+              role="tabpanel"
+              aria-labelledby="assistant-tab"
+              [hidden]="activityTab() !== 'assistant'"
+            >
+              <ob-incident-assistant
+                [incident]="incident"
+                [timelineCount]="timeline.data()?.totalCount ?? null"
+                [simulated]="assistantSimulated()"
+              />
+            </div>
           } @else {
-            <!-- Focusable so a keyboard can scroll it when it runs past its height. -->
-            <ol #timelineList class="timeline" tabindex="0" aria-labelledby="tl-h">
-              @for (entry of timeline.data()!.items; track entry.id) {
-                <li>
-                  @if (entry.kind === 'writtenUpdate') {
-                    <div class="kind kind--written">Written update</div>
-                  } @else {
-                    <div class="kind">{{ entry.type | obHumanize }}</div>
-                  }
-                  <div class="entry__byline">
-                    <strong>{{ entry.actorDisplayName }}</strong>
-                    <time class="muted" [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | obTimestamp }}</time>
-                  </div>
-                  @if (entry.body) {
-                    <p class="entry__body">{{ entry.body }}</p>
-                  }
-                </li>
-              }
-            </ol>
-            <ob-pagination
-              [page]="timeline.data()!.page"
-              [totalPages]="timeline.data()!.totalPages"
-              [totalCount]="timeline.data()!.totalCount"
-              (previous)="onTimelinePage(-1)"
-              (next)="onTimelinePage(1)"
-            />
+            <h2 id="tl-h" class="section__title">Timeline</h2>
+            <ng-container [ngTemplateOutlet]="timelineContent" />
           }
+
+          <ng-template #timelineContent>
+            @if (timeline.isPending()) {
+              <ob-callout variant="loading">Loading timeline…</ob-callout>
+            } @else if (timeline.isError()) {
+              <ob-callout variant="error" semantic="alert">Could not load timeline.</ob-callout>
+            } @else if ((timeline.data()?.items.length ?? 0) === 0) {
+              <ob-callout variant="empty">No timeline entries.</ob-callout>
+            } @else {
+              <!-- Focusable so a keyboard can scroll it when it runs past its height. -->
+              <ol #timelineList class="timeline" tabindex="0" aria-labelledby="tl-h">
+                @for (entry of timeline.data()!.items; track entry.id) {
+                  <li>
+                    @if (entry.kind === 'writtenUpdate') {
+                      <div class="kind kind--written">Written update</div>
+                    } @else {
+                      <div class="kind">{{ entry.type | obHumanize }}</div>
+                    }
+                    <div class="entry__byline">
+                      <strong>{{ entry.actorDisplayName }}</strong>
+                      <time class="muted" [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | obTimestamp }}</time>
+                    </div>
+                    @if (entry.body) {
+                      <p class="entry__body">{{ entry.body }}</p>
+                    }
+                  </li>
+                }
+              </ol>
+              <ob-pagination
+                [page]="timeline.data()!.page"
+                [totalPages]="timeline.data()!.totalPages"
+                [totalCount]="timeline.data()!.totalCount"
+                (previous)="onTimelinePage(-1)"
+                (next)="onTimelinePage(1)"
+              />
+            }
+          </ng-template>
         </section>
       </div>
     </div>

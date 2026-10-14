@@ -1,0 +1,112 @@
+<!-- Announces outcomes without moving focus. -->
+<p class="visually-hidden" role="status">{{ announcement() }}</p>
+
+@if (briefMut.isPending()) {
+  <div class="pending">
+    <p class="pending__text">
+      @if (simulated()) {
+        Writing the brief…
+      } @else {
+        Writing the brief… This can take a few seconds.
+      }
+    </p>
+    <button #cancelButton type="button" class="btn" (click)="cancel()">Cancel</button>
+  </div>
+} @else if (!brief() && !failure()) {
+  <p class="intro">
+    @if (simulated()) {
+      No AI model is connected here, so the brief is assembled from this incident's
+      record and timeline by fixed rules. It cites the records it uses, so each
+      statement can be checked.
+    } @else {
+      Get a short summary of this incident from its record and timeline. The brief
+      cites the records it uses, so each statement can be checked.
+    }
+  </p>
+  <button #startButton type="button" class="btn btn--primary" (click)="summarize()">
+    Summarize incident
+  </button>
+}
+
+@if (failureView(); as view) {
+  <div #failureElement class="failure" tabindex="-1">
+    <ob-callout variant="error" semantic="alert">
+      {{ view.message }}
+      @if (view.retry && !briefMut.isPending()) {
+        <div class="actions">
+          <button #retryButton type="button" class="btn" (click)="summarize()">Try again</button>
+        </div>
+      }
+    </ob-callout>
+  </div>
+}
+
+@if (brief(); as b) {
+  <article #briefElement class="brief" tabindex="-1" aria-labelledby="assistant-brief-label">
+    <p id="assistant-brief-label" class="brief__label">
+      {{ label() }} ·
+      <time [attr.datetime]="b.generatedAt">{{ b.generatedAt | obTimestamp: true }}</time>
+    </p>
+
+    @if (stale()) {
+      <ob-callout variant="info">
+        The incident has changed since this brief was written.
+        <button
+          type="button"
+          class="link-button"
+          [disabled]="briefMut.isPending()"
+          (click)="summarize()"
+        >
+          Regenerate
+        </button>
+      </ob-callout>
+    }
+    @if (b.omittedTimelineEntries > 0) {
+      <p class="brief__note">
+        The {{ b.omittedTimelineEntries }} oldest timeline entries were left out to keep the brief short.
+      </p>
+    }
+
+    @for (section of sections(); track section.title) {
+      <h3>{{ section.title }}</h3>
+      @if (section.suggestions) {
+        <p class="brief__hint">Suggestions, not facts</p>
+      }
+      @if (section.statements.length === 0) {
+        <p class="brief__none">None noted.</p>
+      } @else {
+        <ul>
+          @for (statement of section.statements; track $index) {
+            <li>
+              {{ statement.text }}
+              @for (ref of statement.refs; track ref) {
+                @if (sources().get(ref); as source) {
+                  <ob-hover-card
+                    class="ref"
+                    [label]="ref"
+                    [heading]="'Source ' + ref"
+                    [ariaLabel]="sourceName(source)"
+                  >
+                    <p class="source__what">
+                      {{ source.label }}@if (source.actor) {<span> · {{ source.actor }}</span>}
+                    </p>
+                    <p class="source__when">
+                      <time [attr.datetime]="source.occurredAt">{{ source.occurredAt | obTimestamp: true }}</time>
+                    </p>
+                    @if (source.detail) {
+                      <p class="source__detail">{{ source.detail }}</p>
+                    }
+                  </ob-hover-card>
+                }
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    <div class="actions brief__actions">
+      <button type="button" class="btn" (click)="copy()">Copy brief</button>
+    </div>
+  </article>
+}

@@ -69,6 +69,7 @@ OpsBoard/
 - [Accessibility](docs/accessibility.md): the contracts the application keeps and which are verified
 - [Brand integration](docs/brand.md): approved RGPL assets, product naming and favicon/PWA packaging
 - [Deployment](docs/deployment.md): what changes outside the demonstration stack
+- [AI assistance](docs/ai-assistance.md): the incident brief, what keeps it grounded and safe, and its limits
 - Decision records: [server state](docs/adr/0001-server-state-ownership.md), [client state](docs/adr/0002-client-state-ownership.md), [realtime orchestration](docs/adr/0003-realtime-orchestration.md)
 
 ## What works today

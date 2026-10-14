@@ -1,0 +1,161 @@
+using OpsBoard.Application.Assistant;
+using OpsBoard.Application.Errors;
+using OpsBoard.Domain.Enums;
+
+namespace OpsBoard.UnitTests.Application;
+
+/// Provider calls are the scarce resource: free tiers allow a few dozen a day.
+public sealed class AssistantLimitsTests
+{
+    [Fact]
+    public async Task Unchanged_inputs_are_answered_from_cache_without_calling_the_model()
+    {
+        var harness = new AssistantHarness();
+
+        var first = await harness.GenerateAsync();
+        var second = await harness.GenerateAsync();
+
+        Assert.Single(harness.Model.Requests);
+        Assert.False(first.FromCache);
+        Assert.True(second.FromCache);
+        Assert.Equal(first.WhatHappened.Select(s => s.Text), second.WhatHappened.Select(s => s.Text));
+        Assert.Equal(first.GeneratedAt, second.GeneratedAt);
+    }
+
+    [Fact]
+    public async Task A_new_timeline_entry_or_revision_makes_the_next_brief_fresh()
+    {
+        var harness = new AssistantHarness();
+        await harness.GenerateAsync();
+
+        harness.Timeline.Add(AssistantHarness.Entry(3, TimelineEntryType.WrittenUpdate, "Rolled back the 09:40 deploy."));
+        await harness.GenerateAsync();
+        harness.Incident = harness.Incident! with { Severity = IncidentSeverity.Critical, Version = "4" };
+        await harness.GenerateAsync();
+
+        Assert.Equal(3, harness.Model.Requests.Count);
+    }
+
+    [Fact]
+    public async Task A_cached_brief_is_still_refused_once_the_incident_is_out_of_reach()
+    {
+        var harness = new AssistantHarness();
+        await harness.GenerateAsync();
+
+        harness.Incident = null;
+
+        await Assert.ThrowsAsync<UnavailableException>(harness.GenerateAsync);
+    }
+
+    [Fact]
+    public async Task The_daily_limit_stops_provider_calls_until_midnight_utc_but_not_cached_answers()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { DailyRequestLimit = 2 };
+        harness.Clock.UtcNow = DateTimeOffset.Parse("2026-10-01T22:30:00Z");
+
+        await harness.GenerateAsync();
+        harness.Timeline.Add(AssistantHarness.Entry(3, TimelineEntryType.WrittenUpdate, "Second change."));
+        await harness.GenerateAsync();
+        var cached = await harness.GenerateAsync();
+        harness.Timeline.Add(AssistantHarness.Entry(4, TimelineEntryType.WrittenUpdate, "Third change."));
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(harness.GenerateAsync);
+
+        Assert.True(cached.FromCache);
+        Assert.Equal(AssistantFailure.DailyLimitReached, error.Failure);
+        Assert.Equal(TimeSpan.FromMinutes(90), error.RetryAfter);
+        Assert.Equal(2, harness.Model.Requests.Count);
+
+        harness.Clock.UtcNow = DateTimeOffset.Parse("2026-10-02T00:00:01Z");
+        var nextDay = await harness.GenerateAsync();
+        Assert.False(nextDay.FromCache);
+        Assert.Equal(3, harness.Model.Requests.Count);
+    }
+
+    [Fact]
+    public async Task Requests_beyond_the_concurrency_limit_are_turned_away_at_once()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { MaxConcurrentRequests = 1 };
+        var release = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Model.Answer = (_, _) => release.Task;
+
+        var first = harness.GenerateAsync();
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(harness.GenerateAsync);
+        release.SetResult(AssistantHarness.Reply());
+        await first;
+
+        Assert.Equal(AssistantFailure.Busy, error.Failure);
+        Assert.NotNull(error.RetryAfter);
+        Assert.Single(harness.Model.Requests);
+    }
+
+    [Fact]
+    public async Task A_failed_call_gives_back_its_concurrency_slot()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { MaxConcurrentRequests = 1 };
+        harness.Model.FailWith(new InferenceFailedException(InferenceFailure.Unavailable, "502 from provider"));
+        await Assert.ThrowsAsync<AssistantUnavailableException>(harness.GenerateAsync);
+
+        harness.Model.AnswerWith(AssistantHarness.Reply());
+        var brief = await harness.GenerateAsync();
+
+        Assert.False(brief.FromCache);
+    }
+
+    public static TheoryData<InferenceFailure, AssistantFailure> ProviderFailures => new()
+    {
+        { InferenceFailure.RateLimited, AssistantFailure.Busy },
+        { InferenceFailure.Unavailable, AssistantFailure.ProviderUnavailable },
+        { InferenceFailure.TimedOut, AssistantFailure.ProviderUnavailable },
+        { InferenceFailure.InvalidResponse, AssistantFailure.UnverifiedResponse },
+    };
+
+    [Theory]
+    [MemberData(nameof(ProviderFailures))]
+    public async Task Provider_failures_become_failures_a_person_can_act_on(InferenceFailure failure, AssistantFailure expected)
+    {
+        var harness = new AssistantHarness();
+        harness.Model.FailWith(new InferenceFailedException(failure, "provider said no", TimeSpan.FromSeconds(20)));
+
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(harness.GenerateAsync);
+
+        Assert.Equal(expected, error.Failure);
+        if (failure == InferenceFailure.RateLimited)
+        {
+            Assert.Equal(TimeSpan.FromSeconds(20), error.RetryAfter);
+        }
+    }
+
+    [Fact]
+    public async Task A_model_that_never_answers_is_abandoned_at_the_request_timeout()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { RequestTimeout = TimeSpan.FromMilliseconds(50) };
+        harness.Model.Answer = async (_, token) =>
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            return "";
+        };
+
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(harness.GenerateAsync);
+
+        Assert.Equal(AssistantFailure.ProviderUnavailable, error.Failure);
+    }
+
+    [Fact]
+    public async Task A_caller_that_goes_away_cancels_the_call_without_reporting_a_provider_fault()
+    {
+        var harness = new AssistantHarness();
+        harness.Model.Answer = async (_, token) =>
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            return "";
+        };
+        using var caller = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => harness.Service.GenerateAsync(AssistantHarness.IncidentId, caller.Token));
+    }
+}

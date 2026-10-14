@@ -53,6 +53,9 @@ export const opsboardKeys = {
   all: ['opsboard'] as const,
   currentUser: () => [...opsboardKeys.all, 'current-user'] as const,
   organization: () => [...opsboardKeys.all, 'organization'] as const,
+  assistant: {
+    status: () => [...opsboardKeys.all, 'assistant', 'status'] as const,
+  },
   lookups: {
     all: () => [...opsboardKeys.all, 'lookups'] as const,
     teams: (q: ContinuationQuery) =>

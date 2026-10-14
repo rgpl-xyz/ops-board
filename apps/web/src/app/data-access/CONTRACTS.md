@@ -33,6 +33,8 @@ Sources:
 | POST | `/api/incidents/{id}/responders/leave` | `IncidentsApi.leave` → `ResponseMutationDto` |
 | POST | `/api/incidents/{id}/updates` | `IncidentsApi.addUpdate` → `ResponseMutationDto` |
 | GET | `/api/incidents/{id}/timeline` | `IncidentsApi.listTimeline` → `Page<TimelineEntryDto>` |
+| GET | `/api/assistant` | `AssistantApi.getStatus` → `AssistantStatusDto` |
+| POST | `/api/incidents/{id}/assistant/brief` | `AssistantApi.generateBrief` → `IncidentBriefDto` |
 
 Not represented by this client API layer: `/api/health`, dashboard, postmortem,
 and SignalR.
@@ -46,6 +48,7 @@ and SignalR.
 | `contracts/identity.ts` / `lookups.ts` | `Lookups/LookupDtos.cs` |
 | `contracts/services.ts` | `Services/ServiceDtos.cs` |
 | `contracts/incidents.ts` | `Incidents/IncidentDtos.cs` |
+| `contracts/assistant.ts` | `Assistant/IncidentBriefDtos.cs` |
 
 ## Notes
 

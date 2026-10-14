@@ -27,6 +27,13 @@ public static class ExceptionMapping
             problem.Extensions["errors"] = errors;
         }
 
+        if (exception is AssistantUnavailableException { RetryAfter: { } wait })
+        {
+            var seconds = (long)Math.Ceiling(Math.Max(1, wait.TotalSeconds));
+            httpContext.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            problem.Extensions["retryAfterSeconds"] = seconds;
+        }
+
         if (status < StatusCodes.Status500InternalServerError)
         {
             httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
@@ -79,8 +86,18 @@ public static class ExceptionMapping
             ConcurrencyConflictException e => (StatusCodes.Status409Conflict, e.Code, "Concurrency conflict", e.Message, null),
             PersistenceUnavailableException e => (StatusCodes.Status503ServiceUnavailable, e.Code, "Persistence unavailable", e.Message, null),
             PersistenceFailureException e => (StatusCodes.Status500InternalServerError, e.Code, "Persistence failure", e.Message, null),
+            AssistantUnavailableException e => (AssistantStatus(e.Failure), e.Code, "AI assistance unavailable", e.Message, null),
             _ => (StatusCodes.Status500InternalServerError, "persistence_failure", "Unexpected error", "The operation could not be completed.", null)
         };
+
+    /// Limits are the caller's to wait out (429); a provider that fails or
+    /// answers unusably is an upstream fault (503, 502), not this server's.
+    private static int AssistantStatus(AssistantFailure failure) => failure switch
+    {
+        AssistantFailure.DailyLimitReached or AssistantFailure.Busy => StatusCodes.Status429TooManyRequests,
+        AssistantFailure.UnverifiedResponse => StatusCodes.Status502BadGateway,
+        _ => StatusCodes.Status503ServiceUnavailable,
+    };
 
     private static string ToCamel(string name) =>
         string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];

@@ -175,6 +175,40 @@
   border-color: var(--ob-accent);
 }
 
+/* With AI assistance on, the history column holds two tabs styled like the
+   section titles they replace. */
+.activity-tabs {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ob-rule);
+}
+
+.activity-tabs [role='tab'] {
+  appearance: none;
+  margin-bottom: -1px;
+  padding: 0 0 0.4rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ob-muted);
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.activity-tabs [role='tab']:hover,
+.activity-tabs [role='tab'][aria-selected='true'] {
+  color: var(--ob-ink);
+}
+
+.activity-tabs [role='tab'][aria-selected='true'] {
+  border-bottom-color: var(--ob-accent);
+}
+
 /* The byline is already small mono; its timestamp should not shrink again. */
 .entry__byline time {
   font-size: inherit;
@@ -197,6 +231,23 @@
     display: flex;
     flex-direction: column;
     align-self: stretch;
+  }
+
+  /* A tab panel passes the column's height on to what it holds. */
+  .activity-panel:not([hidden]) {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* A brief longer than the column scrolls in place, like the timeline. */
+  .activity-panel--assistant:not([hidden]) {
+    display: block;
+    min-height: 12rem;
+    contain: size;
+    overflow-y: auto;
+    padding-right: 1rem;
   }
 
   /* Size containment keeps the entries out of the row heights: the list takes

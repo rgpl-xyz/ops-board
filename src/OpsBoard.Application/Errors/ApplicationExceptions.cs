@@ -92,3 +92,46 @@ public sealed class PersistenceUnavailableException : ApplicationException
     {
     }
 }
+
+public enum AssistantFailure
+{
+    Disabled,
+    DailyLimitReached,
+    Busy,
+    ProviderUnavailable,
+    UnverifiedResponse,
+}
+
+/// AI assistance could not answer. Each failure tells the caller what to do next.
+public sealed class AssistantUnavailableException : ApplicationException
+{
+    public AssistantUnavailableException(AssistantFailure failure, TimeSpan? retryAfter = null)
+        : base(CodeFor(failure), MessageFor(failure))
+    {
+        Failure = failure;
+        RetryAfter = retryAfter;
+    }
+
+    public AssistantFailure Failure { get; }
+
+    /// When trying again could succeed, if that is known.
+    public TimeSpan? RetryAfter { get; }
+
+    private static string CodeFor(AssistantFailure failure) => failure switch
+    {
+        AssistantFailure.Disabled => "assistant_disabled",
+        AssistantFailure.DailyLimitReached => "assistant_daily_limit",
+        AssistantFailure.Busy => "assistant_busy",
+        AssistantFailure.ProviderUnavailable => "assistant_provider_unavailable",
+        _ => "assistant_unverified_response",
+    };
+
+    private static string MessageFor(AssistantFailure failure) => failure switch
+    {
+        AssistantFailure.Disabled => "AI assistance is turned off for this environment.",
+        AssistantFailure.DailyLimitReached => "The daily limit for AI assistance has been reached. It resets at 00:00 UTC.",
+        AssistantFailure.Busy => "AI assistance is busy. Try again in a few seconds.",
+        AssistantFailure.ProviderUnavailable => "The AI provider is unavailable. Try again later.",
+        _ => "The AI response could not be checked against the incident's records, so it was not shown. Try again.",
+    };
+}

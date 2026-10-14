@@ -7,7 +7,12 @@ export type OpsBoardProblemCode =
   | 'responder_conflict'
   | 'concurrency_conflict'
   | 'persistence_failure'
-  | 'persistence_unavailable';
+  | 'persistence_unavailable'
+  | 'assistant_disabled'
+  | 'assistant_daily_limit'
+  | 'assistant_busy'
+  | 'assistant_provider_unavailable'
+  | 'assistant_unverified_response';
 
 export const OPSBOARD_PROBLEM_CODES = [
   'identity_unavailable',
@@ -19,6 +24,11 @@ export const OPSBOARD_PROBLEM_CODES = [
   'concurrency_conflict',
   'persistence_failure',
   'persistence_unavailable',
+  'assistant_disabled',
+  'assistant_daily_limit',
+  'assistant_busy',
+  'assistant_provider_unavailable',
+  'assistant_unverified_response',
 ] as const satisfies readonly OpsBoardProblemCode[];
 
 export interface OpsBoardProblem {
@@ -30,6 +40,8 @@ export interface OpsBoardProblem {
   type?: string;
   traceId?: string;
   errors?: Record<string, string[]>;
+  /** How long to wait before trying again, when the server knows. */
+  retryAfterSeconds?: number;
 }
 
 export function isKnownProblemCode(value: string): value is OpsBoardProblemCode {

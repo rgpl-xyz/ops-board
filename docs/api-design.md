@@ -15,6 +15,7 @@ Every application endpoint lives under `/api` and exchanges JSON. The web applic
 | Incident lifecycle | `PATCH /api/incidents/{id}/severity`, `PATCH /api/incidents/{id}/status`, `POST /api/incidents/{id}/resolve`, `POST /api/incidents/{id}/reopen` | Change severity and active status; resolve and reopen |
 | Responders | `GET /api/incidents/{id}/responders`, `POST …/responders/join`, `POST …/responders/leave` | Who is working an incident; the caller joining or leaving |
 | Timeline | `GET /api/incidents/{id}/timeline`, `POST /api/incidents/{id}/updates` | The incident's history; posting a written update |
+| AI assistance | `GET /api/assistant`, `POST /api/incidents/{id}/assistant/brief` | Whether it is on, and whether a model or the offline fake writes its briefs; an AI brief of one incident, which reads only and takes no body ([AI assistance](ai-assistance.md)) |
 
 `GET /api/health` sits outside this model. It reports that the process is up and the commit it was built from, with no identity and no database access, so it is suitable for a liveness probe. It says nothing about whether application requests will succeed.
 
@@ -107,6 +108,9 @@ Every error the application produces is a problem response in the RFC 9457 style
 | 409 | `responder_conflict` | Joining an incident the caller already works, or leaving one they do not |
 | 409 | `concurrency_conflict` | The record changed after the caller read it; see below |
 | 500 | `persistence_failure` | An unexpected server-side failure. Details stay in the logs and are never returned |
+| 429 | `assistant_daily_limit`, `assistant_busy` | AI assistance is out of today's allowance, or busy. `Retry-After` and `retryAfterSeconds` say how long to wait |
+| 502 | `assistant_unverified_response` | The model's reply failed the server's checks and was not shown |
+| 503 | `assistant_disabled`, `assistant_provider_unavailable` | AI assistance is turned off, or its provider failed or timed out |
 
 The four kinds of failure call for different client responses:
 

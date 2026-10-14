@@ -10,7 +10,9 @@ import {
   signal,
   untracked,
   viewChild,
+  viewChildren,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
@@ -26,6 +28,7 @@ import {
 import { map } from 'rxjs';
 
 import {
+  assistantStatusQuery,
   changeSeverityMutation,
   changeStatusMutation,
   currentUserQuery,
@@ -69,6 +72,7 @@ import {
   focusFormElement,
   type FormFieldRef,
 } from '../../../shared/a11y/form-focus';
+import { IncidentAssistantComponent } from '../ui/incident-assistant.component';
 import { ResponderListComponent } from '../ui/responder-list.component';
 import { ResizeToFitDirective } from '../../../shared/directives/resize-to-fit.directive';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
@@ -82,6 +86,10 @@ import { HumanizePipe } from '../../../shared/pipes/humanize.pipe';
 import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 type ConfirmKind = 'resolve' | 'reopen' | 'leave';
+
+/** The history column's tabs, in order, when AI assistance is on. */
+const ACTIVITY_TABS = ['timeline', 'assistant'] as const;
+type ActivityTab = (typeof ACTIVITY_TABS)[number];
 
 const EDIT_FIELDS: readonly FormFieldRef[] = [
   { name: 'title', id: 'edit-title', label: 'Title' },
@@ -101,6 +109,8 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
     CalloutComponent,
     ClampedTextComponent,
     ConfirmDialogComponent,
+    IncidentAssistantComponent,
+    NgTemplateOutlet,
     PageHeaderComponent,
     PaginationComponent,
     ResizeToFitDirective,
@@ -122,6 +132,8 @@ export class IncidentDetailPage {
   private readonly pageBody = viewChild<ElementRef<HTMLElement>>('pageBody');
   private readonly timelineList =
     viewChild<ElementRef<HTMLElement>>('timelineList');
+  private readonly activityTabButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>('activityTabButton');
 
   private readonly confirmDialog =
     viewChild.required<ConfirmDialogComponent>('lifecycleConfirm');
@@ -159,6 +171,7 @@ export class IncidentDetailPage {
   private readonly statusChosen = signal(false);
   protected readonly confirmKind = signal<ConfirmKind | null>(null);
   readonly updateBody = signal('');
+  protected readonly activityTab = signal<ActivityTab>('timeline');
 
   protected readonly severities = INCIDENT_SEVERITIES;
   protected readonly activeStatusOptions = ACTIVE_STATUS_OPTIONS;
@@ -266,6 +279,20 @@ export class IncidentDetailPage {
       }
     );
   });
+
+  private readonly assistantStatusOptions = runInInjectionContext(
+    this.injector,
+    () => assistantStatusQuery(),
+  );
+  protected readonly assistantStatus = injectQuery(() => this.assistantStatusOptions);
+  /** Off, failed or still loading all show the timeline alone, as before. */
+  protected readonly assistantEnabled = computed(
+    () => this.assistantStatus.data()?.enabled === true,
+  );
+  /** No model is connected, so the brief is not called an AI brief. */
+  protected readonly assistantSimulated = computed(
+    () => this.assistantStatus.data()?.simulated === true,
+  );
 
   protected readonly services = injectQuery(() => this.servicesOptions);
   protected readonly currentUser = injectQuery(() => this.currentUserOptions);
@@ -463,6 +490,29 @@ export class IncidentDetailPage {
 
   resetTimelinePage(): void {
     this.timelinePage.set(1);
+  }
+
+  protected selectActivityTab(tab: ActivityTab): void {
+    this.activityTab.set(tab);
+  }
+
+  /** Arrow keys, Home and End move between tabs and select as they go. */
+  protected onActivityTabKeydown(event: KeyboardEvent): void {
+    const current = ACTIVITY_TABS.indexOf(this.activityTab());
+    const last = ACTIVITY_TABS.length - 1;
+    const targets: Record<string, number> = {
+      ArrowRight: current === last ? 0 : current + 1,
+      ArrowLeft: current === 0 ? last : current - 1,
+      Home: 0,
+      End: last,
+    };
+    const next = targets[event.key];
+    if (next === undefined) {
+      return;
+    }
+    event.preventDefault();
+    this.activityTab.set(ACTIVITY_TABS[next]);
+    this.activityTabButtons()[next]?.nativeElement.focus();
   }
 
   dismissConflict(): void {

@@ -18,6 +18,12 @@ function readStatus(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+function readSeconds(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined;
+}
+
 function readErrors(value: unknown): Record<string, string[]> | undefined {
   if (!isRecord(value)) {
     return undefined;
@@ -84,5 +90,6 @@ export function parseProblem(input: unknown, fallbackStatus = 0): OpsBoardProble
     type: readString(body['type']),
     traceId: readString(body['traceId']),
     errors: readErrors(body['errors']),
+    retryAfterSeconds: readSeconds(body['retryAfterSeconds']),
   };
 }

@@ -62,6 +62,32 @@ const CODE_FIXTURES: Record<
     title: 'Persistence unavailable',
     detail: 'The data store is temporarily unavailable.',
   },
+  assistant_disabled: {
+    status: 503,
+    title: 'AI assistance unavailable',
+    detail: 'AI assistance is turned off for this environment.',
+  },
+  assistant_daily_limit: {
+    status: 429,
+    title: 'AI assistance unavailable',
+    detail: 'The daily limit for AI assistance has been reached. It resets at 00:00 UTC.',
+  },
+  assistant_busy: {
+    status: 429,
+    title: 'AI assistance unavailable',
+    detail: 'AI assistance is busy. Try again in a few seconds.',
+  },
+  assistant_provider_unavailable: {
+    status: 503,
+    title: 'AI assistance unavailable',
+    detail: 'The AI provider is unavailable. Try again later.',
+  },
+  assistant_unverified_response: {
+    status: 502,
+    title: 'AI assistance unavailable',
+    detail:
+      "The AI response could not be checked against the incident's records, so it was not shown. Try again.",
+  },
 };
 
 function goldenProblem(

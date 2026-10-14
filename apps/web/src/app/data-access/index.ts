@@ -5,6 +5,7 @@ export {
   FetchAllBoundedExceededError,
   fetchAllBounded,
 } from './http/fetch-all-bounded';
+export { AssistantApi } from './http/assistant.api';
 export { IdentityApi } from './http/identity.api';
 export { IncidentsApi } from './http/incidents.api';
 export { LookupsApi } from './http/lookups.api';
@@ -30,6 +31,12 @@ export {
   INCIDENT_STATUSES,
   SERVICE_HEALTHS,
 } from './contracts/enums';
+export type {
+  AssistantStatusDto,
+  BriefSourceDto,
+  BriefStatementDto,
+  IncidentBriefDto,
+} from './contracts/assistant';
 export type { CurrentUserDto, OrganizationDto } from './contracts/identity';
 export type {
   CreateIncidentRequest,
@@ -83,6 +90,11 @@ export {
   invalidateIncidentRespondersPrefix,
   invalidateIncidentTimelinePrefix,
 } from './query/cache-matrix';
+export {
+  assistantStatusQuery,
+  incidentBriefMutation,
+  type IncidentBriefVariables,
+} from './query/assistant.queries';
 export { currentUserQuery, organizationQuery } from './query/identity.queries';
 export { teamsQuery, usersQuery } from './query/lookups.queries';
 export { serviceQuery, servicesQuery } from './query/services.queries';

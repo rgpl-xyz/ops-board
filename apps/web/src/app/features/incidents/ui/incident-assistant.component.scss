@@ -1,0 +1,119 @@
+:host {
+  display: block;
+}
+
+.intro {
+  max-width: var(--ob-measure);
+  margin: 0 0 0.9rem;
+  color: var(--ob-ink-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Matches the loading callout used elsewhere on the page. */
+.pending__text {
+  margin: 0;
+  color: var(--ob-muted);
+  font-family: var(--ob-font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+}
+
+.brief:focus,
+.failure:focus {
+  outline: none;
+}
+
+.brief:focus-visible,
+.failure:focus-visible {
+  outline: 2px solid var(--ob-focus);
+  outline-offset: 4px;
+}
+
+/* Who wrote the text comes first, so nobody mistakes it for a record. */
+.brief__label {
+  margin: 0 0 0.75rem;
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+  color: var(--ob-muted);
+}
+
+.brief__note,
+.brief__none {
+  margin: 0 0 0.5rem;
+  color: var(--ob-muted);
+  font-size: 0.86rem;
+}
+
+.brief h3 {
+  margin: 1rem 0 0.35rem;
+  color: var(--ob-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.brief h3:first-of-type {
+  margin-top: 0.5rem;
+}
+
+.brief__hint {
+  margin: -0.2rem 0 0.35rem;
+  font-family: var(--ob-font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ob-muted);
+}
+
+.brief ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.brief li {
+  margin: 0.3rem 0;
+  color: var(--ob-ink-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.ref {
+  margin-left: 0.3rem;
+  font-family: var(--ob-font-mono);
+  font-size: 0.78rem;
+}
+
+.source__what,
+.source__when,
+.source__detail {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.source__when {
+  margin-top: 0.15rem;
+  color: var(--ob-muted);
+  font-family: var(--ob-font-mono);
+  font-size: 0.72rem;
+}
+
+/* A timeline update keeps its own line breaks. */
+.source__detail {
+  max-width: 30rem;
+  margin-top: 0.4rem;
+  color: var(--ob-ink-2);
+  white-space: pre-wrap;
+}
+
+.brief__actions {
+  margin-top: 1rem;
+}

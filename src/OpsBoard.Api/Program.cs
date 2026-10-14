@@ -6,6 +6,7 @@ using OpsBoard.Api.Endpoints;
 using OpsBoard.Api.Errors;
 using OpsBoard.Api.Realtime;
 using OpsBoard.Application;
+using OpsBoard.Application.Errors;
 using OpsBoard.Application.Realtime;
 using OpsBoard.Infrastructure;
 using OpsBoard.Infrastructure.Persistence.Seed;
@@ -86,8 +87,10 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
         }
     },
     // An answered client error is not a fault; only server failures are logged
-    // as errors, with their exception.
-    SuppressDiagnosticsCallback = context => ExceptionMapping.IsClientError(context.Exception),
+    // as errors, with their exception. An unavailable assistant is a handled
+    // condition the brief service has already logged.
+    SuppressDiagnosticsCallback = context =>
+        ExceptionMapping.IsClientError(context.Exception) || context.Exception is AssistantUnavailableException,
 });
 app.UseStatusCodePages();
 app.UseCors("Frontend");
@@ -105,6 +108,7 @@ app.MapGet("/api/health", () => Results.Ok(new
 .WithName("GetHealth");
 
 app.MapDomainEndpoints();
+app.MapAssistantEndpoints();
 app.MapHub<IncidentsHub>("/hubs/incidents");
 
 app.Run();

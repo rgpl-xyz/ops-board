@@ -33,6 +33,13 @@ Every setting the API needs can be supplied as an environment variable, so value
 | `ConnectionStrings__OpsBoard` | the PostgreSQL connection, used by the API and by the migration bundle |
 | `ASPNETCORE_ENVIRONMENT` | leave unset or `Production` |
 | `Cors__Origins__0` (and further indexes) | only if the frontend is served from a different origin; see below |
+| `Assistant__Enabled` | `true` turns on [AI assistance](ai-assistance.md); off when unset |
+| `Assistant__Provider__Kind` | required when enabled: `OpenAiCompatible`, or `Fake` for a simulated brief with no model |
+| `Assistant__Provider__BaseUrl`, `__Model`, `__Name` | the provider's OpenAI-compatible root (https), the model, and the name shown beside its text |
+| `Assistant__Provider__ApiKey` | the provider key, a secret; required for any provider not on loopback |
+| `Assistant__Provider__SupportsStrictSchema`, `__ReasoningEffort`, `__TimeoutSeconds` | provider capabilities and per-call timeout (default 20 s) |
+| `Assistant__DailyRequestLimit`, `__MaxConcurrentRequests`, `__RequestTimeoutSeconds` | limits; defaults 50 a day, 2 at once, 30 s |
+| `Assistant__Provider__InputUsdPerMillionTokens`, `__OutputUsdPerMillionTokens` | prices for the estimated-cost metric; default 0 |
 
 The `.env` file and the credentials in `.env.example` exist for local development and the demonstration stack. Real credentials never belong in either, and the images are built without any environment file inside them. If the database is reached over a network the platform does not already protect, configure encryption in the connection string. The demonstration stack's connection string also disables GSS encryption, which only avoids a harmless probe in the runtime image.
 

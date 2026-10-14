@@ -15,6 +15,7 @@ import { BehaviorSubject } from 'rxjs';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 import { asRevisionString, opsboardKeys } from '../../../data-access';
+import { AssistantApi } from '../../../data-access/http/assistant.api';
 import { IdentityApi } from '../../../data-access/http/identity.api';
 import { IncidentsApi } from '../../../data-access/http/incidents.api';
 import { ServicesApi } from '../../../data-access/http/services.api';
@@ -51,6 +52,7 @@ describe('IncidentDetailPage', () => {
   const leaveMock = vi.fn();
   const addUpdateMock = vi.fn();
   const getById = vi.fn();
+  const assistantStatus = vi.fn();
   let params$: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
@@ -64,6 +66,8 @@ describe('IncidentDetailPage', () => {
     addUpdateMock.mockReset();
     getById.mockReset();
     getById.mockResolvedValue(detailDto());
+    assistantStatus.mockReset();
+    assistantStatus.mockResolvedValue({ enabled: false, simulated: false });
 
     params$ = new BehaviorSubject(convertToParamMap({ id: 'i1' }));
 
@@ -177,6 +181,10 @@ describe('IncidentDetailPage', () => {
             }),
             getOrganization: async () => ({ id: 'o1', name: 'Acme' }),
           },
+        },
+        {
+          provide: AssistantApi,
+          useValue: { getStatus: assistantStatus, generateBrief: vi.fn() },
         },
       ],
     }).compileComponents();
@@ -848,5 +856,103 @@ describe('IncidentDetailPage', () => {
 
     fixture.destroy();
     fixture.nativeElement.remove();
+  });
+
+  describe('with AI assistance', () => {
+    function tabs(root: HTMLElement): HTMLButtonElement[] {
+      return [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    }
+
+    function panel(root: HTMLElement, tab: HTMLButtonElement): HTMLElement {
+      return root.querySelector(`#${tab.getAttribute('aria-controls')}`) as HTMLElement;
+    }
+
+    it('shows the timeline alone while AI assistance is off', async () => {
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(root.querySelector('[role="tablist"]')).toBeNull();
+      expect(root.querySelector('#tl-h')?.tagName).toBe('H2');
+      expect(root.querySelector('ob-incident-assistant')).toBeNull();
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
+
+    it('offers the timeline and an AI brief as tabs, the timeline first', async () => {
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: false });
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'AI brief']);
+      });
+      const [timeline, brief] = tabs(root);
+
+      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and AI brief');
+      expect(timeline.getAttribute('aria-selected')).toBe('true');
+      expect(panel(root, timeline).hidden).toBe(false);
+      expect(panel(root, brief).hidden).toBe(true);
+      expect(panel(root, timeline).textContent).toContain('Investigating authz path');
+
+      brief.click();
+      fixture.detectChanges();
+
+      expect(brief.getAttribute('aria-selected')).toBe('true');
+      expect(timeline.getAttribute('tabindex')).toBe('-1');
+      expect(panel(root, timeline).hidden).toBe(true);
+      expect(panel(root, brief).textContent).toContain('Summarize incident');
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
+
+    it('names the brief tab as simulated when no AI model is connected', async () => {
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: true });
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'Brief (simulated)']);
+      });
+
+      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and simulated brief');
+      expect(panel(root, tabs(root)[1]).textContent).toContain('No AI model is connected here');
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
+
+    it('moves between the tabs with the arrow, Home and End keys', async () => {
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: false });
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(tabs(root)).toHaveLength(2);
+      });
+      const [timeline, brief] = tabs(root);
+      const press = (key: string) => {
+        (document.activeElement as HTMLElement).dispatchEvent(
+          new KeyboardEvent('keydown', { key, bubbles: true }),
+        );
+        fixture.detectChanges();
+      };
+
+      timeline.focus();
+      press('ArrowRight');
+      expect(document.activeElement).toBe(brief);
+      expect(brief.getAttribute('aria-selected')).toBe('true');
+      press('ArrowRight');
+      expect(document.activeElement).toBe(timeline);
+      press('End');
+      expect(document.activeElement).toBe(brief);
+      press('Home');
+      expect(document.activeElement).toBe(timeline);
+      expect(timeline.getAttribute('aria-selected')).toBe('true');
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
   });
 });

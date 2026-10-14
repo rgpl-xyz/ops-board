@@ -6,6 +6,7 @@ using OpsBoard.Application.Incidents;
 using OpsBoard.Application.Lookups;
 using OpsBoard.Application.Realtime;
 using OpsBoard.Application.Services;
+using OpsBoard.Infrastructure.Assistant;
 using OpsBoard.Infrastructure.Identity;
 using OpsBoard.Infrastructure.Incidents;
 using OpsBoard.Infrastructure.Lookups;
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IncidentService>();
         services.AddScoped<IncidentResponseService>();
         services.AddScoped<DemoSeedRunner>();
+        services.AddAssistant(configuration);
 
         return services;
     }
