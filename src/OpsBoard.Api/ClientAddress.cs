@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.AspNetCore.HttpOverrides;
+using OpsBoard.Application.Assistant;
 
 namespace OpsBoard.Api;
 
@@ -41,6 +42,22 @@ public static class ClientAddress
             }
         });
         return services;
+    }
+
+    /// Outside Development the API normally sits behind a proxy. Without a
+    /// trusted proxy network every visitor looks like that proxy, so all share
+    /// one per-visitor allowance; nothing fails, so the log has to say it.
+    public static void WarnIfNoProxyIsTrusted(this WebApplication app)
+    {
+        if (app.Services.GetRequiredService<AssistantSettings>().Enabled
+            && !app.Environment.IsDevelopment()
+            && string.IsNullOrWhiteSpace(app.Configuration["ForwardedHeaders:KnownNetworks"]))
+        {
+            app.Logger.LogWarning(
+                "AI assistance is on, but ForwardedHeaders:KnownNetworks is not set. Behind a proxy, every visitor "
+                + "then shares one allowance of new briefs. Set it, and ForwardedHeaders:ForwardLimit, to match the "
+                + "proxies; see Client addresses in docs/deployment.md.");
+        }
     }
 
     /// One key per address. An IPv6 visitor usually holds a whole /64, so the

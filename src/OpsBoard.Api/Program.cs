@@ -78,6 +78,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.WarnIfNoProxyIsTrusted();
 // First, so everything after it sees the visitor rather than the proxy.
 app.UseForwardedHeaders();
 app.UseExceptionHandler(new ExceptionHandlerOptions
