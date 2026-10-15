@@ -20,6 +20,7 @@ const accepted: readonly AcceptedViolation[] = JSON.parse(
 ) as AcceptedViolation[];
 
 export async function expectAccessible(page: Page, state: string): Promise<void> {
+  await animationsSettled(page);
   const results = await new AxeBuilder({ page }).analyze();
 
   const unaccepted = results.violations.filter(
@@ -39,4 +40,18 @@ export async function expectAccessible(page: Page, state: string): Promise<void>
       targets: violation.nodes.map((node) => node.target.join(' ')),
     })),
   ).toEqual([]);
+}
+
+/**
+ * Route content fades in from transparent, and a heading counts as visible
+ * from the first frame, so axe would otherwise measure contrast through the
+ * fade. Endless animations, such as loading placeholders, are not waited for.
+ */
+async function animationsSettled(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const finite = document
+      .getAnimations()
+      .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity);
+    await Promise.all(finite.map((animation) => animation.finished.catch(() => undefined)));
+  });
 }
