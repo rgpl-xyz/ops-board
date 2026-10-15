@@ -9,7 +9,7 @@ namespace OpsBoard.Application.Assistant;
 public static class IncidentBriefPrompt
 {
     /// Part of the cache key: changing the instructions or contract changes it.
-    public const string Version = "incident-brief/1";
+    public const string Version = "incident-brief/2";
 
     public const string SchemaName = "incident_brief";
 
@@ -40,7 +40,7 @@ public static class IncidentBriefPrompt
         Rules:
         - Use only the incident data. Do not invent events, times, causes, people or numbers.
         - Each statement in whatHappened and currentState is a fact and must cite at least one reference that supports it: "I" for the incident record, "T1", "T2" and so on for timeline entries.
-        - whatHappened: the key events, in time order.
+        - whatHappened: the key events, in time order. If there are more than 6, combine routine ones, such as responders joining, so the latest events still fit.
         - currentState: the status, severity and what is happening now.
         - openQuestions: what the data does not answer, such as an unknown cause or unclear impact. Say plainly that it is unknown rather than guessing. If updates contradict each other, say so here and cite both.
         - suggestedChecks: practical next checks for the responders. These are suggestions, not facts.
@@ -50,8 +50,9 @@ public static class IncidentBriefPrompt
         - Reply with JSON only, matching the schema.
         """;
 
-    /// The response contract. Valid references are listed as an enum, so a
-    /// provider that enforces schemas cannot even produce an unknown one.
+    /// The response contract. Valid references are listed as an enum and the
+    /// limits as maxItems, so a provider that enforces schemas cannot even
+    /// produce an unknown reference or an overlong section.
     public static string BuildSchema(IEnumerable<string> validRefs)
     {
         var refs = new JsonArray(validRefs.Select(r => (JsonNode)JsonValue.Create(r)!).ToArray());
@@ -61,6 +62,7 @@ public static class IncidentBriefPrompt
             properties[section] = new JsonObject
             {
                 ["type"] = "array",
+                ["maxItems"] = MaxStatementsPerSection,
                 ["items"] = new JsonObject
                 {
                     ["type"] = "object",
@@ -72,6 +74,7 @@ public static class IncidentBriefPrompt
                         ["refs"] = new JsonObject
                         {
                             ["type"] = "array",
+                            ["maxItems"] = MaxRefsPerStatement,
                             ["items"] = new JsonObject { ["type"] = "string", ["enum"] = refs.DeepClone() },
                         },
                     },

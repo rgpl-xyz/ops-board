@@ -12,7 +12,7 @@ The feature is off unless configuration turns it on. With it off, the page shows
 
 1. The server checks the caller's identity and read access, then reads the incident and its newest timeline entries through the same organization-scoped queries as the rest of the API.
 2. It turns them into a bounded data document. Long text is shortened and older entries are left out to stay within about 13,000 characters (roughly 4,000 tokens with the instructions). The document says what was left out.
-3. It sends fixed instructions, the data as a separate message, and a JSON schema to one provider call. The schema lists the only valid citations.
+3. It sends fixed instructions, the data as a separate message, and a JSON schema to one provider call. The schema lists the only valid citations and the most statements each part may have.
 4. It checks the reply: exactly the four sections, plain statements of bounded length, facts that cite at least one source, and only citations it actually sent. A reply that breaks any rule is refused, not repaired.
 5. It describes each cited record itself, from stored data, and returns the brief.
 

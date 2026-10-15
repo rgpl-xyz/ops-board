@@ -124,6 +124,23 @@ public sealed class IncidentBriefServiceTests
     }
 
     [Fact]
+    public async Task The_schema_holds_the_statement_and_reference_limits_so_a_strict_provider_keeps_to_them()
+    {
+        var harness = new AssistantHarness();
+
+        await harness.GenerateAsync();
+
+        using var schema = JsonDocument.Parse(Assert.Single(harness.Model.Requests).JsonSchema);
+        foreach (var section in IncidentBriefPrompt.Sections)
+        {
+            var statements = schema.RootElement.GetProperty("properties").GetProperty(section);
+            Assert.Equal(IncidentBriefPrompt.MaxStatementsPerSection, statements.GetProperty("maxItems").GetInt32());
+            var refs = statements.GetProperty("items").GetProperty("properties").GetProperty("refs");
+            Assert.Equal(IncidentBriefPrompt.MaxRefsPerStatement, refs.GetProperty("maxItems").GetInt32());
+        }
+    }
+
+    [Fact]
     public async Task An_oversized_incident_is_cut_to_a_fixed_budget_keeping_the_newest_entries()
     {
         var harness = new AssistantHarness { Incident = AssistantHarness.NewIncident(new string('d', 10_000)) };
