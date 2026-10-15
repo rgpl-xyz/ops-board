@@ -94,7 +94,8 @@ public static class ExceptionMapping
     /// answers unusably is an upstream fault (503, 502), not this server's.
     private static int AssistantStatus(AssistantFailure failure) => failure switch
     {
-        AssistantFailure.DailyLimitReached or AssistantFailure.Busy => StatusCodes.Status429TooManyRequests,
+        AssistantFailure.DailyLimitReached or AssistantFailure.VisitorLimitReached or AssistantFailure.Busy
+            => StatusCodes.Status429TooManyRequests,
         AssistantFailure.UnverifiedResponse => StatusCodes.Status502BadGateway,
         _ => StatusCodes.Status503ServiceUnavailable,
     };

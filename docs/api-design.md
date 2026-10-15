@@ -108,7 +108,7 @@ Every error the application produces is a problem response in the RFC 9457 style
 | 409 | `responder_conflict` | Joining an incident the caller already works, or leaving one they do not |
 | 409 | `concurrency_conflict` | The record changed after the caller read it; see below |
 | 500 | `persistence_failure` | An unexpected server-side failure. Details stay in the logs and are never returned |
-| 429 | `assistant_daily_limit`, `assistant_busy` | AI assistance is out of today's allowance, or busy. `Retry-After` and `retryAfterSeconds` say how long to wait |
+| 429 | `assistant_daily_limit`, `assistant_visitor_limit`, `assistant_busy` | AI assistance is out of today's allowance, this visitor has started too many new briefs recently, or it is busy. `Retry-After` and `retryAfterSeconds` say how long to wait |
 | 502 | `assistant_unverified_response` | The model's reply failed the server's checks and was not shown |
 | 503 | `assistant_disabled`, `assistant_provider_unavailable` | AI assistance is turned off, or its provider failed or timed out |
 

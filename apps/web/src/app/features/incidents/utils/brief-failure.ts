@@ -21,6 +21,11 @@ export function describeBriefFailure(problem: OpsBoardProblem): BriefFailureView
         retry: false,
       };
     }
+    case 'assistant_visitor_limit':
+      return {
+        message: `You've asked for several new briefs in a short time. Try again in about ${aboutWait(problem.retryAfterSeconds ?? 600)}.`,
+        retry: true,
+      };
     case 'assistant_busy':
       return {
         message: `AI assistance is busy. Try again in ${aboutWait(problem.retryAfterSeconds ?? 5)}.`,

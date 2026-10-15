@@ -72,6 +72,11 @@ const CODE_FIXTURES: Record<
     title: 'AI assistance unavailable',
     detail: 'The daily limit for AI assistance has been reached. It resets at 00:00 UTC.',
   },
+  assistant_visitor_limit: {
+    status: 429,
+    title: 'AI assistance unavailable',
+    detail: 'You have started several new briefs in a short time. Try again in a few minutes.',
+  },
   assistant_busy: {
     status: 429,
     title: 'AI assistance unavailable',

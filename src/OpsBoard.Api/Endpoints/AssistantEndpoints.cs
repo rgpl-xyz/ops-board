@@ -11,9 +11,11 @@ public static class AssistantEndpoints
 
         // POST: it spends provider allowance, so it must not be prefetched or
         // replayed like a read. It takes no body: the incident comes from the
-        // route and everything else from the server.
-        app.MapPost("/api/incidents/{id:guid}/assistant/brief", async (Guid id, IncidentBriefService briefs, CancellationToken ct) =>
-            Results.Ok(await briefs.GenerateAsync(id, ct)));
+        // route, the visitor from the connection, and everything else from the server.
+        app.MapPost(
+            "/api/incidents/{id:guid}/assistant/brief",
+            async (Guid id, HttpContext http, IncidentBriefService briefs, CancellationToken ct) =>
+                Results.Ok(await briefs.GenerateAsync(id, ClientAddress.VisitorOf(http.Connection.RemoteIpAddress), ct)));
 
         return app;
     }

@@ -1,7 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using OpsBoard.Api;
 using OpsBoard.Application.Assistant;
 using OpsBoard.Domain.Entities;
 using OpsBoard.Domain.Enums;
@@ -224,6 +227,118 @@ public sealed class AssistantBriefTests(PostgresFixture fixture)
         Assert.Empty(model.Requests);
     }
 
+    [Fact]
+    public async Task A_visitor_over_its_limit_gets_429_with_the_wait_but_cached_briefs_still_answer()
+    {
+        var model = new RecordingModel();
+        await using var factory = new OpsBoardWebApplicationFactory(
+            fixture.ConnectionString,
+            configureServices: services =>
+            {
+                services.AddSingleton<IInferenceClient>(model);
+                services.AddSingleton(new AssistantSettings(true, 20, 2, TimeSpan.FromSeconds(30), VisitorRequestLimit: 1));
+            });
+        await SeedAsync(factory);
+        var client = factory.CreateClient();
+        var ids = await IncidentIdsAsync(client, 2);
+
+        var first = await BriefAsync(client, ids[0]);
+        var again = await BriefAsync(client, ids[0]);
+        var next = await BriefAsync(client, ids[1]);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, next.StatusCode);
+        Assert.Equal("assistant_visitor_limit", await ProblemCodeAsync(next));
+        Assert.InRange(next.Headers.RetryAfter?.Delta ?? TimeSpan.Zero, TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(10));
+        Assert.Single(model.Requests);
+    }
+
+    [Fact]
+    public async Task Visitors_behind_a_trusted_proxy_are_counted_apart_by_their_forwarded_address()
+    {
+        await using var factory = VisitorLimitHost(
+            peer: "10.0.0.5",
+            new Dictionary<string, string?> { ["ForwardedHeaders:KnownNetworks"] = "10.0.0.0/8" });
+        await SeedAsync(factory);
+        var client = factory.CreateClient();
+        var ids = await IncidentIdsAsync(client, 3);
+
+        var first = await BriefAsync(client, ids[0], forwardedFor: "203.0.113.7");
+        var other = await BriefAsync(client, ids[1], forwardedFor: "203.0.113.8");
+        var firstAgain = await BriefAsync(client, ids[2], forwardedFor: "203.0.113.7");
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, other.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, firstAgain.StatusCode);
+        Assert.Equal("assistant_visitor_limit", await ProblemCodeAsync(firstAgain));
+    }
+
+    [Fact]
+    public async Task A_forwarded_address_from_an_untrusted_peer_is_ignored_so_it_cannot_dodge_the_limit()
+    {
+        await using var factory = VisitorLimitHost(peer: "198.51.100.9", new Dictionary<string, string?>());
+        await SeedAsync(factory);
+        var client = factory.CreateClient();
+        var ids = await IncidentIdsAsync(client, 2);
+
+        var first = await BriefAsync(client, ids[0], forwardedFor: "203.0.113.7");
+        var forged = await BriefAsync(client, ids[1], forwardedFor: "203.0.113.8");
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, forged.StatusCode);
+        Assert.Equal("assistant_visitor_limit", await ProblemCodeAsync(forged));
+    }
+
+    [Theory]
+    [InlineData("203.0.113.7", "203.0.113.7")]
+    [InlineData("::ffff:203.0.113.7", "203.0.113.7")]
+    [InlineData("2001:db8:1:2:aaaa::1", "2001:db8:1:2::/64")]
+    [InlineData("2001:db8:1:2:bbbb::9", "2001:db8:1:2::/64")]
+    public void A_visitor_is_one_address_or_one_ipv6_64(string address, string visitor) =>
+        Assert.Equal(visitor, ClientAddress.VisitorOf(IPAddress.Parse(address)));
+
+    [Fact]
+    public async Task A_proxy_network_that_cannot_be_read_stops_startup()
+    {
+        await using var factory = new OpsBoardWebApplicationFactory(
+            fixture.ConnectionString,
+            settings: new Dictionary<string, string?> { ["ForwardedHeaders:KnownNetworks"] = "10.0.0.0/8, not-a-network" });
+
+        var error = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
+
+        Assert.Contains("not-a-network", error.Message);
+    }
+
+    /// A host whose connections all come from one peer address, with one new brief per visitor.
+    private OpsBoardWebApplicationFactory VisitorLimitHost(string peer, Dictionary<string, string?> settings) =>
+        new(
+            fixture.ConnectionString,
+            configureServices: services =>
+            {
+                services.AddSingleton<IInferenceClient>(new RecordingModel());
+                services.AddSingleton(new AssistantSettings(true, 20, 2, TimeSpan.FromSeconds(30), VisitorRequestLimit: 1));
+                services.AddSingleton<IStartupFilter>(new PeerAddress(IPAddress.Parse(peer)));
+            },
+            settings: settings);
+
+    private static Task<HttpResponseMessage> BriefAsync(HttpClient client, Guid id, string? forwardedFor = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/incidents/{id}/assistant/brief");
+        if (forwardedFor is not null)
+        {
+            request.Headers.Add("X-Forwarded-For", forwardedFor);
+        }
+
+        return client.SendAsync(request);
+    }
+
+    private static async Task<List<Guid>> IncidentIdsAsync(HttpClient client, int count)
+    {
+        var list = await client.GetFromJsonAsync<JsonElement>($"/api/incidents?pageSize={count}", JsonOptions);
+        return list.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()).ToList();
+    }
+
     private static async Task<JsonElement> FirstActiveIncidentAsync(HttpClient client)
     {
         var list = await client.GetFromJsonAsync<JsonElement>("/api/incidents?status=Investigating", JsonOptions);
@@ -273,6 +388,21 @@ public sealed class AssistantBriefTests(PostgresFixture fixture)
     {
         await using var scope = factory.Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<DemoSeedRunner>().RunAsync(CancellationToken.None);
+    }
+
+    /// Plays the connection's peer, which the test server leaves empty, ahead
+    /// of the application's own middleware.
+    private sealed class PeerAddress(IPAddress address) : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((context, nextMiddleware) =>
+            {
+                context.Connection.RemoteIpAddress = address;
+                return nextMiddleware(context);
+            });
+            next(app);
+        };
     }
 
     /// Answers with a fixed reply, or fails, and records what it was sent.

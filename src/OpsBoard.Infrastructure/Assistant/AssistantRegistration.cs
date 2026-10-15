@@ -23,7 +23,9 @@ public static class AssistantRegistration
             MaxConcurrentRequests: ReadInt(section, "MaxConcurrentRequests", fallback: 2, minimum: 1),
             RequestTimeout: TimeSpan.FromSeconds(ReadInt(section, "RequestTimeoutSeconds", fallback: 30, minimum: 1)),
             InputUsdPerMillionTokens: ReadDecimal(section, "Provider:InputUsdPerMillionTokens"),
-            OutputUsdPerMillionTokens: ReadDecimal(section, "Provider:OutputUsdPerMillionTokens"));
+            OutputUsdPerMillionTokens: ReadDecimal(section, "Provider:OutputUsdPerMillionTokens"),
+            VisitorRequestLimit: ReadInt(section, "VisitorRequestLimit", fallback: 5, minimum: 1),
+            VisitorWindowMinutes: ReadInt(section, "VisitorWindowMinutes", fallback: 10, minimum: 1));
 
         services.AddSingleton(settings);
         services.AddSingleton<IncidentBriefCache>();

@@ -12,17 +12,20 @@ internal sealed class OpsBoardWebApplicationFactory : WebApplicationFactory<Prog
     private readonly Guid _demoUserId;
     private readonly Action<IServiceCollection>? _configureServices;
     private readonly string _environment;
+    private readonly IReadOnlyDictionary<string, string?> _settings;
 
     public OpsBoardWebApplicationFactory(
         string connectionString,
         Guid? demoUserId = null,
         Action<IServiceCollection>? configureServices = null,
-        string environment = "Development")
+        string environment = "Development",
+        IReadOnlyDictionary<string, string?>? settings = null)
     {
         _connectionString = connectionString;
         _demoUserId = demoUserId ?? SeedIds.DemoUser;
         _configureServices = configureServices;
         _environment = environment;
+        _settings = settings ?? new Dictionary<string, string?>();
     }
 
 
@@ -32,6 +35,11 @@ internal sealed class OpsBoardWebApplicationFactory : WebApplicationFactory<Prog
         builder.UseSetting("Demo:Enabled", "true");
         builder.UseSetting("Demo:UserId", _demoUserId.ToString());
         builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.EnvironmentKey, _environment);
+        foreach (var (key, value) in _settings)
+        {
+            builder.UseSetting(key, value);
+        }
+
         if (_configureServices is not null)
         {
             builder.ConfigureServices(_configureServices);

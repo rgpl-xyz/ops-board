@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Logging;
+using OpsBoard.Api;
 using OpsBoard.Api.Endpoints;
 using OpsBoard.Api.Errors;
 using OpsBoard.Api.Realtime;
@@ -45,6 +46,7 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddClientAddress(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IIncidentRealtimePublisher, SignalRIncidentRealtimePublisher>();
@@ -76,6 +78,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// First, so everything after it sees the visitor rather than the proxy.
+app.UseForwardedHeaders();
 app.UseExceptionHandler(new ExceptionHandlerOptions
 {
     ExceptionHandler = async context =>

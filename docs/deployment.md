@@ -39,7 +39,10 @@ Every setting the API needs can be supplied as an environment variable, so value
 | `Assistant__Provider__ApiKey` | the provider key, a secret; required for any provider not on loopback |
 | `Assistant__Provider__SupportsStrictSchema`, `__ReasoningEffort`, `__TimeoutSeconds` | provider capabilities and per-call timeout (default 20 s) |
 | `Assistant__DailyRequestLimit`, `__MaxConcurrentRequests`, `__RequestTimeoutSeconds` | limits; defaults 50 a day, 2 at once, 30 s |
+| `Assistant__VisitorRequestLimit`, `__VisitorWindowMinutes` | new briefs one visitor may start in a window; default 5 in 10 minutes |
 | `Assistant__Provider__InputUsdPerMillionTokens`, `__OutputUsdPerMillionTokens` | prices for the estimated-cost metric; default 0 |
+| `ForwardedHeaders__KnownNetworks` | comma-separated networks of the proxies in front of the API, such as `172.16.0.0/12`; see [client addresses](#client-addresses) |
+| `ForwardedHeaders__ForwardLimit` | how many proxies stand in front of the API; default 1 |
 
 The `.env` file and the credentials in `.env.example` exist for local development and the demonstration stack. Real credentials never belong in either, and the images are built without any environment file inside them. If the database is reached over a network the platform does not already protect, configure encryption in the connection string. The demonstration stack's connection string also disables GSS encryption, which only avoids a harmless probe in the runtime image.
 
@@ -47,7 +50,13 @@ The `.env` file and the credentials in `.env.example` exist for local developmen
 
 Terminate TLS at the edge, in front of the web container, and enforce HTTPS there, including the redirect from plain HTTP.
 
-The API itself should not be relied on for HTTPS. It contains a redirection middleware, but it has no handling for forwarded headers. Behind a TLS-terminating proxy it therefore sees every request as plain HTTP and cannot tell that the visitor used HTTPS. Leave the API without an HTTPS port configured, so that the redirection stays inert: it logs a warning and redirects nothing. Configuring an HTTPS port there would make it redirect every proxied request. If the API ever needs to know the original scheme or client address, adding forwarded-header handling is a code change that would need deciding first.
+The API itself should not be relied on for HTTPS. It contains a redirection middleware, but it does not read the forwarded scheme. Behind a TLS-terminating proxy it therefore sees every request as plain HTTP and cannot tell that the visitor used HTTPS. Leave the API without an HTTPS port configured, so that the redirection stays inert: it logs a warning and redirects nothing. Configuring an HTTPS port there would make it redirect every proxied request. The API does read the forwarded client address, as described below; trusting the forwarded scheme as well would be a separate decision.
+
+## Client addresses
+
+The API tells visitors apart by network address, to limit how many new AI briefs one visitor starts. An IPv6 visitor counts as their whole /64. Behind proxies, the address comes from `X-Forwarded-For`, which the API believes only from loopback and the networks in `ForwardedHeaders__KnownNetworks`, for at most `ForwardedHeaders__ForwardLimit` hops, so a visitor cannot choose their own address by sending the header.
+
+Set the networks to those the proxies connect from, such as the container network, and the limit to the number of proxies: 1 for the demonstration stack, where the web container's nginx is the only one, and 2 when a server's own nginx sits in front of the web container. Each proxy must append to the header with `$proxy_add_x_forwarded_for`, as the web container does. If the settings do not match the proxies, every visitor appears as the nearest proxy and all share one allowance: the limit still holds, but for everyone together.
 
 ## Origins and CORS
 

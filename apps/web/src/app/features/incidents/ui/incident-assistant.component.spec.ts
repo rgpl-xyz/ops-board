@@ -235,6 +235,7 @@ describe('IncidentAssistantComponent', () => {
     [problem('assistant_disabled', 503), 'AI assistance is turned off', false],
     [problem('assistant_daily_limit', 429, 5400), "Today's AI allowance is used up. It resets at 00:00 UTC, in about 2 hours.", false],
     [problem('assistant_busy', 429, 5), 'AI assistance is busy. Try again in 5 seconds.', true],
+    [problem('assistant_visitor_limit', 429, 360), "You've asked for several new briefs in a short time. Try again in about 6 minutes.", true],
     [problem('assistant_provider_unavailable', 503), "The AI provider isn't responding.", true],
     [problem('assistant_unverified_response', 502), "didn't pass the checks against this incident's records", true],
     [problem('unavailable', 404), 'This incident is no longer available.', false],

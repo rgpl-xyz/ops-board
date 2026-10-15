@@ -10,6 +10,7 @@ export type OpsBoardProblemCode =
   | 'persistence_unavailable'
   | 'assistant_disabled'
   | 'assistant_daily_limit'
+  | 'assistant_visitor_limit'
   | 'assistant_busy'
   | 'assistant_provider_unavailable'
   | 'assistant_unverified_response';
@@ -26,6 +27,7 @@ export const OPSBOARD_PROBLEM_CODES = [
   'persistence_unavailable',
   'assistant_disabled',
   'assistant_daily_limit',
+  'assistant_visitor_limit',
   'assistant_busy',
   'assistant_provider_unavailable',
   'assistant_unverified_response',

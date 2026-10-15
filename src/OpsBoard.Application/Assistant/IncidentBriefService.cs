@@ -33,7 +33,9 @@ public sealed class IncidentBriefService(
         return new AssistantStatusDto(settings.Enabled, settings.Enabled && inference.IsSimulated);
     }
 
-    public async Task<IncidentBriefDto> GenerateAsync(Guid incidentId, CancellationToken cancellationToken)
+    /// The visitor key only bounds how many new briefs one visitor starts; it
+    /// grants nothing, and access is still checked for the current user.
+    public async Task<IncidentBriefDto> GenerateAsync(Guid incidentId, string visitor, CancellationToken cancellationToken)
     {
         var started = Stopwatch.GetTimestamp();
         if (!settings.Enabled)
@@ -64,7 +66,7 @@ public sealed class IncidentBriefService(
 
         try
         {
-            using var lease = gate.Enter();
+            using var lease = gate.Enter(visitor);
             var brief = await AskModelAsync(incident, context, cancellationToken);
             cache.Store(user.OrganizationId, incidentId, key, brief);
             Record("generated", started);
@@ -190,6 +192,7 @@ public sealed class IncidentBriefService(
     private static string Outcome(AssistantFailure failure) => failure switch
     {
         AssistantFailure.DailyLimitReached => "daily_limit",
+        AssistantFailure.VisitorLimitReached => "visitor_limit",
         AssistantFailure.Busy => "busy",
         AssistantFailure.ProviderUnavailable => "provider_unavailable",
         AssistantFailure.UnverifiedResponse => "unverified",

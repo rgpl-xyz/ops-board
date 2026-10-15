@@ -73,6 +73,60 @@ public sealed class AssistantLimitsTests
     }
 
     [Fact]
+    public async Task One_visitor_is_held_to_its_limit_while_others_still_get_briefs()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { VisitorRequestLimit = 2, VisitorWindowMinutes = 10 };
+
+        await harness.GenerateAsync("visitor-a");
+        harness.Clock.UtcNow += TimeSpan.FromMinutes(4);
+        harness.Timeline.Add(AssistantHarness.Entry(3, TimelineEntryType.WrittenUpdate, "Second change."));
+        await harness.GenerateAsync("visitor-a");
+        var cached = await harness.GenerateAsync("visitor-a");
+        harness.Timeline.Add(AssistantHarness.Entry(4, TimelineEntryType.WrittenUpdate, "Third change."));
+        var error = await Assert.ThrowsAsync<AssistantUnavailableException>(() => harness.GenerateAsync("visitor-a"));
+        var other = await harness.GenerateAsync("visitor-b");
+
+        Assert.True(cached.FromCache);
+        Assert.Equal(AssistantFailure.VisitorLimitReached, error.Failure);
+        Assert.Equal(TimeSpan.FromMinutes(6), error.RetryAfter);
+        Assert.False(other.FromCache);
+        Assert.Equal(3, harness.Model.Requests.Count);
+    }
+
+    [Fact]
+    public async Task A_visitor_can_start_briefs_again_once_its_oldest_leaves_the_window()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { VisitorRequestLimit = 1, VisitorWindowMinutes = 10 };
+        await harness.GenerateAsync("visitor-a");
+        harness.Timeline.Add(AssistantHarness.Entry(3, TimelineEntryType.WrittenUpdate, "Second change."));
+        await Assert.ThrowsAsync<AssistantUnavailableException>(() => harness.GenerateAsync("visitor-a"));
+
+        harness.Clock.UtcNow += TimeSpan.FromMinutes(10);
+        var brief = await harness.GenerateAsync("visitor-a");
+
+        Assert.False(brief.FromCache);
+        Assert.Equal(2, harness.Model.Requests.Count);
+    }
+
+    [Fact]
+    public async Task A_visitor_turned_away_spends_none_of_the_daily_allowance()
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { DailyRequestLimit = 2, VisitorRequestLimit = 1 };
+        await harness.GenerateAsync("visitor-a");
+        harness.Timeline.Add(AssistantHarness.Entry(3, TimelineEntryType.WrittenUpdate, "Second change."));
+
+        var refused = await Assert.ThrowsAsync<AssistantUnavailableException>(() => harness.GenerateAsync("visitor-a"));
+        var other = await harness.GenerateAsync("visitor-b");
+
+        Assert.Equal(AssistantFailure.VisitorLimitReached, refused.Failure);
+        Assert.False(other.FromCache);
+        Assert.Equal(2, harness.Model.Requests.Count);
+    }
+
+    [Fact]
     public async Task Requests_beyond_the_concurrency_limit_are_turned_away_at_once()
     {
         var harness = new AssistantHarness();
@@ -156,6 +210,6 @@ public sealed class AssistantLimitsTests
         using var caller = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => harness.Service.GenerateAsync(AssistantHarness.IncidentId, caller.Token));
+            () => harness.Service.GenerateAsync(AssistantHarness.IncidentId, "visitor-a", caller.Token));
     }
 }

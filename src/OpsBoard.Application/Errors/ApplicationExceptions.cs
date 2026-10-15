@@ -97,6 +97,7 @@ public enum AssistantFailure
 {
     Disabled,
     DailyLimitReached,
+    VisitorLimitReached,
     Busy,
     ProviderUnavailable,
     UnverifiedResponse,
@@ -121,6 +122,7 @@ public sealed class AssistantUnavailableException : ApplicationException
     {
         AssistantFailure.Disabled => "assistant_disabled",
         AssistantFailure.DailyLimitReached => "assistant_daily_limit",
+        AssistantFailure.VisitorLimitReached => "assistant_visitor_limit",
         AssistantFailure.Busy => "assistant_busy",
         AssistantFailure.ProviderUnavailable => "assistant_provider_unavailable",
         _ => "assistant_unverified_response",
@@ -130,6 +132,7 @@ public sealed class AssistantUnavailableException : ApplicationException
     {
         AssistantFailure.Disabled => "AI assistance is turned off for this environment.",
         AssistantFailure.DailyLimitReached => "The daily limit for AI assistance has been reached. It resets at 00:00 UTC.",
+        AssistantFailure.VisitorLimitReached => "You have started several new briefs in a short time. Try again in a few minutes.",
         AssistantFailure.Busy => "AI assistance is busy. Try again in a few seconds.",
         AssistantFailure.ProviderUnavailable => "The AI provider is unavailable. Try again later.",
         _ => "The AI response could not be checked against the incident's records, so it was not shown. Try again.",

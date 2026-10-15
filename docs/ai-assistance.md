@@ -27,7 +27,7 @@ The design assumes an attacker can control every word the model writes, for exam
 - **Its reply is checked against a fixed contract** and against the citations actually sent, so it cannot point to records the caller was not given.
 - **Its text is shown as text.** The page renders statements by interpolation, never as HTML or Markdown, and builds no links from model output. Source cards come from stored data, not from the model.
 - **The instructions contain nothing secret**, so a model repeating them discloses nothing. The provider key is server configuration and never reaches the browser or the model.
-- **Use is bounded**: a request timeout, a cap on concurrent provider calls, and a daily limit across the whole deployment, since the demonstration has one shared identity.
+- **Use is bounded**: a request timeout, a cap on concurrent provider calls, a limit on new briefs per visitor, and a daily limit across the whole deployment, since the demonstration has one shared identity.
 
 The worst a fully hostile reply can do is be refused, or give a poor brief from data the caller could already read.
 
@@ -39,12 +39,15 @@ Data sent to the provider: the incident's title, description, service and team n
 | --- | --- | --- |
 | Provider calls per UTC day | 50 | `429 assistant_daily_limit`, with `Retry-After` until midnight UTC |
 | Concurrent provider calls | 2 | `429 assistant_busy`, with `Retry-After` |
+| New briefs per visitor | 5 in 10 minutes | `429 assistant_visitor_limit`, with `Retry-After` until the oldest leaves the window |
 | Whole request | 30 s | `503 assistant_provider_unavailable` |
 | Provider call | 20 s, one retry on a server error | `503 assistant_provider_unavailable` |
 
 A provider's own rate limit also answers `assistant_busy` and is never retried. A reply that fails the checks answers `502 assistant_unverified_response`. The page explains each failure and offers to try again only where that can help.
 
-A brief is cached per incident and reused while everything the model would see is unchanged, so asking again costs nothing. Cached briefs are still subject to the access check on every request.
+Visitors are told apart by network address, read from forwarded headers only when they come from a trusted proxy ([client addresses](deployment.md#client-addresses)), so no one visitor can spend the shared daily limit. A refused request spends neither allowance.
+
+A brief is cached per incident and reused while everything the model would see is unchanged, so asking again costs nothing and counts against neither limit. Cached briefs are still subject to the access check on every request.
 
 ## Providers
 

@@ -54,8 +54,10 @@ internal sealed class AssistantHarness
         NullLogger<IncidentBriefService>.Instance,
         _clock);
 
-    public Task<IncidentBriefDto> GenerateAsync() =>
-        Service.GenerateAsync(IncidentId, CancellationToken.None);
+    public Task<IncidentBriefDto> GenerateAsync() => GenerateAsync("visitor-a");
+
+    public Task<IncidentBriefDto> GenerateAsync(string visitor) =>
+        Service.GenerateAsync(IncidentId, visitor, CancellationToken.None);
 
     internal static IncidentDetailDto NewIncident(string description = "Checkout requests are failing for some customers.") =>
         new(
