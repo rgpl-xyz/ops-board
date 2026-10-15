@@ -14,7 +14,8 @@ The feature is off unless configuration turns it on. With it off, the page shows
 2. It turns them into a bounded data document. Long text is shortened and older entries are left out to stay within about 13,000 characters (roughly 4,000 tokens with the instructions). The document says what was left out.
 3. It sends fixed instructions, the data as a separate message, and a JSON schema to one provider call. The schema lists the only valid citations and the most statements each part may have.
 4. It checks the reply: exactly the four sections, plain statements of bounded length, facts that cite at least one source, and only citations it actually sent. A reply that breaks any rule is refused, not repaired.
-5. It describes each cited record itself, from stored data, and returns the brief.
+5. It completes the citations. When a fact repeats a number, clock time or person's name that none of its cited records holds, but exactly one record it was sent does, that record is added to the fact's sources. The text is never changed.
+6. It describes each cited record itself, from stored data, and returns the brief.
 
 There is no tool calling, no free-form question, and no conversation in this version: the person can only ask for a brief of the incident on screen.
 

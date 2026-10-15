@@ -103,8 +103,16 @@ public sealed class IncidentBriefService(
             result.OutputTokens,
             cost);
 
-        var parsed = Verify(incident.Id, result.Content, context);
-        var cited = parsed.WhatHappened.Concat(parsed.CurrentState).Concat(parsed.OpenQuestions)
+        var (parsed, added) = IncidentBriefCitations.Complete(Verify(incident.Id, result.Content, context), context);
+        if (added > 0)
+        {
+            logger.LogInformation(
+                "Assistant brief for incident {IncidentId}: added {Count} references the model left out",
+                incident.Id,
+                added);
+        }
+
+        var cited =parsed.WhatHappened.Concat(parsed.CurrentState).Concat(parsed.OpenQuestions)
             .Concat(parsed.SuggestedChecks)
             .SelectMany(s => s.Refs)
             .ToHashSet(StringComparer.Ordinal);
