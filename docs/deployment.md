@@ -58,6 +58,18 @@ The API tells visitors apart by network address, to limit how many new AI briefs
 
 Set the networks to those the proxies connect from, such as the container network, and the limit to the number of proxies: 1 for the demonstration stack, where the web container's nginx is the only one, and 2 when a server's own nginx sits in front of the web container. Each proxy must append to the header with `$proxy_add_x_forwarded_for`, as the web container does. If the settings do not match the proxies, every visitor appears as the nearest proxy and all share one allowance: the limit still holds, but for everyone together.
 
+## Turning on AI assistance
+
+AI assistance stays off until configured. A public deployment needs all of the following. The API refuses to start when the provider settings are incomplete, but mistakes in the last two only show in use:
+
+1. `Assistant__Enabled=true`, `Assistant__Provider__Kind=OpenAiCompatible`, and the provider's `BaseUrl`, `Model` and `Name`.
+2. `Assistant__Provider__ApiKey` from the platform's secret store, never from a file in the repository or an image.
+3. `Assistant__DailyRequestLimit` sized to the provider's allowance, with room for your own use.
+4. `Assistant__Provider__SupportsStrictSchema=true` where the provider enforces schemas, and for a reasoning model `Assistant__Provider__ReasoningEffort=low`, so its reasoning leaves room for the brief within the output limit. Otherwise more briefs are refused.
+5. `ForwardedHeaders__KnownNetworks` and `ForwardedHeaders__ForwardLimit` for the proxies in front of the API, as described under [client addresses](#client-addresses). Otherwise all visitors share one per-visitor allowance.
+
+Afterwards, ask for one brief and check that its label names the expected model and provider.
+
 ## Origins and CORS
 
 The web container serves the application and the API from one origin, so the browser makes no cross-origin requests and CORS plays no part. If the frontend is ever served from a different origin than the API, set `Cors:Origins` to that exact origin. The policy allows credentials, so a wildcard is not an option.
