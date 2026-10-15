@@ -38,6 +38,12 @@ async function paletteTo(page: Page, title: string) {
   await page.getByRole('option', { name: new RegExp(title) }).first().click();
 }
 
+/** The details form makes the record longer than these screens. */
+async function openDetailsForm(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Edit details' }).click();
+  await expect(page.locator('#edit-title')).toBeVisible();
+}
+
 test('an incident keeps its header in view, scrolls one body region and opens dialogs in full', async ({
   page,
   request,
@@ -45,7 +51,8 @@ test('an incident keeps its header in view, scrolls one body region and opens di
   const incident = await provisionIncident(request, runName('Contained detail incident'));
   await page.setViewportSize({ width: 1440, height: 640 });
   await page.goto(`/incidents/${incident.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+  await expect(page.getByRole('heading', { level: 1, name: incident.title })).toBeVisible();
+  await openDetailsForm(page);
 
   const contained = await measure(page);
   expect(contained.page).toBeLessThanOrEqual(0);
@@ -93,9 +100,10 @@ test('moving to another incident in place starts at the top with that incident',
 
   // Visit the second first, so it is cached and the page is reused in place.
   await page.goto(`/incidents/${second.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(second.title);
+  await expect(page.getByRole('heading', { level: 1, name: second.title })).toBeVisible();
   await paletteTo(page, first.title);
-  await expect(page.locator('#edit-title')).toHaveValue(first.title);
+  await expect(page.getByRole('heading', { level: 1, name: first.title })).toBeVisible();
+  await openDetailsForm(page);
 
   const body = page.locator('.viewport-page__body');
   await body.evaluate((el) => el.scrollTo(0, el.scrollHeight));
@@ -104,7 +112,8 @@ test('moving to another incident in place starts at the top with that incident',
   await paletteTo(page, second.title);
   await expect(page).toHaveURL(new RegExp(`/incidents/${second.id}$`));
   await expect(page.getByRole('heading', { level: 1, name: second.title })).toBeVisible();
-  await expect(page.locator('#edit-title')).toHaveValue(second.title);
+  // The form belonged to the incident left behind.
+  await expect(page.locator('#edit-title')).toHaveCount(0);
   expect((await measure(page)).bodyTop).toBe(0);
 });
 
@@ -153,7 +162,7 @@ test('a long description shows a paragraph and the rest on demand', async ({ pag
   const incident = await provisionIncident(request, runName('Long description incident'), description);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`/incidents/${incident.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+  await expect(page.getByRole('heading', { level: 1, name: incident.title })).toBeVisible();
 
   const paragraph = page.locator('ob-clamped-text .clamped');
   const lines = await paragraph.evaluate(
@@ -201,7 +210,7 @@ test('a text box dragged taller stops before the page would scroll', async ({ pa
   const incident = await provisionIncident(request, runName('Resize limit incident'));
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`/incidents/${incident.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+  await expect(page.getByRole('heading', { level: 1, name: incident.title })).toBeVisible();
 
   const update = page.locator('#update-body');
   const start = (await update.boundingBox())!;
@@ -234,7 +243,7 @@ test('a phone keeps ordinary page scrolling on a detail page', async ({ page, re
   const incident = await provisionIncident(request, runName('Phone detail incident'));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/incidents/${incident.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+  await expect(page.getByRole('heading', { level: 1, name: incident.title })).toBeVisible();
 
   const result = await measure(page);
   expect(result.page).toBeGreaterThan(0);

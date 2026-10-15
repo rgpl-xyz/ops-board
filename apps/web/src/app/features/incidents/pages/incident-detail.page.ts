@@ -130,6 +130,8 @@ export class IncidentDetailPage {
   private readonly fb = inject(FormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly pageBody = viewChild<ElementRef<HTMLElement>>('pageBody');
+  private readonly assistantPanel = viewChild(IncidentAssistantComponent);
+  private readonly editButton = viewChild<ElementRef<HTMLButtonElement>>('editButton');
   private readonly timelineList =
     viewChild<ElementRef<HTMLElement>>('timelineList');
   private readonly activityTabButtons =
@@ -172,6 +174,12 @@ export class IncidentDetailPage {
   protected readonly confirmKind = signal<ConfirmKind | null>(null);
   readonly updateBody = signal('');
   protected readonly activityTab = signal<ActivityTab>('timeline');
+  /** The details form opens on demand; the summary already shows the record. */
+  protected readonly editing = signal(false);
+  /** Open while editing or while a conflict waits, which is resolved in the form. */
+  protected readonly detailsFormOpen = computed(
+    () => this.canEdit() && (this.editing() || this.conflictOpen()),
+  );
 
   protected readonly severities = INCIDENT_SEVERITIES;
   protected readonly activeStatusOptions = ACTIVE_STATUS_OPTIONS;
@@ -440,6 +448,7 @@ export class IncidentDetailPage {
           this.boundIncidentId.set(incident.id);
           this.lastBoundVersion.set(version);
           if (movedIncident) {
+            this.editing.set(false);
             this.severityChosen.set(false);
             this.statusChosen.set(false);
             // A reused page keeps its scroll containers, so start the new incident at the top.
@@ -494,6 +503,32 @@ export class IncidentDetailPage {
 
   protected selectActivityTab(tab: ActivityTab): void {
     this.activityTab.set(tab);
+  }
+
+  /** The header's shortcut to the brief: shows its tab and asks for one. */
+  protected openBrief(): void {
+    this.activityTab.set('assistant');
+    // Focus first, so a phone scrolls down to where the brief will appear.
+    this.activityTabButtons()[ACTIVITY_TABS.indexOf('assistant')]?.nativeElement.focus();
+    this.assistantPanel()?.start();
+  }
+
+  protected startEditing(): void {
+    this.editing.set(true);
+    focusAfterRender(this.injector, () => this.editTitle()?.nativeElement);
+  }
+
+  /** Puts the form back to the record as stored and closes it. */
+  protected cancelEditing(): void {
+    const id = this.id();
+    const incident = id ? this.cachedDetail(id) : undefined;
+    if (incident) {
+      this.bindEditForm(incident);
+    }
+    this.editError.set(null);
+    this.conflictOpen.set(false);
+    this.editing.set(false);
+    focusAfterRender(this.injector, () => this.editButton()?.nativeElement);
   }
 
   /** Arrow keys, Home and End move between tabs and select as they go. */
@@ -642,6 +677,8 @@ export class IncidentDetailPage {
         },
       });
       this.bindEditForm(saved);
+      this.editing.set(false);
+      focusAfterRender(this.injector, () => this.editButton()?.nativeElement);
     } catch (error) {
       if (isValidationFailed(error)) {
         const affected = applyServerFieldErrors(
@@ -855,6 +892,8 @@ export class IncidentDetailPage {
   ): Promise<void> {
     if (isConcurrencyConflict(error)) {
       this.conflictOpen.set(true);
+      // The conflict is resolved in the details form, so it opens.
+      this.editing.set(true);
       focusAfterRender(
         this.injector,
         () => this.conflictDismiss()?.nativeElement,

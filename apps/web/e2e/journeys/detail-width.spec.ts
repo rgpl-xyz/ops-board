@@ -30,6 +30,7 @@ for (const width of [1920, 2560]) {
   test(`at ${width}px an incident spans the main region in two balanced columns`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await openFirst(page, '/incidents');
+    await page.getByRole('button', { name: 'Edit details' }).click();
     await expect(page.locator('#edit-title')).toBeVisible();
 
     const result = await frame(page, '.layout');

@@ -43,7 +43,7 @@ async function openOverflowingIncident(page: Page, request: APIRequestContext) {
   );
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`/incidents/${incident.id}`);
-  await expect(page.locator('#edit-title')).toHaveValue(incident.title);
+  await expect(page.getByRole('heading', { level: 1, name: incident.title })).toBeVisible();
 
   return {
     heading: page.getByRole('heading', { name: incident.title, level: 1 }),

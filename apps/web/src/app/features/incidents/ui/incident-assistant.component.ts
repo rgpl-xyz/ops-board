@@ -180,6 +180,23 @@ export class IncidentAssistantComponent {
     }
   }
 
+  /**
+   * Asks for a brief on behalf of a control outside the panel, such as the
+   * page header's shortcut, and brings focus along so the result is not missed.
+   */
+  start(): void {
+    if (this.briefMut.isPending()) {
+      return;
+    }
+    if (this.brief() && !this.stale()) {
+      focusWhenRendered(() => this.briefElement()?.nativeElement);
+      return;
+    }
+    this.summarize();
+    this.followFocus = true;
+    focusWhenRendered(() => this.cancelButton()?.nativeElement);
+  }
+
   protected cancel(): void {
     const focusWasHere = this.hasFocus();
     this.abort?.abort();

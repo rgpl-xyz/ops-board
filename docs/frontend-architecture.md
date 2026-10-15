@@ -75,7 +75,7 @@ Concurrent edits are detected by optimistic concurrency: each incident and servi
 
 On a conflict, the incident and service detail pages:
 
-- fetch the current record and load it into the form;
+- fetch the current record and load it into the form, opening the incident's details form if it was closed;
 - show a single alert saying the record changed since it was loaded;
 - move focus to the alert's *Dismiss and continue editing* action;
 - block further saves until the alert is dismissed.

@@ -190,16 +190,59 @@ describe('IncidentDetailPage', () => {
     }).compileComponents();
   });
 
+  function buttonNamed(root: ParentNode, name: string): HTMLButtonElement | undefined {
+    return [...root.querySelectorAll<HTMLButtonElement>('button')].find(
+      (button) => button.textContent?.trim() === name,
+    );
+  }
+
+  /** The details form starts closed; this opens it as a person would. */
   async function mountEditable() {
     const fixture = TestBed.createComponent(IncidentDetailPage);
     document.body.append(fixture.nativeElement);
     fixture.detectChanges();
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('Edit details');
+      expect(buttonNamed(fixture.nativeElement, 'Edit details')).toBeDefined();
+    });
+    buttonNamed(fixture.nativeElement, 'Edit details')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#edit-title')).not.toBeNull();
     });
     return fixture;
   }
+
+  it('opens the details form only when asked, and cancel puts back the record', async () => {
+    const fixture = TestBed.createComponent(IncidentDetailPage);
+    document.body.append(fixture.nativeElement);
+    const root = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(buttonNamed(root, 'Edit details')).toBeDefined();
+    });
+    expect(root.querySelector('#edit-title')).toBeNull();
+
+    buttonNamed(root, 'Edit details')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(root.querySelector('#edit-title'));
+    });
+    const title = root.querySelector('#edit-title') as HTMLInputElement;
+    title.value = 'Abandoned title';
+    title.dispatchEvent(new Event('input'));
+    buttonNamed(root.querySelector('.area-summary form')!, 'Cancel')!.click();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(root.querySelector('#edit-title')).toBeNull();
+      expect(document.activeElement).toBe(buttonNamed(root, 'Edit details'));
+    });
+
+    expect(fixture.componentInstance.editForm.getRawValue().title).toBe('Checkout timeouts');
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
 
   /** Mirrors a realtime/refetch cache write, which is the passive path. */
   function passiveDetail(overrides: Record<string, unknown>) {
@@ -907,6 +950,28 @@ describe('IncidentDetailPage', () => {
       fixture.nativeElement.remove();
     });
 
+    it('asks for a brief from the page header, on the brief tab', async () => {
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: false });
+      const generateBrief = vi.mocked(TestBed.inject(AssistantApi).generateBrief);
+      generateBrief.mockReturnValue(new Promise(() => undefined));
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+      const header = () => root.querySelector('ob-page-header') as HTMLElement;
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(buttonNamed(header(), 'Summarize with AI')).toBeDefined();
+      });
+
+      buttonNamed(header(), 'Summarize with AI')!.click();
+      fixture.detectChanges();
+
+      expect(tabs(root)[1].getAttribute('aria-selected')).toBe('true');
+      await vi.waitFor(() => expect(generateBrief).toHaveBeenCalledTimes(1));
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
+
     it('names the brief tab as simulated when no AI model is connected', async () => {
       assistantStatus.mockResolvedValue({ enabled: true, simulated: true });
       const fixture = await mountEditable();
@@ -915,6 +980,7 @@ describe('IncidentDetailPage', () => {
         fixture.detectChanges();
         expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'Brief (simulated)']);
       });
+      expect(buttonNamed(root.querySelector('ob-page-header')!, 'Summarize (simulated)')).toBeDefined();
 
       expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and simulated brief');
       expect(panel(root, tabs(root)[1]).textContent).toContain('No AI model is connected here');

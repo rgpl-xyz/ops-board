@@ -15,6 +15,11 @@ test('the incident detail is accessible', async ({ page, request }) => {
   await page.goto(`/incidents/${incident.id}`);
   await expect(page.getByRole('heading', { name: incident.title, level: 1 })).toBeVisible();
   await expectAccessible(page, 'incident-detail');
+
+  // The details form opens on demand, so it is checked open too.
+  await page.getByRole('button', { name: 'Edit details' }).click();
+  await expect(page.locator('#edit-title')).toBeFocused();
+  await expectAccessible(page, 'incident-detail-editing');
 });
 
 test('the incident create form is accessible', async ({ page }) => {

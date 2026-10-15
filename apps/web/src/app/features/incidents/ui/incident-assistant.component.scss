@@ -86,6 +86,11 @@
   line-height: 1.5;
 }
 
+/* A statement's sources wrap as one group, never one letter to a line. */
+.refs {
+  white-space: nowrap;
+}
+
 .ref {
   margin-left: 0.3rem;
   font-family: var(--ob-font-mono);

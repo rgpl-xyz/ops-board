@@ -449,6 +449,9 @@ time {
      overlay scrollbar, which takes no width, then covers that padding rather
      than the text at the end of a row. */
   .viewport-page__body {
+    /* Positioned, so text kept only for screen readers scrolls and clips with
+       the body instead of stretching the page around it. */
+    position: relative;
     flex: 0 1 auto;
     min-height: 0;
     overflow: auto;

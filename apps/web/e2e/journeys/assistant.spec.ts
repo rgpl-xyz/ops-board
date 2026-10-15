@@ -65,6 +65,20 @@ test('a reader summarizes an incident and checks a statement against its source'
   await expect(source).toBeFocused();
 });
 
+test('the page header asks for a brief in one step', async ({ page, request }) => {
+  const title = runName('Assistant header incident');
+  const incident = await provisionIncident(request, title);
+  await page.goto(`/incidents/${incident.id}`);
+  await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Summarize (simulated)' }).click();
+
+  await expect(page.getByRole('tab', { name: briefTabName })).toHaveAttribute('aria-selected', 'true');
+  const panel = page.getByRole('tabpanel', { name: briefTabName });
+  await expect(panel.getByText('Simulated brief, no AI model (Fake provider)')).toBeVisible();
+  await expectAccessible(page, 'assistant header shortcut');
+});
+
 test('the brief and its sources show stored markup as text', async ({ page, request }) => {
   const title = runName('Assistant markup incident');
   const incident = await provisionIncident(request, title);

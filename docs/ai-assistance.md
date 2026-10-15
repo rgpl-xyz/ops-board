@@ -4,7 +4,7 @@ Scope: the incident brief, OpsBoard's first AI feature: what it does, what keeps
 
 ## What it does
 
-An incident's detail page has an **AI brief** tab beside the timeline. On request, a large language model (LLM) from a provider you configure writes a short brief of that incident in four parts: what happened, the current state, open questions, and suggested next checks. Every statement in the first two parts cites the records it relies on: `I` for the incident record, and `T1`, `T2` and so on for timeline entries. Each citation opens a card describing that record. The brief is labelled with the model and provider that wrote it, says when the incident has changed since it was written, and can be copied as plain text with its sources.
+An incident's detail page has a **Summarize with AI** button in its header and an **AI brief** tab beside the timeline. On request, a large language model (LLM) from a provider you configure writes a short brief of that incident in four parts: what happened, the current state, open questions, and suggested next checks. Every statement in the first two parts cites the records it relies on: `I` for the incident record, and `T1`, `T2` and so on for timeline entries. Each citation opens a card describing that record. The brief is labelled with the model and provider that wrote it, says when the incident has changed since it was written, and can be copied as plain text with its sources.
 
 The feature is off unless configuration turns it on. With it off, the page shows the timeline exactly as before.
 
@@ -54,7 +54,7 @@ A brief is cached per incident and reused while everything the model would see i
 
 The server talks to any OpenAI-compatible chat completions endpoint, such as Groq, Cloudflare Workers AI or OpenRouter, and never sends tools. Where the provider enforces JSON schemas (`SupportsStrictSchema`), it is asked to; otherwise it is asked for a JSON object and the server's checks are the only enforcement. Free tiers allow a few dozen briefs a day, which is why caching and the daily limit matter.
 
-In Development the API uses an offline **fake provider** that writes a plain brief from the data without any model. Its briefs go through the same checks and are never called AI: `GET /api/assistant` reports `simulated`, the tab reads **Brief (simulated)**, the panel says no AI model is connected, and each brief is labelled as simulated. It lets the page, the tests and local work run without a key.
+In Development the API uses an offline **fake provider** that writes a plain brief from the data without any model. Its briefs go through the same checks and are never called AI: `GET /api/assistant` reports `simulated`, the tab reads **Brief (simulated)** and the header button **Summarize (simulated)**, the panel says no AI model is connected, and each brief is labelled as simulated. It lets the page, the tests and local work run without a key.
 
 ## Observability
 

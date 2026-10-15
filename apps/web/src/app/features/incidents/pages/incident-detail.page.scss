@@ -1,5 +1,6 @@
-/* A document: the record and its edit form on the left, status, people
-   and history beside it. DOM order is kept, so reading and tab order match. */
+/* A document: the record and its history on the left, and beside it what can
+   be done: status, people and a written update. DOM order is kept, so reading
+   and tab order match. */
 .layout {
   display: grid;
   gap: 1.75rem 2.5rem;
@@ -9,14 +10,12 @@
   .layout {
     /* Both columns share the available width; forms keep a readable measure. */
     grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr);
-    /* Spare height goes to the last row, so the written update follows the
-       record directly and only the timeline runs on below it. */
-    grid-template-rows: min-content min-content auto 1fr;
+    /* The record takes what it needs and its history the rest; the actions
+       column runs its own height, so neither side pushes the other down. */
+    grid-template-rows: min-content 1fr;
     grid-template-areas:
-      'summary lifecycle'
-      'summary responders'
-      'summary timeline'
-      'update timeline';
+      'summary actions'
+      'timeline actions';
     column-gap: 3.5rem;
     align-items: start;
     row-gap: 2rem;
@@ -26,21 +25,41 @@
     grid-area: summary;
   }
 
-  .area-lifecycle {
-    grid-area: lifecycle;
-  }
-
-  .area-responders {
-    grid-area: responders;
-  }
-
-  .area-update {
-    grid-area: update;
+  .layout__actions {
+    grid-area: actions;
+    gap: 2rem;
   }
 
   .area-timeline {
     grid-area: timeline;
   }
+}
+
+.area-timeline[hidden] {
+  display: none;
+}
+
+.layout__actions {
+  display: grid;
+  align-content: start;
+  gap: 1.75rem;
+}
+
+/* A section title with the one action that belongs to it. */
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.section__head .section__title {
+  margin-bottom: 0;
+}
+
+.section__head .link-button {
+  font-size: 0.84rem;
 }
 
 .meta {
@@ -72,6 +91,11 @@
   color: var(--ob-ink-2);
 }
 
+/* Last in the summary, the grid's row gap alone separates it from the history. */
+.description:last-child {
+  margin-bottom: 0;
+}
+
 .area-summary .form,
 .area-update .form {
   max-width: var(--ob-measure);
@@ -88,14 +112,21 @@
   min-width: 9rem;
 }
 
-/* Each select keeps its Apply button on the same row, whatever the column width. */
+/* Each select keeps its Apply button on the same row, whatever the column
+   width, with its label beside it rather than above. */
 .lifecycle-actions {
   display: grid;
   grid-template-columns: minmax(9rem, max-content) max-content;
   justify-content: start;
   justify-items: start;
-  align-items: end;
+  align-items: center;
   gap: 0.6rem;
+}
+
+.lifecycle-actions .inline-field {
+  grid-template-columns: 4.25rem minmax(9rem, max-content);
+  align-items: center;
+  column-gap: 0.6rem;
 }
 
 /* A dragged text box stops at a sensible length, and sooner where the page

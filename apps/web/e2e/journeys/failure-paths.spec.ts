@@ -43,6 +43,7 @@ test('a rejected save explains itself and keeps what was typed', async ({ page, 
   );
 
   await page.goto(`/incidents/${incident.id}`);
+  await page.getByRole('button', { name: 'Edit details' }).click();
   const title = page.locator('#edit-title');
   await expect(title).toBeVisible();
 
@@ -71,6 +72,7 @@ test('a conflicting change offers recovery instead of silently discarding it', a
   );
 
   await page.goto(`/incidents/${incident.id}`);
+  await page.getByRole('button', { name: 'Edit details' }).click();
   const title = page.locator('#edit-title');
   await expect(title).toBeVisible();
 
@@ -97,6 +99,7 @@ test('a stale edit is rejected rather than overwriting a change that arrived whi
   const incident = await provisionIncident(request, runName('Concurrent edit incident'));
 
   await page.goto(`/incidents/${incident.id}`);
+  await page.getByRole('button', { name: 'Edit details' }).click();
   const title = page.locator('#edit-title');
   await expect(title).toBeVisible();
   const typed = `${incident.title} edited`;
