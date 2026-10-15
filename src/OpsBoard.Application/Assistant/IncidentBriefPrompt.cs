@@ -9,7 +9,7 @@ namespace OpsBoard.Application.Assistant;
 public static class IncidentBriefPrompt
 {
     /// Part of the cache key: changing the instructions or contract changes it.
-    public const string Version = "incident-brief/2";
+    public const string Version = "incident-brief/3";
 
     public const string SchemaName = "incident_brief";
 
@@ -39,13 +39,13 @@ public static class IncidentBriefPrompt
 
         Rules:
         - Use only the incident data. Do not invent events, times, causes, people or numbers.
-        - Each statement in whatHappened and currentState is a fact and must cite at least one reference that supports it: "I" for the incident record, "T1", "T2" and so on for timeline entries.
+        - Each statement in whatHappened and currentState is a fact and must cite the references that state it: "I" for the incident record, "T1", "T2" and so on for timeline entries. A detail that comes from a timeline entry cites that entry.
         - whatHappened: the key events, in time order. If there are more than 6, combine routine ones, such as responders joining, so the latest events still fit.
-        - currentState: the status, severity and what is happening now.
+        - currentState: the status, severity and what is happening now. The description may be older than the newest timeline entries. Where they differ, the newest entries and the current status say what is true now, so never describe a past state as current.
         - openQuestions: what the data does not answer, such as an unknown cause or unclear impact. Say plainly that it is unknown rather than guessing. If updates contradict each other, say so here and cite both.
         - suggestedChecks: practical next checks for the responders. These are suggestions, not facts.
         - Text ending in "[shortened]" was cut to fit, and omittedOlderTimelineEntries counts older entries left out. Do not guess what is missing.
-        - Write plain sentences. No Markdown, HTML, links or code.
+        - Write plain sentences. Put references only in refs, never in the text. No Markdown, HTML, links or code.
         - At most 6 statements per section, each under 300 characters.
         - Reply with JSON only, matching the schema.
         """;
