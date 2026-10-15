@@ -33,6 +33,9 @@ public sealed class OpenAiCompatibleInferenceClient(
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(250);
 
+    /// Larger error bodies are not read at all.
+    private const int MaxErrorBodyBytes = 64 * 1024;
+
     public string ProviderName => options.ProviderName;
 
     public string Model => options.Model;
@@ -94,10 +97,19 @@ public sealed class OpenAiCompatibleInferenceClient(
 
         if (!response.IsSuccessStatusCode)
         {
-            // The body is not logged: a provider may echo generated text back.
+            // Only the error's code is read: the rest of the body may echo
+            // generated text back, as Groq's failed_generation does.
+            var code = await ErrorCodeAsync(response, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.BadRequest && code == "json_validate_failed")
+            {
+                throw Invalid("The reply did not match the schema (json_validate_failed).");
+            }
+
             throw new InferenceFailedException(
                 InferenceFailure.Unavailable,
-                $"{options.ProviderName} answered {(int)response.StatusCode}.");
+                code is null
+                    ? $"{options.ProviderName} answered {(int)response.StatusCode}."
+                    : $"{options.ProviderName} answered {(int)response.StatusCode} ({code}).");
         }
 
         var text = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -169,6 +181,43 @@ public sealed class OpenAiCompatibleInferenceClient(
         }
 
         return body.ToJsonString();
+    }
+
+    /// The OpenAI-style error.code, when it is a short identifier; nothing else from the body.
+    private static async Task<string?> ErrorCodeAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        var buffer = new byte[MaxErrorBodyBytes];
+        var read = 0;
+        await using (var body = await response.Content.ReadAsStreamAsync(cancellationToken))
+        {
+            int count;
+            while (read < buffer.Length && (count = await body.ReadAsync(buffer.AsMemory(read), cancellationToken)) > 0)
+            {
+                read += count;
+            }
+        }
+
+        if (read == buffer.Length)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(buffer.AsMemory(0, read));
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("error", out var error)
+                && error.ValueKind == JsonValueKind.Object
+                && error.TryGetProperty("code", out var code)
+                && code.GetString() is { Length: > 0 and <= 64 } text
+                && text.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_')
+                ? text
+                : null;
+        }
+        catch (Exception error) when (error is JsonException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private InferenceFailedException Invalid(string reason) =>

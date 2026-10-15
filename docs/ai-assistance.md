@@ -44,7 +44,7 @@ Data sent to the provider: the incident's title, description, service and team n
 | Whole request | 30 s | `503 assistant_provider_unavailable` |
 | Provider call | 20 s, one retry on a server error | `503 assistant_provider_unavailable` |
 
-A provider's own rate limit also answers `assistant_busy` and is never retried. A reply that fails the checks answers `502 assistant_unverified_response`. The page explains each failure and offers to try again only where that can help.
+A provider's own rate limit also answers `assistant_busy` and is never retried. A reply that fails the checks, or that the provider itself rejects against the schema, answers `502 assistant_unverified_response`. The page explains each failure and offers to try again only where that can help.
 
 Visitors are told apart by network address, read from forwarded headers only when they come from a trusted proxy ([client addresses](deployment.md#client-addresses)), so no one visitor can spend the shared daily limit. A refused request spends neither allowance.
 
