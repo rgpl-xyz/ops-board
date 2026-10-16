@@ -1,12 +1,12 @@
 # OpsBoard
 
-Real-time incident and service operations management platform. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and containerised delivery. Delivery status is in the [roadmap](#roadmap).
+Real-time incident and service operations management platform, with AI incident briefs that cite their sources. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and containerised delivery. Delivery status is in the [roadmap](#roadmap).
 
 ## Screenshots
 
 ![Incident list with filters, severity and status cues](docs/screenshots/incident-list.png)
 
-![Incident detail with lifecycle controls, responders and timeline](docs/screenshots/incident-detail.png)
+![Incident detail with an AI brief that cites its sources, lifecycle controls and responders](docs/screenshots/incident-detail.png)
 
 ## Live demo
 
@@ -205,6 +205,7 @@ The stack and the local development setup share the same PostgreSQL container an
 8. **Deterministic Acme demo seed** behind a Development-only `--seed-demo` command (not a public reset endpoint).
 9. **Schema changes as a separate step**: the API never migrates itself; a migration bundle ships in the API image.
 10. **Tool versions pinned in `mise.toml`** so every clone uses the same Node/.NET pair.
+11. **AI assistance that does not rely on the model behaving**: the server sends one incident the caller can already read, gives the model no tools, checks every citation against what it sent, and shows the reply as text. It is off unless configured ([AI assistance](docs/ai-assistance.md)).
 
 ## Roadmap
 
@@ -218,6 +219,7 @@ The stack and the local development setup share the same PostgreSQL container an
 | 6 | Command palette, deeper keyboard/a11y polish | Done |
 | 7 | Frontend/backend/integration/E2E/a11y test hardening | Done |
 | 8 | GitHub Actions, container images and stack, architecture docs / ADRs, deployment guidance | Done |
+| 9 | AI incident brief: cited sources checked by the server, per-visitor and daily limits, off by default | Done |
 
 ## License
 
