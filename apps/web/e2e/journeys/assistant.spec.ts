@@ -116,6 +116,54 @@ test('a new update makes the brief stale and it can be regenerated', async ({ pa
   await expect(panel.getByText('The incident has changed since this brief was written.')).toHaveCount(0);
 });
 
+test('the end of a long brief, its copy button included, scrolls fully into view', async ({ page, request }) => {
+  const title = runName('Assistant long brief incident');
+  const incident = await provisionIncident(request, title);
+  const detail = await (await request.get(`/api/incidents/${incident.id}`)).json();
+  const timeline = await (await request.get(`/api/incidents/${incident.id}/timeline?pageSize=1`)).json();
+  const statements = (part: string) =>
+    Array.from({ length: 6 }, (_, i) => ({
+      text: `${part} ${i + 1}, long enough to wrap onto a second line in the brief at a laptop's width.`,
+      refs: ['I'],
+    }));
+  // A brief longer than the panel, so the panel scrolls; the server's own fake writes a short one.
+  await page.route(`**/api/incidents/${incident.id}/assistant/brief`, (route) =>
+    route.fulfill({
+      json: {
+        incidentId: incident.id,
+        basedOnVersion: detail.version,
+        basedOnTimelineCount: timeline.totalCount,
+        omittedTimelineEntries: 0,
+        generatedAt: new Date().toISOString(),
+        provider: 'Fake provider',
+        model: 'rule-based',
+        simulated: true,
+        fromCache: false,
+        whatHappened: statements('What happened'),
+        currentState: statements('Current state'),
+        openQuestions: statements('Open question'),
+        suggestedChecks: statements('Suggested check'),
+        sources: [{ ref: 'I', label: 'Incident record', actor: null, occurredAt: detail.createdAt, detail: title }],
+      },
+    }),
+  );
+  await page.setViewportSize({ width: 1536, height: 730 });
+  await openBriefTab(page, incident.id, title);
+  const panel = page.getByRole('tabpanel', { name: briefTabName });
+  await panel.getByRole('button', { name: 'Summarize incident' }).click();
+  const copy = panel.getByRole('button', { name: 'Copy brief' });
+  await expect(copy).toBeAttached();
+  expect(await panel.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+
+  await panel.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+
+  // Room below the button, so neither it nor its focus outline meets the panel's edge.
+  const room = await copy.evaluate(
+    (button) => button.closest('[role="tabpanel"]')!.getBoundingClientRect().bottom - button.getBoundingClientRect().bottom,
+  );
+  expect(room).toBeGreaterThanOrEqual(4);
+});
+
 test('the tabs work from the keyboard', async ({ page, request }) => {
   const title = runName('Assistant keyboard incident');
   const incident = await provisionIncident(request, title);

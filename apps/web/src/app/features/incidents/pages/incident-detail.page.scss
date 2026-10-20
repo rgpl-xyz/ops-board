@@ -279,6 +279,8 @@
     contain: size;
     overflow-y: auto;
     padding-right: 1rem;
+    /* Room at the end, so the last control and its focus outline clear the edge. */
+    padding-bottom: 1rem;
   }
 
   /* Size containment keeps the entries out of the row heights: the list takes
