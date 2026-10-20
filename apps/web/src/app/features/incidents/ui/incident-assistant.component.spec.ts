@@ -157,6 +157,16 @@ describe('IncidentAssistantComponent', () => {
     expect(root.textContent).toContain('Suggestions, not facts');
   });
 
+  it('says what its source markers stand for', async () => {
+    generateBrief.mockResolvedValue(brief());
+    const root = await render();
+    await summarize(root);
+
+    expect(root.querySelector('.brief')?.textContent?.replace(/\s+/g, ' ')).toContain(
+      'Sources: I is the incident record, and T1, T2 and so on are its timeline entries, oldest first.',
+    );
+  });
+
   it('says plainly, before and after, when no model writes the brief', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });

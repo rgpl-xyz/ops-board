@@ -231,7 +231,7 @@
               @if (showResolve()) {
                 <button
                   type="button"
-                  class="btn btn--danger"
+                  class="btn"
                   [disabled]="lifecyclePending() || conflictOpen()"
                   (click)="openResolveConfirm($event)"
                 >
@@ -254,7 +254,7 @@
               [title]="confirmTitle()"
               [body]="confirmBody()"
               [confirmLabel]="confirmLabel()"
-              [danger]="confirmKind() === 'resolve' || confirmKind() === 'leave'"
+              [danger]="confirmKind() === 'leave'"
               (confirmRequested)="onLifecycleConfirmed()"
               (cancelled)="onLifecycleCancelled()"
             />
@@ -308,7 +308,8 @@
                 (submit)="$event.preventDefault(); postWrittenUpdate()"
               >
                 <div class="field">
-                  <label for="update-body">Update</label>
+                  <!-- The section title already says it; the label stays for assistive technology. -->
+                  <label for="update-body" class="visually-hidden">Update</label>
                   <textarea
                     obResizeToFit
                     id="update-body"
@@ -429,13 +430,15 @@
                   </li>
                 }
               </ol>
-              <ob-pagination
-                [page]="timeline.data()!.page"
-                [totalPages]="timeline.data()!.totalPages"
-                [totalCount]="timeline.data()!.totalCount"
-                (previous)="onTimelinePage(-1)"
-                (next)="onTimelinePage(1)"
-              />
+              @if (timeline.data()!.totalPages > 1) {
+                <ob-pagination
+                  [page]="timeline.data()!.page"
+                  [totalPages]="timeline.data()!.totalPages"
+                  [totalCount]="timeline.data()!.totalCount"
+                  (previous)="onTimelinePage(-1)"
+                  (next)="onTimelinePage(1)"
+                />
+              }
             }
           </ng-template>
         </section>

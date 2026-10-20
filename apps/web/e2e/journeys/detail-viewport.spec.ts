@@ -123,7 +123,8 @@ test('a long timeline scrolls in place, newest entry first, clear of the scrollb
 }) => {
   const incident = await provisionIncident(request, runName('Long timeline incident'));
   const detail = await (await request.get(`/api/incidents/${incident.id}`)).json();
-  for (let n = 1; n <= 14; n++) {
+  // More than one page (25 entries), so the pager shows below the list.
+  for (let n = 1; n <= 30; n++) {
     const posted = await request.post(`/api/incidents/${incident.id}/updates`, {
       data: { body: `Update ${n}`, expectedLifecycleVersion: detail.lifecycleVersion },
     });
@@ -132,7 +133,7 @@ test('a long timeline scrolls in place, newest entry first, clear of the scrollb
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`/incidents/${incident.id}`);
   const timeline = page.getByRole('list', { name: 'Timeline' });
-  await expect(timeline.getByRole('listitem').first()).toContainText('Update 14');
+  await expect(timeline.getByRole('listitem').first()).toContainText('Update 30');
 
   const result = await page.evaluate(() => {
     const body = document.querySelector('.viewport-page__body') as HTMLElement;

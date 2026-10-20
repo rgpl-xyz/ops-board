@@ -47,6 +47,9 @@
       {{ label() }} ·
       <time [attr.datetime]="b.generatedAt">{{ b.generatedAt | obTimestamp: true }}</time>
     </p>
+    <p class="brief__legend">
+      Sources: I is the incident record, and T1, T2 and so on are its timeline entries, oldest first.
+    </p>
 
     @if (stale()) {
       <ob-callout variant="info">

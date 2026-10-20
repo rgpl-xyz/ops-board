@@ -213,6 +213,40 @@ describe('IncidentDetailPage', () => {
     return fixture;
   }
 
+  it('shows the timeline without a pager when it fits on one page', async () => {
+    const fixture = await mountEditable();
+    const root = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(root.textContent).toContain('Investigating authz path');
+    });
+
+    expect(root.querySelector('ob-pagination')).toBeNull();
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  it('pages the timeline once it runs past one page', async () => {
+    const api = TestBed.inject(IncidentsApi);
+    const firstPage = api.listTimeline.bind(api);
+    vi.spyOn(api, 'listTimeline').mockImplementation(async (...args: Parameters<IncidentsApi['listTimeline']>) => ({
+      ...(await firstPage(...args)),
+      totalCount: 30,
+      totalPages: 2,
+    }));
+    const fixture = await mountEditable();
+    const root = fixture.nativeElement as HTMLElement;
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(root.querySelector('ob-pagination')).not.toBeNull();
+    });
+
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
   it('opens the details form only when asked, and cancel puts back the record', async () => {
     const fixture = TestBed.createComponent(IncidentDetailPage);
     document.body.append(fixture.nativeElement);

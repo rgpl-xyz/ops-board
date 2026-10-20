@@ -46,6 +46,13 @@
   color: var(--ob-muted);
 }
 
+/* What the I and T1 markers mean, once, under the label. */
+.brief__legend {
+  margin: -0.4rem 0 0.75rem;
+  color: var(--ob-muted);
+  font-size: 0.8rem;
+}
+
 .brief__note,
 .brief__none {
   margin: 0 0 0.5rem;
