@@ -2,6 +2,8 @@
 
 Real-time incident and service operations management platform, with AI incident briefs that cite their sources. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and containerised delivery. Delivery status is in the [roadmap](#roadmap).
 
+Made by [RGPL](https://rgpl.xyz).
+
 ## Screenshots
 
 ![Incident list with filters, severity and status cues](docs/screenshots/incident-list.png)
