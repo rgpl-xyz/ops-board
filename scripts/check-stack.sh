@@ -40,4 +40,21 @@ code=$(status_of "$response")
 body_of "$response" | grep -q '<app-root' || fail "GET / did not serve the application shell"
 echo "check-stack: ok: / serves the application shell"
 
+response=$(fetch /robots.txt)
+code=$(status_of "$response")
+[ "$code" = 200 ] || fail "GET /robots.txt returned $code, expected 200"
+body_of "$response" | grep -q '^Sitemap: ' || fail "GET /robots.txt did not name the sitemap"
+echo "check-stack: ok: /robots.txt names the sitemap"
+
+response=$(fetch /sitemap.xml)
+code=$(status_of "$response")
+[ "$code" = 200 ] || fail "GET /sitemap.xml returned $code, expected 200"
+body_of "$response" | grep -q '<urlset' || fail "GET /sitemap.xml did not serve the sitemap"
+echo "check-stack: ok: /sitemap.xml lists the pages"
+
+response=$(fetch /no-such-file.txt)
+code=$(status_of "$response")
+[ "$code" = 404 ] || fail "GET /no-such-file.txt returned $code, expected 404 rather than the app"
+echo "check-stack: ok: a missing file is a 404"
+
 echo "check-stack: passed against $base"
