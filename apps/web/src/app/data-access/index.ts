@@ -44,6 +44,8 @@ export type {
   IncidentQuery,
   IncidentSummaryDto,
   LifecycleVersionRequest,
+  RelatedIncidentDto,
+  RelatedIncidentsDto,
   ResponderDto,
   ResponseMutationDto,
   SeverityRequest,
@@ -103,6 +105,7 @@ export {
   incidentRespondersQuery,
   incidentsQuery,
   incidentTimelineQuery,
+  relatedIncidentsQuery,
 } from './query/incidents.queries';
 export {
   createServiceMutation,

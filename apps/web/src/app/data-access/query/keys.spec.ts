@@ -1,5 +1,7 @@
+import { QueryClient } from '@tanstack/angular-query-experimental';
 import { describe, expect, it } from 'vitest';
 
+import { invalidateIncidentLists } from './cache-matrix';
 import { opsboardKeys, stableQueryPart } from './keys';
 
 describe('stableQueryPart', () => {
@@ -94,5 +96,15 @@ describe('opsboardKeys', () => {
       page: 1,
     });
     expect(left).toEqual(right);
+  });
+
+  it('refreshes related incidents whenever the incident lists refresh', async () => {
+    const client = new QueryClient();
+    const related = opsboardKeys.incidents.related('i1');
+    client.setQueryData(related, { items: [] });
+
+    invalidateIncidentLists(client);
+
+    expect(client.getQueryState(related)?.isInvalidated).toBe(true);
   });
 });

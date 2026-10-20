@@ -124,6 +124,9 @@ public static class DomainEndpoints
         app.MapGet("/api/incidents/{id:guid}/timeline", async (Guid id, int? page, int? pageSize, IncidentResponseService responders, CancellationToken ct) =>
             Results.Ok(await responders.ListTimelineAsync(id, new PageQuery(page ?? 1, pageSize ?? 25), ct)));
 
+        app.MapGet("/api/incidents/{id:guid}/related", async (Guid id, RelatedIncidentService related, CancellationToken ct) =>
+            Results.Ok(await related.ListAsync(id, ct)));
+
         return app;
     }
 }

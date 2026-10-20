@@ -43,6 +43,17 @@ export function incidentRespondersQuery(
   });
 }
 
+export function relatedIncidentsQuery(id: string) {
+  const api = inject(IncidentsApi);
+  return queryOptions<
+    Awaited<ReturnType<IncidentsApi['listRelated']>>,
+    OpsBoardProblem
+  >({
+    queryKey: opsboardKeys.incidents.related(id),
+    queryFn: () => api.listRelated(id),
+  });
+}
+
 export function incidentTimelineQuery(id: string, query: PageQuery = {}) {
   const api = inject(IncidentsApi);
   return queryOptions<

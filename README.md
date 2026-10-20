@@ -77,7 +77,7 @@ OpsBoard/
 ## What works today
 
 - **Demo identity + Acme seed**: organization, teams, users, services, historical and active incidents
-- **Incidents API + UI**: paged/filtered list (URL-backed filters), create, detail, edit, severity/status/resolve/reopen, join/leave, written updates, timeline, with conflict recovery
+- **Incidents API + UI**: paged/filtered list (URL-backed filters), create, detail, edit, severity/status/resolve/reopen, join/leave, written updates, timeline, related incidents with the reason each was picked, with conflict recovery
 - **Services API + UI**: paged/filtered list, detail and edit with conflict recovery; creation through the API
 - **Realtime**: incident changes made by one user appear in other open browsers, with reconnect recovery and a connection status in the shell
 - **Command palette**: Ctrl+K / Cmd+K search and navigation across incidents, services and commands

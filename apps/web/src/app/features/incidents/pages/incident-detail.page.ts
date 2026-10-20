@@ -73,6 +73,7 @@ import {
   type FormFieldRef,
 } from '../../../shared/a11y/form-focus';
 import { IncidentAssistantComponent } from '../ui/incident-assistant.component';
+import { RelatedIncidentsComponent } from '../ui/related-incidents.component';
 import { ResponderListComponent } from '../ui/responder-list.component';
 import { ResizeToFitDirective } from '../../../shared/directives/resize-to-fit.directive';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
@@ -87,9 +88,7 @@ import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 
 type ConfirmKind = 'resolve' | 'reopen' | 'leave';
 
-/** The history column's tabs, in order, when AI assistance is on. */
-const ACTIVITY_TABS = ['timeline', 'assistant'] as const;
-type ActivityTab = (typeof ACTIVITY_TABS)[number];
+type ActivityTab = 'timeline' | 'assistant' | 'related';
 
 const EDIT_FIELDS: readonly FormFieldRef[] = [
   { name: 'title', id: 'edit-title', label: 'Title' },
@@ -113,6 +112,7 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
     NgTemplateOutlet,
     PageHeaderComponent,
     PaginationComponent,
+    RelatedIncidentsComponent,
     ResizeToFitDirective,
     ResponderListComponent,
     SeverityBadgeComponent,
@@ -300,6 +300,10 @@ export class IncidentDetailPage {
   /** No model is connected, so the brief is not called an AI brief. */
   protected readonly assistantSimulated = computed(
     () => this.assistantStatus.data()?.simulated === true,
+  );
+  /** The history column's tabs, in order; the brief's only with AI assistance on. */
+  private readonly activityTabs = computed<readonly ActivityTab[]>(() =>
+    this.assistantEnabled() ? ['timeline', 'assistant', 'related'] : ['timeline', 'related'],
   );
 
   protected readonly services = injectQuery(() => this.servicesOptions);
@@ -509,7 +513,7 @@ export class IncidentDetailPage {
   protected openBrief(): void {
     this.activityTab.set('assistant');
     // Focus first, so a phone scrolls down to where the brief will appear.
-    this.activityTabButtons()[ACTIVITY_TABS.indexOf('assistant')]?.nativeElement.focus();
+    this.activityTabButtons()[this.activityTabs().indexOf('assistant')]?.nativeElement.focus();
     this.assistantPanel()?.start();
   }
 
@@ -533,8 +537,9 @@ export class IncidentDetailPage {
 
   /** Arrow keys, Home and End move between tabs and select as they go. */
   protected onActivityTabKeydown(event: KeyboardEvent): void {
-    const current = ACTIVITY_TABS.indexOf(this.activityTab());
-    const last = ACTIVITY_TABS.length - 1;
+    const tabs = this.activityTabs();
+    const current = tabs.indexOf(this.activityTab());
+    const last = tabs.length - 1;
     const targets: Record<string, number> = {
       ArrowRight: current === last ? 0 : current + 1,
       ArrowLeft: current === 0 ? last : current - 1,
@@ -546,7 +551,7 @@ export class IncidentDetailPage {
       return;
     }
     event.preventDefault();
-    this.activityTab.set(ACTIVITY_TABS[next]);
+    this.activityTab.set(tabs[next]);
     this.activityTabButtons()[next]?.nativeElement.focus();
   }
 

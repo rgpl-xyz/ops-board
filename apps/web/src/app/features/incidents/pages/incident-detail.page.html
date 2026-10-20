@@ -337,31 +337,35 @@
              view; hidden rather than removed, so a brief survives. -->
         <section
           class="section area-timeline"
-          [attr.aria-labelledby]="assistantEnabled() ? 'activity-h' : 'tl-h'"
+          aria-labelledby="activity-h"
           [hidden]="detailsFormOpen()"
         >
-          @if (assistantEnabled()) {
-            <h2 id="activity-h" class="visually-hidden">
-              Timeline and {{ assistantSimulated() ? 'simulated brief' : 'AI brief' }}
-            </h2>
-            <div
-              class="activity-tabs"
-              role="tablist"
-              aria-labelledby="activity-h"
-              (keydown)="onActivityTabKeydown($event)"
+          <h2 id="activity-h" class="visually-hidden">
+            @if (assistantEnabled()) {
+              Timeline, {{ assistantSimulated() ? 'simulated brief' : 'AI brief' }} and related incidents
+            } @else {
+              Timeline and related incidents
+            }
+          </h2>
+          <div
+            class="activity-tabs"
+            role="tablist"
+            aria-labelledby="activity-h"
+            (keydown)="onActivityTabKeydown($event)"
+          >
+            <button
+              #activityTabButton
+              type="button"
+              role="tab"
+              id="tl-h"
+              aria-controls="tl-panel"
+              [attr.aria-selected]="activityTab() === 'timeline'"
+              [attr.tabindex]="activityTab() === 'timeline' ? 0 : -1"
+              (click)="selectActivityTab('timeline')"
             >
-              <button
-                #activityTabButton
-                type="button"
-                role="tab"
-                id="tl-h"
-                aria-controls="tl-panel"
-                [attr.aria-selected]="activityTab() === 'timeline'"
-                [attr.tabindex]="activityTab() === 'timeline' ? 0 : -1"
-                (click)="selectActivityTab('timeline')"
-              >
-                Timeline
-              </button>
+              Timeline
+            </button>
+            @if (assistantEnabled()) {
               <button
                 #activityTabButton
                 type="button"
@@ -374,20 +378,34 @@
               >
                 {{ assistantSimulated() ? 'Brief (simulated)' : 'AI brief' }}
               </button>
-            </div>
-            <div
-              id="tl-panel"
-              class="activity-panel"
-              role="tabpanel"
-              aria-labelledby="tl-h"
-              [hidden]="activityTab() !== 'timeline'"
+            }
+            <button
+              #activityTabButton
+              type="button"
+              role="tab"
+              id="related-tab"
+              aria-controls="related-panel"
+              [attr.aria-selected]="activityTab() === 'related'"
+              [attr.tabindex]="activityTab() === 'related' ? 0 : -1"
+              (click)="selectActivityTab('related')"
             >
-              <ng-container [ngTemplateOutlet]="timelineContent" />
-            </div>
+              Related
+            </button>
+          </div>
+          <div
+            id="tl-panel"
+            class="activity-panel"
+            role="tabpanel"
+            aria-labelledby="tl-h"
+            [hidden]="activityTab() !== 'timeline'"
+          >
+            <ng-container [ngTemplateOutlet]="timelineContent" />
+          </div>
+          @if (assistantEnabled()) {
             <!-- Hidden rather than removed, so a brief survives a look at the timeline. -->
             <div
               id="assistant-panel"
-              class="activity-panel activity-panel--assistant"
+              class="activity-panel activity-panel--scrolls"
               role="tabpanel"
               aria-labelledby="assistant-tab"
               [hidden]="activityTab() !== 'assistant'"
@@ -398,10 +416,19 @@
                 [simulated]="assistantSimulated()"
               />
             </div>
-          } @else {
-            <h2 id="tl-h" class="section__title">Timeline</h2>
-            <ng-container [ngTemplateOutlet]="timelineContent" />
           }
+          <!-- Fetched on first look; the query cache keeps it between looks. -->
+          <div
+            id="related-panel"
+            class="activity-panel activity-panel--scrolls"
+            role="tabpanel"
+            aria-labelledby="related-tab"
+            [hidden]="activityTab() !== 'related'"
+          >
+            @if (activityTab() === 'related') {
+              <ob-related-incidents [incidentId]="incident.id" />
+            }
+          </div>
 
           <ng-template #timelineContent>
             @if (timeline.isPending()) {

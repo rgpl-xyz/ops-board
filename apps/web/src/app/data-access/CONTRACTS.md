@@ -33,6 +33,7 @@ Sources:
 | POST | `/api/incidents/{id}/responders/leave` | `IncidentsApi.leave` → `ResponseMutationDto` |
 | POST | `/api/incidents/{id}/updates` | `IncidentsApi.addUpdate` → `ResponseMutationDto` |
 | GET | `/api/incidents/{id}/timeline` | `IncidentsApi.listTimeline` → `Page<TimelineEntryDto>` |
+| GET | `/api/incidents/{id}/related` | `IncidentsApi.listRelated` → `RelatedIncidentsDto` |
 | GET | `/api/assistant` | `AssistantApi.getStatus` → `AssistantStatusDto` |
 | POST | `/api/incidents/{id}/assistant/brief` | `AssistantApi.generateBrief` → `IncidentBriefDto` |
 

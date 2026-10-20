@@ -174,8 +174,12 @@ public sealed class AuthorizationMatrixTests(PostgresFixture fixture)
 
         var foreignResponders = await client.GetAsync($"/api/incidents/{foreign.IncidentId}/responders");
         var foreignTimeline = await client.GetAsync($"/api/incidents/{foreign.IncidentId}/timeline");
+        var foreignRelated = await client.GetAsync($"/api/incidents/{foreign.IncidentId}/related");
+        var missingRelated = await client.GetAsync($"/api/incidents/{Guid.NewGuid()}/related");
         Assert.Equal(HttpStatusCode.NotFound, foreignResponders.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, foreignTimeline.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, foreignRelated.StatusCode);
+        Assert.Equal(await ProblemCodeAsync(missingRelated), await ProblemCodeAsync(foreignRelated));
 
         var foreignService = await client.GetAsync($"/api/services/{foreign.ServiceId}");
         Assert.Equal(HttpStatusCode.NotFound, foreignService.StatusCode);

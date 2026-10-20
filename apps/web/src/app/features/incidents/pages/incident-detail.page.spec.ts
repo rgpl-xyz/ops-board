@@ -53,6 +53,7 @@ describe('IncidentDetailPage', () => {
   const addUpdateMock = vi.fn();
   const getById = vi.fn();
   const assistantStatus = vi.fn();
+  const listRelated = vi.fn();
   let params$: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
@@ -68,6 +69,24 @@ describe('IncidentDetailPage', () => {
     getById.mockResolvedValue(detailDto());
     assistantStatus.mockReset();
     assistantStatus.mockResolvedValue({ enabled: false, simulated: false });
+    listRelated.mockReset();
+    listRelated.mockResolvedValue({
+      items: [
+        {
+          id: 'i9',
+          title: 'Card authorizations timing out',
+          serviceName: 'Payment Processor',
+          teamName: 'Payments',
+          severity: 'High',
+          status: 'Resolved',
+          createdAt: '2026-07-01T00:00:00Z',
+          resolvedAt: '2026-07-01T01:00:00Z',
+          sameService: true,
+          sameTeam: true,
+          sharedWords: [],
+        },
+      ],
+    });
 
     params$ = new BehaviorSubject(convertToParamMap({ id: 'i1' }));
 
@@ -107,6 +126,7 @@ describe('IncidentDetailPage', () => {
             join: joinMock,
             leave: leaveMock,
             addUpdate: addUpdateMock,
+            listRelated,
             listTimeline: async () => ({
               items: [
                 {
@@ -819,6 +839,7 @@ describe('IncidentDetailPage', () => {
             join: joinMock,
             leave: leaveMock,
             addUpdate: addUpdateMock,
+            listRelated,
             listResponders: async () => ({ items: [], nextAfter: null }),
             listTimeline: async () => ({
               items: [],
@@ -935,38 +956,63 @@ describe('IncidentDetailPage', () => {
     fixture.nativeElement.remove();
   });
 
-  describe('with AI assistance', () => {
-    function tabs(root: HTMLElement): HTMLButtonElement[] {
-      return [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
-    }
+  function tabs(root: HTMLElement): HTMLButtonElement[] {
+    return [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+  }
 
-    function panel(root: HTMLElement, tab: HTMLButtonElement): HTMLElement {
-      return root.querySelector(`#${tab.getAttribute('aria-controls')}`) as HTMLElement;
-    }
+  function panel(root: HTMLElement, tab: HTMLButtonElement): HTMLElement {
+    return root.querySelector(`#${tab.getAttribute('aria-controls')}`) as HTMLElement;
+  }
 
-    it('shows the timeline alone while AI assistance is off', async () => {
+  describe('related incidents', () => {
+    it('offers the timeline and related incidents as tabs while AI assistance is off', async () => {
       const fixture = await mountEditable();
       const root = fixture.nativeElement as HTMLElement;
 
-      expect(root.querySelector('[role="tablist"]')).toBeNull();
-      expect(root.querySelector('#tl-h')?.tagName).toBe('H2');
+      expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'Related']);
+      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and related incidents');
+      expect(tabs(root)[0].getAttribute('aria-selected')).toBe('true');
       expect(root.querySelector('ob-incident-assistant')).toBeNull();
 
       fixture.destroy();
       fixture.nativeElement.remove();
     });
 
-    it('offers the timeline and an AI brief as tabs, the timeline first', async () => {
+    it('loads related incidents only once their tab is opened', async () => {
+      const fixture = await mountEditable();
+      const root = fixture.nativeElement as HTMLElement;
+      const related = tabs(root)[1];
+      expect(listRelated).not.toHaveBeenCalled();
+
+      related.click();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(panel(root, related).textContent).toContain('Card authorizations timing out');
+      });
+
+      expect(listRelated).toHaveBeenCalledWith('i1');
+      expect(related.getAttribute('aria-selected')).toBe('true');
+      expect(panel(root, tabs(root)[0]).hidden).toBe(true);
+
+      fixture.destroy();
+      fixture.nativeElement.remove();
+    });
+  });
+
+  describe('with AI assistance', () => {
+    it('offers the timeline, an AI brief and related incidents as tabs, the timeline first', async () => {
       assistantStatus.mockResolvedValue({ enabled: true, simulated: false });
       const fixture = await mountEditable();
       const root = fixture.nativeElement as HTMLElement;
       await vi.waitFor(() => {
         fixture.detectChanges();
-        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'AI brief']);
+        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'AI brief', 'Related']);
       });
       const [timeline, brief] = tabs(root);
 
-      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and AI brief');
+      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe(
+        'Timeline, AI brief and related incidents',
+      );
       expect(timeline.getAttribute('aria-selected')).toBe('true');
       expect(panel(root, timeline).hidden).toBe(false);
       expect(panel(root, brief).hidden).toBe(true);
@@ -1012,11 +1058,17 @@ describe('IncidentDetailPage', () => {
       const root = fixture.nativeElement as HTMLElement;
       await vi.waitFor(() => {
         fixture.detectChanges();
-        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual(['Timeline', 'Brief (simulated)']);
+        expect(tabs(root).map((tab) => tab.textContent?.trim())).toEqual([
+          'Timeline',
+          'Brief (simulated)',
+          'Related',
+        ]);
       });
       expect(buttonNamed(root.querySelector('ob-page-header')!, 'Summarize (simulated)')).toBeDefined();
 
-      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe('Timeline and simulated brief');
+      expect(root.querySelector('#activity-h')?.textContent?.trim()).toBe(
+        'Timeline, simulated brief and related incidents',
+      );
       expect(panel(root, tabs(root)[1]).textContent).toContain('No AI model is connected here');
 
       fixture.destroy();
@@ -1029,9 +1081,9 @@ describe('IncidentDetailPage', () => {
       const root = fixture.nativeElement as HTMLElement;
       await vi.waitFor(() => {
         fixture.detectChanges();
-        expect(tabs(root)).toHaveLength(2);
+        expect(tabs(root)).toHaveLength(3);
       });
-      const [timeline, brief] = tabs(root);
+      const [timeline, brief, related] = tabs(root);
       const press = (key: string) => {
         (document.activeElement as HTMLElement).dispatchEvent(
           new KeyboardEvent('keydown', { key, bubbles: true }),
@@ -1044,9 +1096,15 @@ describe('IncidentDetailPage', () => {
       expect(document.activeElement).toBe(brief);
       expect(brief.getAttribute('aria-selected')).toBe('true');
       press('ArrowRight');
+      expect(document.activeElement).toBe(related);
+      press('ArrowRight');
+      expect(document.activeElement).toBe(timeline);
+      press('ArrowLeft');
+      expect(document.activeElement).toBe(related);
+      press('Home');
       expect(document.activeElement).toBe(timeline);
       press('End');
-      expect(document.activeElement).toBe(brief);
+      expect(document.activeElement).toBe(related);
       press('Home');
       expect(document.activeElement).toBe(timeline);
       expect(timeline.getAttribute('aria-selected')).toBe('true');

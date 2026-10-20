@@ -76,6 +76,9 @@ export const opsboardKeys = {
     lists: () => [...opsboardKeys.incidents.all(), 'list'] as const,
     list: (q: IncidentQuery) =>
       [...opsboardKeys.incidents.lists(), stableQueryPart(q)] as const,
+    /** A list of incidents, so whatever refreshes the lists refreshes it too. */
+    related: (id: string) =>
+      [...opsboardKeys.incidents.lists(), 'related', id] as const,
     detail: (id: string) =>
       [...opsboardKeys.incidents.all(), 'detail', id] as const,
     responders: (id: string, q: ContinuationQuery) =>

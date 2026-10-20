@@ -8,6 +8,7 @@ import type {
   IncidentQuery,
   IncidentSummaryDto,
   LifecycleVersionRequest,
+  RelatedIncidentsDto,
   ResponderDto,
   ResponseMutationDto,
   SeverityRequest,
@@ -177,6 +178,14 @@ export class IncidentsApi {
             pageSize: query.pageSize,
           }),
         },
+      ),
+    );
+  }
+
+  listRelated(id: string): Promise<RelatedIncidentsDto> {
+    return toPromise(
+      this.http.get<RelatedIncidentsDto>(
+        apiUrl(this.baseUrl, `/api/incidents/${id}/related`),
       ),
     );
   }

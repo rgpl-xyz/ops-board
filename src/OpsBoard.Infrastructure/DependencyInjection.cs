@@ -35,10 +35,12 @@ public static class DependencyInjection
         services.AddScoped<IServiceData, ServiceData>();
         services.AddScoped<IIncidentData, IncidentData>();
         services.AddScoped<IIncidentReadData, IncidentReadData>();
+        services.AddScoped<IRelatedIncidentData, RelatedIncidentData>();
         services.AddScoped<LookupService>();
         services.AddScoped<ServiceService>();
         services.AddScoped<IncidentService>();
         services.AddScoped<IncidentResponseService>();
+        services.AddScoped<RelatedIncidentService>();
         services.AddScoped<DemoSeedRunner>();
         services.AddAssistant(configuration);
 

@@ -66,3 +66,14 @@ public interface IIncidentReadData
         int pageSize,
         CancellationToken cancellationToken);
 }
+
+public interface IRelatedIncidentData
+{
+    /// The incidents most like this one, strongest first; null when the
+    /// organization has no such incident.
+    Task<IReadOnlyList<RelatedIncidentDto>?> ListAsync(
+        Guid organizationId,
+        Guid incidentId,
+        int limit,
+        CancellationToken cancellationToken);
+}

@@ -215,6 +215,33 @@ describe('IncidentsApi', () => {
     await expect(timelinePending).resolves.toMatchObject({ totalCount: 1 });
   });
 
+  it('reads the incidents related to one', async () => {
+    const related = {
+      items: [
+        {
+          id: 'i2',
+          title: 'Outage again',
+          serviceName: 'API',
+          teamName: 'Platform',
+          severity: 'High' as const,
+          status: 'Resolved' as const,
+          createdAt: '2025-12-01T00:00:00Z',
+          resolvedAt: '2025-12-01T01:00:00Z',
+          sameService: true,
+          sameTeam: true,
+          sharedWords: ['Outage'],
+        },
+      ],
+    };
+
+    const pending = api.listRelated('i1');
+    const request = http.expectOne('/api/incidents/i1/related');
+    expect(request.request.method).toBe('GET');
+    request.flush(related);
+
+    await expect(pending).resolves.toEqual(related);
+  });
+
   it('throws OpsBoardProblem on incident errors', async () => {
     const pending = api.getById('missing');
     http.expectOne('/api/incidents/missing').flush(

@@ -206,8 +206,7 @@
   border-color: var(--ob-accent);
 }
 
-/* With AI assistance on, the history column holds two tabs styled like the
-   section titles they replace. */
+/* The history column's tabs, styled like the section titles beside them. */
 .activity-tabs {
   display: flex;
   gap: 1.25rem;
@@ -272,8 +271,8 @@
     min-height: 0;
   }
 
-  /* A brief longer than the column scrolls in place, like the timeline. */
-  .activity-panel--assistant:not([hidden]) {
+  /* A brief or related list longer than the column scrolls in place, like the timeline. */
+  .activity-panel--scrolls:not([hidden]) {
     display: block;
     min-height: 12rem;
     contain: size;

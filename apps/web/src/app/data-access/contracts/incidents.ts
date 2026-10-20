@@ -100,6 +100,29 @@ export interface TimelineEntryDto {
   toSeverity: IncidentSeverity | null;
 }
 
+/**
+ * Another incident with something in common with the one asked about.
+ * `sharedWords` are words of the asked-about title, as written there, that
+ * this incident's title also uses.
+ */
+export interface RelatedIncidentDto {
+  id: string;
+  title: string;
+  serviceName: string;
+  teamName: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+  sameService: boolean;
+  sameTeam: boolean;
+  sharedWords: string[];
+}
+
+export interface RelatedIncidentsDto {
+  items: RelatedIncidentDto[];
+}
+
 export interface ResponseMutationDto {
   incidentId: string;
   version: RevisionString;

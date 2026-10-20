@@ -56,6 +56,24 @@ public sealed record IncidentDetailDto(
     string Version,
     string LifecycleVersion);
 
+/// Another incident in the same organization, with what it has in common with
+/// the one asked about. SharedWords are words of the asked-about title, as
+/// written there and in its order, that this incident's title also uses.
+public sealed record RelatedIncidentDto(
+    Guid Id,
+    string Title,
+    string ServiceName,
+    string TeamName,
+    IncidentSeverity Severity,
+    IncidentStatus Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? ResolvedAt,
+    bool SameService,
+    bool SameTeam,
+    IReadOnlyList<string> SharedWords);
+
+public sealed record RelatedIncidentsDto(IReadOnlyList<RelatedIncidentDto> Items);
+
 public sealed record ResponderDto(Guid UserId, string DisplayName, DateTimeOffset JoinedAt);
 
 public sealed record TimelineEntryDto(
