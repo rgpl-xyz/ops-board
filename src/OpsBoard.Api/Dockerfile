@@ -19,6 +19,13 @@ RUN ConnectionStrings__OpsBoard="Host=unused" dotnet ef migrations bundle \
       --output /app/efbundle
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# The base image's ca-certificates still trusts emSign ECC Root CA - G3, whose
+# intermediates' keys leaked in October 2026; Ubuntu's 20260816ubuntu0.24.04.1 drops
+# it. Remove this once the base image ships that version or later.
+RUN apt-get update \
+      && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+         --only-upgrade ca-certificates \
+      && rm -rf /var/lib/apt/lists/*
 # The full commit the image is built from, reported by /api/health; `dev` when not given.
 ARG GIT_SHA=dev
 RUN echo "$GIT_SHA" | grep -Eqx 'dev|[0-9a-f]{40}' \
