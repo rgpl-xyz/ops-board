@@ -53,6 +53,22 @@ describe('AssistantApi', () => {
     await expect(pending).rejects.toSatisfy(isOpsBoardProblem);
   });
 
+  it('POSTs a question as the only thing in the body, and can abandon it', async () => {
+    const pending = api.askQuestion('i1', 'What happened?');
+    const req = http.expectOne('/api/incidents/i1/assistant/questions');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ question: 'What happened?' });
+    req.flush({ incidentId: 'i1', answered: false });
+    await expect(pending).resolves.toMatchObject({ incidentId: 'i1', answered: false });
+
+    const controller = new AbortController();
+    const abandoned = api.askQuestion('i1', 'And then?', controller.signal);
+    const second = http.expectOne('/api/incidents/i1/assistant/questions');
+    controller.abort();
+    expect(second.cancelled).toBe(true);
+    await expect(abandoned).rejects.toSatisfy(isOpsBoardProblem);
+  });
+
   it('reads an assistant problem with its code and wait', async () => {
     const pending = api.generateBrief('i1');
     http.expectOne('/api/incidents/i1/assistant/brief').flush(

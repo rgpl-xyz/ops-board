@@ -415,6 +415,9 @@
                 [timelineCount]="timeline.data()?.totalCount ?? null"
                 [simulated]="assistantSimulated()"
               />
+              @if (assistantQuestions()) {
+                <ob-incident-question [incident]="incident" [simulated]="assistantSimulated()" />
+              }
             </div>
           }
           <!-- Fetched on first look; the query cache keeps it between looks. -->

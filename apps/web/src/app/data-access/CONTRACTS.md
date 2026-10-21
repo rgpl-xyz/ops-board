@@ -36,6 +36,7 @@ Sources:
 | GET | `/api/incidents/{id}/related` | `IncidentsApi.listRelated` → `RelatedIncidentsDto` |
 | GET | `/api/assistant` | `AssistantApi.getStatus` → `AssistantStatusDto` |
 | POST | `/api/incidents/{id}/assistant/brief` | `AssistantApi.generateBrief` → `IncidentBriefDto` |
+| POST | `/api/incidents/{id}/assistant/questions` | `AssistantApi.askQuestion` → `IncidentAnswerDto` |
 
 Not represented by this client API layer: `/api/health`, dashboard, postmortem,
 and SignalR.
@@ -49,7 +50,7 @@ and SignalR.
 | `contracts/identity.ts` / `lookups.ts` | `Lookups/LookupDtos.cs` |
 | `contracts/services.ts` | `Services/ServiceDtos.cs` |
 | `contracts/incidents.ts` | `Incidents/IncidentDtos.cs` |
-| `contracts/assistant.ts` | `Assistant/IncidentBriefDtos.cs` |
+| `contracts/assistant.ts` | `Assistant/IncidentBriefDtos.cs`, `Assistant/IncidentAnswerDtos.cs` |
 
 ## Notes
 

@@ -17,6 +17,17 @@ public static class AssistantEndpoints
             async (Guid id, HttpContext http, IncidentBriefService briefs, CancellationToken ct) =>
                 Results.Ok(await briefs.GenerateAsync(id, ClientAddress.VisitorOf(http.Connection.RemoteIpAddress), ct)));
 
+        // The body carries only the question; the incident comes from the route
+        // and whatever else is in the body is not read.
+        app.MapPost(
+            "/api/incidents/{id:guid}/assistant/questions",
+            async (Guid id, IncidentQuestionRequest request, HttpContext http, IncidentQuestionService questions, CancellationToken ct) =>
+                Results.Ok(await questions.AskAsync(
+                    id,
+                    request,
+                    ClientAddress.VisitorOf(http.Connection.RemoteIpAddress),
+                    ct)));
+
         return app;
     }
 }

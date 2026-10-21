@@ -35,6 +35,7 @@ export type {
   AssistantStatusDto,
   BriefSourceDto,
   BriefStatementDto,
+  IncidentAnswerDto,
   IncidentBriefDto,
 } from './contracts/assistant';
 export type { CurrentUserDto, OrganizationDto } from './contracts/identity';
@@ -95,7 +96,9 @@ export {
 export {
   assistantStatusQuery,
   incidentBriefMutation,
+  incidentQuestionMutation,
   type IncidentBriefVariables,
+  type IncidentQuestionVariables,
 } from './query/assistant.queries';
 export { currentUserQuery, organizationQuery } from './query/identity.queries';
 export { teamsQuery, usersQuery } from './query/lookups.queries';

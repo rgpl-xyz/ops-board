@@ -45,6 +45,7 @@ export default defineConfig({
         // Every journey comes from one local address, so the per-visitor brief
         // limit would stop the suite partway; the API tests cover that limit.
         Assistant__VisitorRequestLimit: '1000',
+        Assistant__Questions__VisitorLimit: '1000',
       },
       reuseExistingServer: !process.env['CI'],
       timeout: 180_000,

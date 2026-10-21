@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IIncidentData, IncidentData>();
         services.AddScoped<IIncidentReadData, IncidentReadData>();
         services.AddScoped<IRelatedIncidentData, RelatedIncidentData>();
+        services.AddScoped<IPostmortemData, PostmortemData>();
         services.AddScoped<LookupService>();
         services.AddScoped<ServiceService>();
         services.AddScoped<IncidentService>();

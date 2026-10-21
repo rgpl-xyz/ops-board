@@ -1,7 +1,8 @@
 namespace OpsBoard.Application.Assistant;
 
 /// <param name="Simulated">True when briefs would come from the offline provider, with no model.</param>
-public sealed record AssistantStatusDto(bool Enabled, bool Simulated);
+/// <param name="Questions">True when people may also type questions about an incident.</param>
+public sealed record AssistantStatusDto(bool Enabled, bool Simulated, bool Questions = false);
 
 /// <param name="BasedOnVersion">The incident revision the brief was generated from.</param>
 /// <param name="BasedOnTimelineCount">Timeline entries that existed then; a new entry makes the brief stale.</param>

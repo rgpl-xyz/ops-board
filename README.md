@@ -1,6 +1,6 @@
 # OpsBoard
 
-Real-time incident and service operations management platform, with AI incident briefs that cite their sources. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and containerised delivery. Delivery status is in the [roadmap](#roadmap).
+Real-time incident and service operations management platform, with AI incident briefs and answers that cite their sources. Portfolio application demonstrating senior Angular frontend engineering, ASP.NET Core API design, EF Core/PostgreSQL persistence, SignalR, testing, accessibility, and containerised delivery. Delivery status is in the [roadmap](#roadmap).
 
 Made by [RGPL](https://rgpl.xyz).
 
@@ -71,7 +71,7 @@ OpsBoard/
 - [Accessibility](docs/accessibility.md): the contracts the application keeps and which are verified
 - [Brand integration](docs/brand.md): approved RGPL assets, product naming and favicon/PWA packaging
 - [Deployment](docs/deployment.md): what changes outside the demonstration stack
-- [AI assistance](docs/ai-assistance.md): the incident brief, what keeps it grounded and safe, and its limits
+- [AI assistance](docs/ai-assistance.md): the incident brief and typed questions, what keeps them grounded and safe, and their limits
 - Decision records: [server state](docs/adr/0001-server-state-ownership.md), [client state](docs/adr/0002-client-state-ownership.md), [realtime orchestration](docs/adr/0003-realtime-orchestration.md)
 
 ## What works today
@@ -207,7 +207,7 @@ The stack and the local development setup share the same PostgreSQL container an
 8. **Deterministic Acme demo seed** behind a Development-only `--seed-demo` command (not a public reset endpoint).
 9. **Schema changes as a separate step**: the API never migrates itself; a migration bundle ships in the API image.
 10. **Tool versions pinned in `mise.toml`** so every clone uses the same Node/.NET pair.
-11. **AI assistance that does not rely on the model behaving**: the server sends one incident the caller can already read, gives the model no tools, checks every citation against what it sent, and shows the reply as text. It is off unless configured ([AI assistance](docs/ai-assistance.md)).
+11. **AI assistance that does not rely on the model behaving**: the server sends one incident the caller can already read, checks every citation against what it sent, and shows the reply as text. For a typed question the model's only lookup is reading a related incident by a label the server issued, which the server reads for the caller; anything else refuses the question. It is off unless configured ([AI assistance](docs/ai-assistance.md)).
 
 ## Roadmap
 
@@ -222,6 +222,7 @@ The stack and the local development setup share the same PostgreSQL container an
 | 7 | Frontend/backend/integration/E2E/a11y test hardening | Done |
 | 8 | GitHub Actions, container images and stack, architecture docs / ADRs, deployment guidance | Done |
 | 9 | AI incident brief: cited sources checked by the server, per-visitor and daily limits, off by default | Done |
+| 10 | Related incidents by fixed rules; typed questions with read-only lookups and answers held to their sources, off by default | Done |
 
 ## License
 

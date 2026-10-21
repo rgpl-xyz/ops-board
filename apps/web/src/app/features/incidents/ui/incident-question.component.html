@@ -1,0 +1,66 @@
+<section class="ask" aria-labelledby="assistant-question-heading">
+  <h3 id="assistant-question-heading">Ask about this incident</h3>
+  <p class="ask__intro">
+    @if (simulated()) {
+      No AI model is connected here, so answers are assembled from the records by fixed rules.
+    } @else {
+      Answers come only from this incident's records and its related incidents, and each sentence cites them.
+    }
+  </p>
+
+  <!-- Announces outcomes without moving focus. -->
+  <p class="visually-hidden" role="status">{{ announcement() }}</p>
+
+  <form class="ask__form" (submit)="ask($event)">
+    <div class="field ask__field">
+      <label for="assistant-question">Question</label>
+      <input
+        id="assistant-question"
+        type="text"
+        autocomplete="off"
+        [attr.maxlength]="maxLength"
+        aria-describedby="assistant-question-hint"
+        [value]="question()"
+        (input)="onInput($event)"
+      />
+      <p id="assistant-question-hint" class="ask__hint">{{ remaining() }} characters left</p>
+    </div>
+    <div class="ask__actions">
+      <button type="submit" class="btn" [disabled]="blank() || askMut.isPending()">Ask</button>
+      @if (askMut.isPending()) {
+        <span class="ask__pending">Answering…</span>
+        <button type="button" class="btn" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </form>
+
+  @if (failureView(); as view) {
+    <ob-callout variant="error" semantic="alert">{{ view.message }}</ob-callout>
+  }
+
+  @if (asked(); as a) {
+    <article #answerElement class="answer" aria-labelledby="assistant-answer-label">
+      <p id="assistant-answer-label" class="answer__label">
+        {{ label() }} ·
+        <time [attr.datetime]="a.answer.answeredAt">{{ a.answer.answeredAt | obTimestamp: true }}</time>
+      </p>
+      <p class="answer__question">“{{ a.question }}”</p>
+      @if (a.answer.answered) {
+        <ul>
+          @for (sentence of a.answer.sentences; track $index) {
+            <li>
+              {{ sentence.text }}
+              <ob-source-refs [refs]="sentence.refs" [sources]="sources()" />
+            </li>
+          }
+        </ul>
+        <p class="answer__legend">
+          Sources: I is the incident record, T1, T2 and so on its timeline entries, P its postmortem, and R1, R2
+          and so on its related incidents.
+        </p>
+      } @else {
+        <p class="answer__none">The records don't say.</p>
+      }
+    </article>
+  }
+</section>

@@ -26,6 +26,25 @@ export interface IncidentBriefVariables {
   signal?: AbortSignal;
 }
 
+export interface IncidentQuestionVariables {
+  incidentId: string;
+  question: string;
+  signal?: AbortSignal;
+}
+
+/** Like a brief, a question spends provider allowance, so it runs only when asked. */
+export function incidentQuestionMutation() {
+  const api = inject(AssistantApi);
+  return mutationOptions<
+    Awaited<ReturnType<AssistantApi['askQuestion']>>,
+    OpsBoardProblem,
+    IncidentQuestionVariables
+  >({
+    mutationFn: ({ incidentId, question, signal }) => api.askQuestion(incidentId, question, signal),
+    retry: false,
+  });
+}
+
 /**
  * A brief is a mutation, not a query: each one spends provider allowance, so
  * it runs only when a person asks, never on focus, mount or reconnect. It

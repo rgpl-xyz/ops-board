@@ -17,7 +17,6 @@ import { injectMutation } from '@tanstack/angular-query-experimental';
 
 import {
   incidentBriefMutation,
-  type BriefSourceDto,
   type BriefStatementDto,
   type IncidentBriefDto,
   type IncidentDetailDto,
@@ -26,8 +25,8 @@ import {
 import { focusWhenRendered } from '../../../shared/a11y/focus';
 import { TimestampPipe } from '../../../shared/pipes/timestamp.pipe';
 import { CalloutComponent } from '../../../shared/ui/callout.component';
-import { HoverCardComponent } from '../../../shared/ui/hover-card.component';
 import { describeBriefFailure } from '../utils/brief-failure';
+import { SourceRefsComponent } from './source-refs.component';
 
 interface BriefSection {
   readonly title: string;
@@ -46,7 +45,7 @@ interface BriefSection {
   selector: 'ob-incident-assistant',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(focusout)': 'onFocusOut($event)' },
-  imports: [CalloutComponent, HoverCardComponent, TimestampPipe],
+  imports: [CalloutComponent, SourceRefsComponent, TimestampPipe],
   templateUrl: './incident-assistant.component.html',
   styleUrl: './incident-assistant.component.scss',
 })
@@ -221,12 +220,6 @@ export class IncidentAssistantComponent {
     if (next instanceof Node && !this.host.nativeElement.contains(next)) {
       this.followFocus = false;
     }
-  }
-
-  protected sourceName(source: BriefSourceDto): string {
-    return source.actor
-      ? `Source ${source.ref}: ${source.label} by ${source.actor}`
-      : `Source ${source.ref}: ${source.label}`;
   }
 
   /** The brief as text people can paste anywhere, sources included. */

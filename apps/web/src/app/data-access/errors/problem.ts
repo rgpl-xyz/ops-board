@@ -13,7 +13,9 @@ export type OpsBoardProblemCode =
   | 'assistant_visitor_limit'
   | 'assistant_busy'
   | 'assistant_provider_unavailable'
-  | 'assistant_unverified_response';
+  | 'assistant_unverified_response'
+  | 'assistant_questions_disabled'
+  | 'assistant_question_limit';
 
 export const OPSBOARD_PROBLEM_CODES = [
   'identity_unavailable',
@@ -31,6 +33,8 @@ export const OPSBOARD_PROBLEM_CODES = [
   'assistant_busy',
   'assistant_provider_unavailable',
   'assistant_unverified_response',
+  'assistant_questions_disabled',
+  'assistant_question_limit',
 ] as const satisfies readonly OpsBoardProblemCode[];
 
 export interface OpsBoardProblem {

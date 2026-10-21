@@ -212,4 +212,31 @@ public sealed class AssistantLimitsTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => harness.Service.GenerateAsync(AssistantHarness.IncidentId, "visitor-a", caller.Token));
     }
+
+    [Fact]
+    public void Briefs_and_questions_keep_separate_allowances_but_share_the_calls_in_flight()
+    {
+        var settings = new AssistantSettings(
+            Enabled: true,
+            DailyRequestLimit: 20,
+            MaxConcurrentRequests: 1,
+            RequestTimeout: TimeSpan.FromSeconds(30),
+            VisitorRequestLimit: 1,
+            QuestionsEnabled: true,
+            QuestionVisitorLimit: 1);
+        var gate = new AssistantUsageGate(settings, new MutableTimeProvider(DateTimeOffset.Parse("2026-10-01T12:00:00Z")));
+
+        using (gate.Enter("visitor-a"))
+        {
+            var busy = Assert.Throws<AssistantUnavailableException>(() => gate.EnterQuestion("visitor-b"));
+            Assert.Equal(AssistantFailure.Busy, busy.Failure);
+        }
+
+        using (gate.EnterQuestion("visitor-a"))
+        {
+        }
+
+        Assert.Equal(AssistantFailure.VisitorLimitReached, Assert.Throws<AssistantUnavailableException>(() => gate.Enter("visitor-a")).Failure);
+        Assert.Equal(AssistantFailure.QuestionLimitReached, Assert.Throws<AssistantUnavailableException>(() => gate.EnterQuestion("visitor-a")).Failure);
+    }
 }

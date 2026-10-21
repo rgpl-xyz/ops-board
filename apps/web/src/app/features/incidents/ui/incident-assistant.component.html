@@ -82,28 +82,7 @@
           @for (statement of section.statements; track $index) {
             <li>
               {{ statement.text }}
-              <span class="refs">
-                @for (ref of statement.refs; track ref) {
-                  @if (sources().get(ref); as source) {
-                    <ob-hover-card
-                      class="ref"
-                      [label]="ref"
-                      [heading]="'Source ' + ref"
-                      [ariaLabel]="sourceName(source)"
-                    >
-                      <p class="source__what">
-                        {{ source.label }}@if (source.actor) {<span> · {{ source.actor }}</span>}
-                      </p>
-                      <p class="source__when">
-                        <time [attr.datetime]="source.occurredAt">{{ source.occurredAt | obTimestamp: true }}</time>
-                      </p>
-                      @if (source.detail) {
-                        <p class="source__detail">{{ source.detail }}</p>
-                      }
-                    </ob-hover-card>
-                  }
-                }
-              </span>
+              <ob-source-refs [refs]="statement.refs" [sources]="sources()" />
             </li>
           }
         </ul>

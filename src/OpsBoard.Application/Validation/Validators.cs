@@ -1,4 +1,5 @@
 using FluentValidation;
+using OpsBoard.Application.Assistant;
 using OpsBoard.Application.Incidents;
 using OpsBoard.Application.Services;
 using OpsBoard.Domain.Enums;
@@ -156,6 +157,18 @@ public sealed class IncidentQueryValidator : AbstractValidator<IncidentQuery>
         RuleFor(x => x.Direction).Must(d => d is "asc" or "desc");
         RuleFor(x => x.Severity).Must(s => s is null || Enum.IsDefined(s.Value));
         RuleFor(x => x.Status).Must(s => s is null || Enum.IsDefined(s.Value));
+    }
+}
+
+public sealed class IncidentQuestionRequestValidator : AbstractValidator<IncidentQuestionRequest>
+{
+    public const int MaxQuestionLength = 300;
+
+    public IncidentQuestionRequestValidator()
+    {
+        RuleFor(x => x.Question).Must(q => !string.IsNullOrWhiteSpace(q)).WithMessage("Question is required.")
+            .Must(q => TextLimits.ScalarLength(q?.Trim()) <= MaxQuestionLength)
+            .WithMessage($"Question must be at most {MaxQuestionLength} characters.");
     }
 }
 

@@ -40,6 +40,8 @@ Every setting the API needs can be supplied as an environment variable, so value
 | `Assistant__Provider__SupportsStrictSchema`, `__ReasoningEffort`, `__TimeoutSeconds` | provider capabilities and per-call timeout (default 20 s) |
 | `Assistant__DailyRequestLimit`, `__MaxConcurrentRequests`, `__RequestTimeoutSeconds` | limits; defaults 50 a day, 2 at once, 30 s |
 | `Assistant__VisitorRequestLimit`, `__VisitorWindowMinutes` | new briefs one visitor may start in a window; default 5 in 10 minutes |
+| `Assistant__Questions__Enabled` | `true` also lets people type questions about an incident; off when unset |
+| `Assistant__Questions__DailyLimit`, `__VisitorLimit` | questions a day, and per visitor in the same window; defaults 50 and 5 |
 | `Assistant__Provider__InputUsdPerMillionTokens`, `__OutputUsdPerMillionTokens` | prices for the estimated-cost metric; default 0 |
 | `ForwardedHeaders__KnownNetworks` | comma-separated networks of the proxies in front of the API, such as `172.16.0.0/12`; see [client addresses](#client-addresses) |
 | `ForwardedHeaders__ForwardLimit` | how many proxies stand in front of the API; default 1 |
@@ -67,6 +69,8 @@ AI assistance stays off until configured. A public deployment needs all of the f
 3. `Assistant__DailyRequestLimit` sized to the provider's allowance, with room for your own use.
 4. `Assistant__Provider__SupportsStrictSchema=true` where the provider enforces schemas, and for a reasoning model `Assistant__Provider__ReasoningEffort=low`, so its reasoning leaves room for the brief within the output limit. Otherwise more briefs are refused.
 5. `ForwardedHeaders__KnownNetworks` and `ForwardedHeaders__ForwardLimit` for the proxies in front of the API, as described under [client addresses](#client-addresses). Otherwise all visitors share one per-visitor allowance.
+
+Typed questions stay off until `Assistant__Questions__Enabled=true` as well. Each question can take two provider calls, so size `Assistant__Questions__DailyLimit` with the brief limit against the provider's allowance.
 
 Afterwards, ask for one brief and check that its label names the expected model and provider.
 

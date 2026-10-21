@@ -16,7 +16,7 @@ Every application endpoint lives under `/api` and exchanges JSON. The web applic
 | Responders | `GET /api/incidents/{id}/responders`, `POST …/responders/join`, `POST …/responders/leave` | Who is working an incident; the caller joining or leaving |
 | Timeline | `GET /api/incidents/{id}/timeline`, `POST /api/incidents/{id}/updates` | The incident's history; posting a written update |
 | Related incidents | `GET /api/incidents/{id}/related` | Up to five other incidents on the same service, or whose titles share words with this one, each with what they have in common. Picked by fixed rules, not AI |
-| AI assistance | `GET /api/assistant`, `POST /api/incidents/{id}/assistant/brief` | Whether it is on, and whether a model or the offline fake writes its briefs; an AI brief of one incident, which reads only and takes no body ([AI assistance](ai-assistance.md)) |
+| AI assistance | `GET /api/assistant`, `POST /api/incidents/{id}/assistant/brief`, `POST /api/incidents/{id}/assistant/questions` | Whether it is on, whether a model or the offline fake answers, and whether questions are allowed; an AI brief of one incident, which reads only and takes no body; an answer to one question, sent as `{ "question": "…" }`, which reads only ([AI assistance](ai-assistance.md)) |
 
 `GET /api/health` sits outside this model. It reports that the process is up and the commit it was built from, with no identity and no database access, so it is suitable for a liveness probe. It says nothing about whether application requests will succeed.
 

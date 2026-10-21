@@ -101,6 +101,8 @@ public enum AssistantFailure
     Busy,
     ProviderUnavailable,
     UnverifiedResponse,
+    QuestionsDisabled,
+    QuestionLimitReached,
 }
 
 /// AI assistance could not answer. Each failure tells the caller what to do next.
@@ -125,6 +127,8 @@ public sealed class AssistantUnavailableException : ApplicationException
         AssistantFailure.VisitorLimitReached => "assistant_visitor_limit",
         AssistantFailure.Busy => "assistant_busy",
         AssistantFailure.ProviderUnavailable => "assistant_provider_unavailable",
+        AssistantFailure.QuestionsDisabled => "assistant_questions_disabled",
+        AssistantFailure.QuestionLimitReached => "assistant_question_limit",
         _ => "assistant_unverified_response",
     };
 
@@ -135,6 +139,8 @@ public sealed class AssistantUnavailableException : ApplicationException
         AssistantFailure.VisitorLimitReached => "You have started several new briefs in a short time. Try again in a few minutes.",
         AssistantFailure.Busy => "AI assistance is busy. Try again in a few seconds.",
         AssistantFailure.ProviderUnavailable => "The AI provider is unavailable. Try again later.",
+        AssistantFailure.QuestionsDisabled => "Questions to AI assistance are turned off for this environment.",
+        AssistantFailure.QuestionLimitReached => "You have asked several questions in a short time. Try again in a few minutes.",
         _ => "The AI response could not be checked against the incident's records, so it was not shown. Try again.",
     };
 }

@@ -8,7 +8,8 @@ namespace OpsBoard.Infrastructure.Assistant;
 
 /// Reads the Assistant section. The feature is off unless Assistant:Enabled is
 /// true, and turning it on requires an explicit provider, so production never
-/// falls back to the fake by accident.
+/// falls back to the fake by accident. Typed questions also need
+/// Assistant:Questions:Enabled.
 public static class AssistantRegistration
 {
     public const string FakeKind = "Fake";
@@ -17,6 +18,7 @@ public static class AssistantRegistration
     public static IServiceCollection AddAssistant(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("Assistant");
+        var questions = section.GetSection("Questions");
         var settings = new AssistantSettings(
             Enabled: ReadBool(section, "Enabled", fallback: false),
             DailyRequestLimit: ReadInt(section, "DailyRequestLimit", fallback: 50, minimum: 0),
@@ -25,13 +27,17 @@ public static class AssistantRegistration
             InputUsdPerMillionTokens: ReadDecimal(section, "Provider:InputUsdPerMillionTokens"),
             OutputUsdPerMillionTokens: ReadDecimal(section, "Provider:OutputUsdPerMillionTokens"),
             VisitorRequestLimit: ReadInt(section, "VisitorRequestLimit", fallback: 5, minimum: 1),
-            VisitorWindowMinutes: ReadInt(section, "VisitorWindowMinutes", fallback: 10, minimum: 1));
+            VisitorWindowMinutes: ReadInt(section, "VisitorWindowMinutes", fallback: 10, minimum: 1),
+            QuestionsEnabled: ReadBool(questions, "Enabled", fallback: false),
+            QuestionDailyLimit: ReadInt(questions, "DailyLimit", fallback: 50, minimum: 0),
+            QuestionVisitorLimit: ReadInt(questions, "VisitorLimit", fallback: 5, minimum: 1));
 
         services.AddSingleton(settings);
         services.AddSingleton<IncidentBriefCache>();
         services.AddSingleton<AssistantUsageGate>();
         services.AddSingleton<AssistantMetrics>();
         services.AddScoped<IncidentBriefService>();
+        services.AddScoped<IncidentQuestionService>();
 
         var provider = section.GetSection("Provider");
         var kind = provider["Kind"];

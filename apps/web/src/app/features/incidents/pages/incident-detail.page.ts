@@ -73,6 +73,7 @@ import {
   type FormFieldRef,
 } from '../../../shared/a11y/form-focus';
 import { IncidentAssistantComponent } from '../ui/incident-assistant.component';
+import { IncidentQuestionComponent } from '../ui/incident-question.component';
 import { RelatedIncidentsComponent } from '../ui/related-incidents.component';
 import { ResponderListComponent } from '../ui/responder-list.component';
 import { ResizeToFitDirective } from '../../../shared/directives/resize-to-fit.directive';
@@ -109,6 +110,7 @@ const EDIT_SUMMARY_ID = 'edit-form-error';
     ClampedTextComponent,
     ConfirmDialogComponent,
     IncidentAssistantComponent,
+    IncidentQuestionComponent,
     NgTemplateOutlet,
     PageHeaderComponent,
     PaginationComponent,
@@ -300,6 +302,10 @@ export class IncidentDetailPage {
   /** No model is connected, so the brief is not called an AI brief. */
   protected readonly assistantSimulated = computed(
     () => this.assistantStatus.data()?.simulated === true,
+  );
+  /** Typed questions are a separate setting, off unless the server turns them on. */
+  protected readonly assistantQuestions = computed(
+    () => this.assistantStatus.data()?.questions === true,
   );
   /** The history column's tabs, in order; the brief's only with AI assistance on. */
   private readonly activityTabs = computed<readonly ActivityTab[]>(() =>

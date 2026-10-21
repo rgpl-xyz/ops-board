@@ -207,6 +207,20 @@ public sealed class IncidentBriefServiceTests
         Assert.Equal(new AssistantStatusDto(enabled, simulated), status);
     }
 
+    [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public async Task Status_says_whether_questions_may_be_asked(bool enabled, bool questionsEnabled, bool questions)
+    {
+        var harness = new AssistantHarness();
+        harness.Settings = harness.Settings with { Enabled = enabled, QuestionsEnabled = questionsEnabled };
+
+        var status = await harness.Service.GetStatusAsync(CancellationToken.None);
+
+        Assert.Equal(questions, status.Questions);
+    }
+
     private static IEnumerable<string> ValidRefs(InferenceRequest request)
     {
         using var schema = JsonDocument.Parse(request.JsonSchema);

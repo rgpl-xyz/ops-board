@@ -90,14 +90,16 @@ public sealed record IncidentBriefContext(
     }
 
     /// The newest entries whose serialized size fits the timeline budget, oldest first.
-    private static List<TimelineEntryDto> NewestThatFit(IReadOnlyList<TimelineEntryDto> newestFirst)
+    internal static List<TimelineEntryDto> NewestThatFit(
+        IReadOnlyList<TimelineEntryDto> newestFirst,
+        int budget = MaxTimelineLength)
     {
         var picked = new List<TimelineEntryDto>();
         var used = 0;
         foreach (var entry in newestFirst)
         {
             var size = JsonSerializer.Serialize(ToWire("T00", entry), Json).Length + 1;
-            if (used + size > MaxTimelineLength)
+            if (used + size > budget)
             {
                 break;
             }
@@ -110,7 +112,7 @@ public sealed record IncidentBriefContext(
         return picked;
     }
 
-    private static object ToWire(string reference, TimelineEntryDto entry) => new
+    internal static object ToWire(string reference, TimelineEntryDto entry) => new
     {
         @ref = reference,
         at = entry.OccurredAt.ToString("O", CultureInfo.InvariantCulture),
@@ -121,7 +123,7 @@ public sealed record IncidentBriefContext(
     };
 
     /// The longest prefix whose JSON encoding, with the marker, fits in <paramref name="max"/>.
-    private static string? Fit(string? text, int max)
+    internal static string? Fit(string? text, int max)
     {
         if (text is null || Encoded(text) <= max)
         {
@@ -151,7 +153,7 @@ public sealed record IncidentBriefContext(
     private static string Prefix(string text, int length) =>
         length > 0 && char.IsHighSurrogate(text[length - 1]) ? text[..(length - 1)] : text[..length];
 
-    private static string? Change(TimelineEntryDto entry) => entry.Type switch
+    internal static string? Change(TimelineEntryDto entry) => entry.Type switch
     {
         TimelineEntryType.StatusChanged or TimelineEntryType.Resolved or TimelineEntryType.Reopened
             when entry.FromStatus is not null && entry.ToStatus is not null => $"{entry.FromStatus} → {entry.ToStatus}",
@@ -160,7 +162,7 @@ public sealed record IncidentBriefContext(
         _ => null,
     };
 
-    private static string Label(TimelineEntryType type) => type switch
+    internal static string Label(TimelineEntryType type) => type switch
     {
         TimelineEntryType.IncidentCreated => "Incident opened",
         TimelineEntryType.StatusChanged => "Status changed",

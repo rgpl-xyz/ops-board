@@ -125,5 +125,5 @@ public static class IncidentBriefParser
     }
 }
 
-/// Internal to the brief: the service turns it into a user-facing failure.
+/// Internal to AI assistance: the brief and question services turn it into a user-facing failure.
 public sealed class BriefRejectedException(string reason) : Exception(reason);

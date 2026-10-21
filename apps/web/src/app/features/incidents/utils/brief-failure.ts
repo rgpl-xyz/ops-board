@@ -54,6 +54,36 @@ export function describeBriefFailure(problem: OpsBoardProblem): BriefFailureView
   }
 }
 
+/** What went wrong with a question; limits, outages and access read as for a brief. */
+export function describeQuestionFailure(problem: OpsBoardProblem): BriefFailureView {
+  switch (problem.code) {
+    case 'assistant_questions_disabled':
+      return { message: 'Questions are turned off for this environment.', retry: false };
+    case 'assistant_question_limit':
+      return {
+        message: `You've asked several questions in a short time. Try again in about ${aboutWait(problem.retryAfterSeconds ?? 600)}.`,
+        retry: true,
+      };
+    case 'assistant_unverified_response':
+      return {
+        message: "The AI answer didn't pass the checks against the records, so it isn't shown. Try asking another way.",
+        retry: true,
+      };
+    case 'validation_failed':
+      return { message: 'A question needs some text, up to 300 characters.', retry: false };
+    case 'assistant_disabled':
+    case 'assistant_daily_limit':
+    case 'assistant_busy':
+    case 'assistant_provider_unavailable':
+    case 'unavailable':
+    case 'forbidden':
+    case 'identity_unavailable':
+      return describeBriefFailure(problem);
+    default:
+      return { message: 'The question could not be answered. Check your connection and try again.', retry: true };
+  }
+}
+
 function aboutWait(seconds: number): string {
   if (seconds < 90) {
     return plural(Math.max(1, Math.ceil(seconds)), 'second');

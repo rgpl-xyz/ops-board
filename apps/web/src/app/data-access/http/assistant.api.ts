@@ -2,7 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { fromEvent, takeUntil } from 'rxjs';
 
-import type { AssistantStatusDto, IncidentBriefDto } from '../contracts/assistant';
+import type {
+  AssistantStatusDto,
+  IncidentAnswerDto,
+  IncidentBriefDto,
+} from '../contracts/assistant';
 import { API_BASE_URL } from './api-base';
 import { apiUrl, toPromise } from './http-utils';
 
@@ -29,6 +33,24 @@ export class AssistantApi {
     const request = this.http.post<IncidentBriefDto>(
       apiUrl(this.baseUrl, `/api/incidents/${incidentId}/assistant/brief`),
       null,
+    );
+    return toPromise(
+      signal ? request.pipe(takeUntil(fromEvent(signal, 'abort'))) : request,
+    );
+  }
+
+  /**
+   * Asks one question about an incident. The body holds only the question:
+   * the server chooses the records, the instructions and the model.
+   */
+  askQuestion(
+    incidentId: string,
+    question: string,
+    signal?: AbortSignal,
+  ): Promise<IncidentAnswerDto> {
+    const request = this.http.post<IncidentAnswerDto>(
+      apiUrl(this.baseUrl, `/api/incidents/${incidentId}/assistant/questions`),
+      { question },
     );
     return toPromise(
       signal ? request.pipe(takeUntil(fromEvent(signal, 'abort'))) : request,

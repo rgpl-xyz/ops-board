@@ -93,6 +93,16 @@ const CODE_FIXTURES: Record<
     detail:
       "The AI response could not be checked against the incident's records, so it was not shown. Try again.",
   },
+  assistant_questions_disabled: {
+    status: 503,
+    title: 'AI assistance unavailable',
+    detail: 'Questions to AI assistance are turned off for this environment.',
+  },
+  assistant_question_limit: {
+    status: 429,
+    title: 'AI assistance unavailable',
+    detail: 'You have asked several questions in a short time. Try again in a few minutes.',
+  },
 };
 
 function goldenProblem(

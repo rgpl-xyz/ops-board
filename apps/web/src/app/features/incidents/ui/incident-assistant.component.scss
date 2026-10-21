@@ -93,39 +93,6 @@
   line-height: 1.5;
 }
 
-/* A statement's sources wrap as one group, never one letter to a line. */
-.refs {
-  white-space: nowrap;
-}
-
-.ref {
-  margin-left: 0.3rem;
-  font-family: var(--ob-font-mono);
-  font-size: 0.78rem;
-}
-
-.source__what,
-.source__when,
-.source__detail {
-  margin: 0;
-  font-size: 0.86rem;
-}
-
-.source__when {
-  margin-top: 0.15rem;
-  color: var(--ob-muted);
-  font-family: var(--ob-font-mono);
-  font-size: 0.72rem;
-}
-
-/* A timeline update keeps its own line breaks. */
-.source__detail {
-  max-width: 30rem;
-  margin-top: 0.4rem;
-  color: var(--ob-ink-2);
-  white-space: pre-wrap;
-}
-
 .brief__actions {
   margin-top: 1rem;
 }

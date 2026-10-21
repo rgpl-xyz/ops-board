@@ -12,6 +12,9 @@ public sealed class AssistantMetrics : IDisposable
     private readonly Counter<long> _tokens;
     private readonly Counter<double> _cost;
     private readonly Histogram<double> _duration;
+    private readonly Counter<long> _questions;
+    private readonly Histogram<double> _questionDuration;
+    private readonly Counter<long> _lookups;
 
     public AssistantMetrics()
     {
@@ -20,6 +23,11 @@ public sealed class AssistantMetrics : IDisposable
         _tokens = Meter.CreateCounter<long>("opsboard.assistant.tokens", "{token}", "Provider tokens by direction.");
         _cost = Meter.CreateCounter<double>("opsboard.assistant.estimated_cost", "USD", "Estimated provider cost.");
         _duration = Meter.CreateHistogram<double>("opsboard.assistant.duration", "s", "Time to answer a brief request.");
+        _questions = Meter.CreateCounter<long>("opsboard.assistant.questions", description: "Questions by outcome.");
+        _questionDuration = Meter.CreateHistogram<double>(
+            "opsboard.assistant.question_duration", "s", "Time to answer a question.");
+        _lookups = Meter.CreateCounter<long>(
+            "opsboard.assistant.lookups", "{lookup}", "Related incidents read to answer questions.");
     }
 
     /// One instance per registration, so a test can listen to its own meter.
@@ -30,6 +38,17 @@ public sealed class AssistantMetrics : IDisposable
         var tags = Tags(provider, model, ("outcome", outcome));
         _requests.Add(1, tags);
         _duration.Record(elapsed.TotalSeconds, tags);
+    }
+
+    public void RecordQuestion(string outcome, string provider, string model, int lookups, TimeSpan elapsed)
+    {
+        var tags = Tags(provider, model, ("outcome", outcome));
+        _questions.Add(1, tags);
+        _questionDuration.Record(elapsed.TotalSeconds, tags);
+        if (lookups > 0)
+        {
+            _lookups.Add(lookups, Tags(provider, model));
+        }
     }
 
     public void RecordUsage(string provider, string model, int inputTokens, int outputTokens, decimal estimatedCostUsd)

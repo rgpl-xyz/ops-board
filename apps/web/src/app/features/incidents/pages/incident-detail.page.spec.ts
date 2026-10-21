@@ -1030,6 +1030,31 @@ describe('IncidentDetailPage', () => {
       fixture.nativeElement.remove();
     });
 
+    it('offers typed questions under the brief only while the server allows them', async () => {
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: false, questions: false });
+      const without = await mountEditable();
+      const withoutRoot = without.nativeElement as HTMLElement;
+      await vi.waitFor(() => {
+        without.detectChanges();
+        expect(tabs(withoutRoot)).toHaveLength(3);
+      });
+      expect(withoutRoot.querySelector('ob-incident-question')).toBeNull();
+      without.destroy();
+      without.nativeElement.remove();
+
+      assistantStatus.mockResolvedValue({ enabled: true, simulated: false, questions: true });
+      TestBed.inject(QueryClient).clear();
+      const withQuestions = await mountEditable();
+      const root = withQuestions.nativeElement as HTMLElement;
+      await vi.waitFor(() => {
+        withQuestions.detectChanges();
+        expect(root.querySelector('#assistant-panel ob-incident-question')).not.toBeNull();
+      });
+
+      withQuestions.destroy();
+      withQuestions.nativeElement.remove();
+    });
+
     it('asks for a brief from the page header, on the brief tab', async () => {
       assistantStatus.mockResolvedValue({ enabled: true, simulated: false });
       const generateBrief = vi.mocked(TestBed.inject(AssistantApi).generateBrief);

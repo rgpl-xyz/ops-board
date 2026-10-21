@@ -30,7 +30,10 @@ public sealed class IncidentBriefService(
     {
         var user = await currentUser.GetAsync(cancellationToken);
         Permissions.RequireRead(user.Role);
-        return new AssistantStatusDto(settings.Enabled, settings.Enabled && inference.IsSimulated);
+        return new AssistantStatusDto(
+            settings.Enabled,
+            settings.Enabled && inference.IsSimulated,
+            settings.Enabled && settings.QuestionsEnabled);
     }
 
     /// The visitor key only bounds how many new briefs one visitor starts; it

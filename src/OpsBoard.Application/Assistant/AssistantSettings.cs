@@ -3,6 +3,8 @@ namespace OpsBoard.Application.Assistant;
 /// Limits for AI assistance. The feature is off unless configuration turns it on.
 /// VisitorRequestLimit bounds the new briefs one visitor may start within
 /// VisitorWindowMinutes, so no single visitor can spend the shared daily limit.
+/// Typed questions are off unless QuestionsEnabled is set too, and have their
+/// own daily and per-visitor limits.
 public sealed record AssistantSettings(
     bool Enabled,
     int DailyRequestLimit,
@@ -11,7 +13,10 @@ public sealed record AssistantSettings(
     decimal InputUsdPerMillionTokens = 0,
     decimal OutputUsdPerMillionTokens = 0,
     int VisitorRequestLimit = 5,
-    int VisitorWindowMinutes = 10)
+    int VisitorWindowMinutes = 10,
+    bool QuestionsEnabled = false,
+    int QuestionDailyLimit = 50,
+    int QuestionVisitorLimit = 5)
 {
     public TimeSpan VisitorWindow => TimeSpan.FromMinutes(VisitorWindowMinutes);
 }

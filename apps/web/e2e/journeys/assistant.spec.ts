@@ -47,7 +47,7 @@ test('a reader summarizes an incident and checks a statement against its source'
 
   await expect(panel.getByText('Simulated brief, no AI model (Fake provider)')).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Incident brief ready.' })).toBeAttached();
-  await expect(panel.getByRole('heading', { level: 3 })).toHaveText([
+  await expect(panel.getByRole('article', { name: /^Simulated brief/ }).getByRole('heading', { level: 3 })).toHaveText([
     'What happened',
     'Current state',
     'Open questions',
