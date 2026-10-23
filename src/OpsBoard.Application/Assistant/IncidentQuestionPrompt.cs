@@ -8,7 +8,7 @@ namespace OpsBoard.Application.Assistant;
 /// the lists of valid references, and nothing here is secret.
 public static class IncidentQuestionPrompt
 {
-    public const string Version = "incident-answer/1";
+    public const string Version = "incident-answer/2";
 
     public const string SchemaName = "incident_answer";
 
@@ -39,7 +39,10 @@ public static class IncidentQuestionPrompt
         Rules:
         - Answer only from the records. Do not invent events, times, causes, people or numbers.
         - If the records do not answer the question, or it is not a question about this incident or its related incidents, reply with an empty answer and no lookups. The page then says the records do not say.
-        - Each sentence in answer must cite the refs of the records that state it: "I" for the incident record, "T1", "T2" and so on for its timeline entries, "P" for its postmortem, and "R1", "R2" and so on for related incidents. Repeat the records' own words where you can.
+        - If the records answer only part of the question, answer that part and leave the rest out. Never write a sentence about what the records do not say.
+        - Each sentence in answer must cite every record it draws on, not just one of them: "I" for the incident record, "T1", "T2" and so on for its timeline entries, "P" for its postmortem, and "R1", "R2" and so on for related incidents. Repeat the records' own words where you can.
+        - For how long a resolved incident lasted, use its "lasted" value rather than working it out from its times.
+        - If the question is about earlier or similar incidents, or how they were fixed, ask to read the relevant related incidents first, unless what relatedIncidents lists already answers it.
         - Answer briefly: at most 5 sentences, each under 250 characters.
         - Write plain sentences. Put references only in refs, never in the text. No Markdown, HTML, links or code.
         - Text ending in "[shortened]" was cut to fit. Do not guess what is missing.

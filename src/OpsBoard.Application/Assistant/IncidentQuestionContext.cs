@@ -109,10 +109,14 @@ public sealed class IncidentQuestionContext
                 incident.CreatedAt,
                 IncidentBriefContext.Fit(incident.Title, MaxSourceDetailLength)),
         };
+        var lasted = Lasted(incident.CreatedAt, incident.ResolvedAt);
         var records = new Dictionary<string, AnswerRecord>(StringComparer.Ordinal)
         {
             [IncidentBriefContext.IncidentRef] = new(
-                [title, description, service, team, incident.Severity.ToString(), incident.Status.ToString()],
+                [
+                    title, description, service, team, incident.Severity.ToString(), incident.Status.ToString(),
+                    .. ResolutionTexts(incident.CreatedAt, incident.ResolvedAt),
+                ],
                 Times(incident.CreatedAt, incident.ResolvedAt),
                 []),
         };
@@ -181,6 +185,7 @@ public sealed class IncidentQuestionContext
                 status = incident.Status.ToString(),
                 openedAt = Wire(incident.CreatedAt),
                 resolvedAt = incident.ResolvedAt is { } resolved ? Wire(resolved) : null,
+                lasted,
             },
             timeline,
             Math.Max(0, timelineCount - included.Count),
@@ -230,6 +235,41 @@ public sealed class IncidentQuestionContext
     private static DateTimeOffset[] Times(DateTimeOffset opened, DateTimeOffset? resolved) =>
         resolved is { } at ? [opened, at] : [opened];
 
+    /// How long a resolved incident ran, in words: "90 minutes", "2 hours 5 minutes", "3 days 4 hours". The data
+    /// says it so a model need not work it out from two timestamps, and null while the incident is open.
+    private static string? Lasted(DateTimeOffset opened, DateTimeOffset? resolved)
+    {
+        if (resolved is not { } end)
+        {
+            return null;
+        }
+
+        var minutes = Math.Max(0, (int)Math.Round((end - opened).TotalMinutes));
+        if (minutes < 120)
+        {
+            return Count(minutes, "minute");
+        }
+
+        var (hours, restMinutes) = Math.DivRem(minutes, 60);
+        if (hours < 48)
+        {
+            return restMinutes == 0 ? Count(hours, "hour") : $"{Count(hours, "hour")} {Count(restMinutes, "minute")}";
+        }
+
+        var (days, restHours) = Math.DivRem(hours, 24);
+        return restHours == 0 ? Count(days, "day") : $"{Count(days, "day")} {Count(restHours, "hour")}";
+    }
+
+    /// What a record says about resolution for the answer check: how long a resolved incident lasted, as the data
+    /// words it and in minutes all told, or that an open one is not resolved.
+    private static string[] ResolutionTexts(DateTimeOffset opened, DateTimeOffset? resolved) =>
+        Lasted(opened, resolved) is { } lasted && resolved is { } end
+            ? [$"Lasted {lasted}", $"Lasted {Math.Max(0, (int)Math.Round((end - opened).TotalMinutes)).ToString(CultureInfo.InvariantCulture)} minutes"]
+            : ["Not resolved, still open"];
+
+    private static string Count(int value, string unit) =>
+        value == 1 ? $"1 {unit}" : $"{value.ToString(CultureInfo.InvariantCulture)} {unit}s";
+
     private static string[] Present(params string?[] texts) => texts.OfType<string>().ToArray();
 
     private static PostmortemFields FitPostmortem(PostmortemDto postmortem, int max)
@@ -269,6 +309,7 @@ public sealed class IncidentQuestionContext
             status = Listed.Status.ToString(),
             openedAt = IncidentQuestionContext.Wire(Listed.CreatedAt),
             resolvedAt = Listed.ResolvedAt is { } resolved ? IncidentQuestionContext.Wire(resolved) : null,
+            lasted = IncidentQuestionContext.Lasted(Listed.CreatedAt, Listed.ResolvedAt),
             sameService = Listed.SameService,
             sameTeam = Listed.SameTeam,
             sharedTitleWords = Listed.SharedWords,
@@ -277,14 +318,15 @@ public sealed class IncidentQuestionContext
 
         public AnswerRecord Record()
         {
-            var texts = new List<string>
-            {
+            List<string> texts =
+            [
                 Title,
                 Listed.ServiceName,
                 Listed.TeamName,
                 Listed.Severity.ToString(),
                 Listed.Status.ToString(),
-            };
+                .. ResolutionTexts(Listed.CreatedAt, Listed.ResolvedAt),
+            ];
             var times = new List<DateTimeOffset>(Times(Listed.CreatedAt, Listed.ResolvedAt));
             var people = new List<string>();
             if (Read is not null)

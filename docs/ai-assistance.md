@@ -25,9 +25,9 @@ A brief has no lookups and takes no typed input: the person can only ask for a b
 
 1. The server checks that questions are on, that the question is between 1 and 300 characters, and the caller's identity and read access, before it reads anything.
 2. It reads the incident, its newest timeline entries, its postmortem and up to five [related incidents](api-design.md#resources), all through organization-scoped queries for the caller. Related incidents are labelled `R1` to `R5` in the data; the model never sees an incident ID.
-3. It sends fixed instructions, the question and the records as one data message, and a schema listing the valid citations and the only lookup there is: reading a related incident by its label, at most two.
+3. It sends fixed instructions, the question and the records as one data message (with how long each resolved incident lasted, worked out by the server), and a schema listing the valid citations and the only lookup there is: reading a related incident by its label, at most two.
 4. If the model asks for lookups, the server checks each request: the one known lookup, a label it offered for this question, nothing else in the request. It then reads those incidents itself, for the caller, with their description, recent timeline and postmortem, and makes a second call in which lookups are no longer allowed. Any other request refuses the whole question, so a question takes at most two provider calls.
-5. It checks the answer: at most five plain sentences, each citing only records it sent. Every number, clock time and name in a sentence must appear in the records that sentence cites, and the sentence must share its meaningful words with them. An answer that breaks any rule is refused, not repaired.
+5. It checks the answer: at most five plain sentences, each citing only records it sent. Every date, number, clock time and name in a sentence must appear in the records that sentence cites, and the sentence must share its meaningful words with them, counting the names of the people who wrote them. An answer that breaks any rule is refused, not repaired.
 6. It describes each cited record itself, from stored data, and returns the answer. Nothing is stored.
 
 ## Safety model
@@ -38,7 +38,7 @@ The design assumes an attacker can control every word the model writes, for exam
 - **The model can do nothing.** It has no tools that act, and the server has no code path that acts on its reply other than showing checked text and, for a question, reading related incidents. A brief or an answer changes no data.
 - **A question is data.** It travels in the data message beside the records, never in the instructions, and is at most 300 characters.
 - **A lookup is a request, not authority.** The model can name a related incident only by a label the server issued for that question. The server reads it for the caller's organization, at most two in one round, and an unknown lookup, a label it did not offer, an extra argument or a second round refuses the whole question.
-- **Answers are held to their sources.** A number, time or name its sources do not hold refuses the answer, and so does a sentence that shares no meaningful words with them, such as a poem or a recipe. This word check stops casual misuse; it cannot stop a reply written to pass it, which is why none of the guarantees here depend on it.
+- **Answers are held to their sources.** A date, number, time or name its sources do not hold refuses the answer, and so does a sentence that shares no meaningful words with them, such as a poem or a recipe. This word check stops casual misuse; it cannot stop a reply written to pass it, which is why none of the guarantees here depend on it.
 - **Nothing builds up.** Each question stands alone, with no memory of earlier ones.
 - **Its reply is checked against a fixed contract** and against the citations actually sent, so it cannot point to records the caller was not given.
 - **Its text is shown as text.** The page renders statements by interpolation, never as HTML or Markdown, and builds no links from model output. Source cards come from stored data, not from the model.

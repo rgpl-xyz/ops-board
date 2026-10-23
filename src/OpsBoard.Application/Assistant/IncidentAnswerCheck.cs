@@ -3,9 +3,12 @@ using System.Text.RegularExpressions;
 namespace OpsBoard.Application.Assistant;
 
 /// Holds each sentence of an answer to the records it cites. A sentence may
-/// not state a number, clock time or name that none of them holds, and must
-/// share its meaningful words with them: at least two, or all it has when it
-/// has fewer. Text that is not about the records, such as a poem or a recipe,
+/// not state a date, number, clock time or name that none of them holds, and
+/// must share its meaningful words with them: at least two, or all it has when
+/// it has fewer. A sentence that states a detail they hold is already tied to
+/// them, so it needs only half its words, rounded up: "The provider recovered at
+/// 09:03" passes on "provider". The names of the people who wrote a record count
+/// as its words. Text that is not about the records, such as a poem or a recipe,
 /// fails that second rule. One failing sentence refuses the whole answer.
 ///
 /// The word rule stops a model from being used for unrelated tasks in
@@ -29,6 +32,9 @@ public static partial class IncidentAnswerCheck
         "these", "they", "this", "those", "through", "under", "until", "upon", "very", "were", "what", "when",
         "where", "which", "while", "will", "with", "within", "without", "would", "yes", "your", "incident",
         "incidents", "record", "records", "according", "currently",
+
+        // Field names the records hold as values only, as in "the status is Identified".
+        "status", "severity", "related",
     };
 
     /// <exception cref="BriefRejectedException">A sentence is not supported by what it cites.</exception>
@@ -41,14 +47,16 @@ public static partial class IncidentAnswerCheck
             var held = cited
                 .SelectMany(r => RecordDetails.Held(r.Texts, r.Times, r.People, people))
                 .ToHashSet(StringComparer.Ordinal);
-            if (RecordDetails.Details(sentence.Text, people, distinctiveNumbersOnly: true).Any(d => !held.Contains(d)))
+            var details = RecordDetails.Details(sentence.Text, people, distinctiveNumbersOnly: true).ToList();
+            if (details.Any(d => !held.Contains(d)))
             {
                 throw new BriefRejectedException("A sentence states a detail its sources do not hold.");
             }
 
             var words = Words(sentence.Text);
-            var available = cited.SelectMany(r => r.Texts).SelectMany(Words).ToHashSet(StringComparer.Ordinal);
-            if (words.Count(available.Contains) < Math.Min(MinSharedWords, words.Count))
+            var available = cited.SelectMany(r => r.Texts.Concat(r.People)).SelectMany(Words).ToHashSet(StringComparer.Ordinal);
+            var required = Math.Min(MinSharedWords, details.Count > 0 ? (words.Count + 1) / 2 : words.Count);
+            if (words.Count(available.Contains) < required)
             {
                 throw new BriefRejectedException("A sentence shares too few words with its sources.");
             }

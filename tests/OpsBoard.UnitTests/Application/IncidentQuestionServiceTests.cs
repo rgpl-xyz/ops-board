@@ -1,6 +1,7 @@
 using System.Text.Json;
 using OpsBoard.Application.Assistant;
 using OpsBoard.Application.Errors;
+using OpsBoard.Domain.Enums;
 
 namespace OpsBoard.UnitTests.Application;
 
@@ -126,6 +127,10 @@ public sealed class IncidentQuestionServiceTests
         { "a detail from a record it does not cite", "Checkout errors rose to 12% after the deploy.", ["I"] },
         { "nothing in common with its sources", "Clouds drift softly over silent hills.", ["I"] },
         { "a task unrelated to the incident", "Here is a recipe: whisk eggs, sugar and flour.", ["I", "T2"] },
+        { "a date no cited record holds", "Checkout errors after a promo deploy also happened on 2026-09-13.", ["R1"] },
+        { "a duration no cited record holds", "The promo deploy checkout errors lasted 48 minutes.", ["R1"] },
+        { "a person who did not write the cited entry", "Jordan Patel opened the incident at 08:05.", ["T1"] },
+        { "a detail its source holds, in unrelated words", "At 09:40 the moon sang softly.", ["T2"] },
     };
 
     [Theory]
@@ -138,6 +143,63 @@ public sealed class IncidentQuestionServiceTests
         var failure = await Assert.ThrowsAsync<AssistantUnavailableException>(() => harness.AskAsync());
 
         Assert.True(failure.Failure == AssistantFailure.UnverifiedResponse, attempt);
+    }
+
+    /// True sentences in the forms a model writes them.
+    public static TheoryData<string, string, string[]> SupportedSentences => new()
+    {
+        { "a date its record happened on", "Checkout errors after a promo deploy also happened on 2026-09-12.", ["R1"] },
+        { "a date with non-breaking hyphens", "Checkout errors after a promo deploy also happened on 2026\u201109\u201112.", ["R1"] },
+        { "a date written out", "Checkout errors after a promo deploy also happened on 12 September 2026.", ["R1"] },
+        { "a time in ISO form", "The checkout errors after the promo deploy were resolved at 2026-09-12T11:30:00Z.", ["R1"] },
+        { "how long a resolved incident lasted", "The promo deploy checkout errors lasted 90 minutes.", ["R1"] },
+        { "the status, named as such", "The incident status is Investigating.", ["I"] },
+        { "the person and time of the entry they wrote", "Avery Chen opened the incident at 08:05.", ["T1"] },
+        { "an open incident, said not to be resolved", "The incident is not resolved.", ["I"] },
+        { "a short sentence anchored by a detail its source holds", "Errors peaked at 09:40.", ["T2"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(SupportedSentences))]
+    public async Task A_sentence_its_sources_support_is_shown(string form, string text, string[] refs)
+    {
+        var harness = new QuestionHarness();
+        harness.Model.AnswerWith(QuestionHarness.Reply(answer: [(text, refs)]));
+
+        var answer = await harness.AskAsync();
+
+        Assert.True(answer.Answered, form);
+        Assert.Equal(text, Assert.Single(answer.Sentences).Text);
+    }
+
+    [Fact]
+    public async Task The_data_says_how_long_a_resolved_incident_lasted_so_the_model_need_not_work_it_out()
+    {
+        var harness = new QuestionHarness();
+        harness.Incident = harness.Incident! with
+        {
+            Status = IncidentStatus.Resolved,
+            ResolvedAt = AssistantHarness.Opened.AddMinutes(125),
+        };
+        harness.Model.AnswerWith(QuestionHarness.Reply());
+
+        await harness.AskAsync("How long did it last?");
+
+        using var data = JsonDocument.Parse(Assert.Single(harness.Model.Requests).Data);
+        Assert.Equal("2 hours 5 minutes", data.RootElement.GetProperty("incident").GetProperty("lasted").GetString());
+        Assert.Equal("90 minutes", data.RootElement.GetProperty("relatedIncidents")[0].GetProperty("lasted").GetString());
+    }
+
+    [Fact]
+    public async Task An_open_incident_has_no_duration_in_the_data()
+    {
+        var harness = new QuestionHarness();
+        harness.Model.AnswerWith(QuestionHarness.Reply());
+
+        await harness.AskAsync("How long has it been going?");
+
+        using var data = JsonDocument.Parse(Assert.Single(harness.Model.Requests).Data);
+        Assert.Equal(JsonValueKind.Null, data.RootElement.GetProperty("incident").GetProperty("lasted").ValueKind);
     }
 
     [Fact]
