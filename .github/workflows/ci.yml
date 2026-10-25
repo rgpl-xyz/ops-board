@@ -20,10 +20,11 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Exact: a looser spec takes the runner's cached 24.x, which can lag the latest security release.
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.22
+          node-version: 24.22.1
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
