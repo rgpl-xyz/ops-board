@@ -73,10 +73,14 @@ internal static partial class CitationScorer
             }
         }
 
-        var inline = Statements(brief, AllSections).Select(s => Text(s, "text")).Where(t => InlineRef().IsMatch(t)).ToList();
+        var inline = Statements(brief, AllSections).Select(s => Text(s, "text")).Where(WritesReference).ToList();
         findings.AddRange(inline.Select(t => $"reference in the text | {t}"));
         return new BriefScore(statements, details, cited, uncited, unsupported, inline.Count, findings);
     }
+
+    /// Whether a statement or an answer's sentence writes a citation into its text
+    /// instead of only in its refs.
+    public static bool WritesReference(string text) => InlineRef().IsMatch(text);
 
     private static Dictionary<string, HashSet<Detail>> Sources(
         JsonElement incident, IReadOnlyList<JsonElement> timeline, int omitted, HashSet<string> names)

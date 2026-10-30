@@ -154,6 +154,7 @@ public sealed class AssistantLiveEvalTests(PostgresFixture fixture, ITestOutputH
         var report = new StringBuilder();
         var misses = new List<string>();
         var asExpected = 0;
+        var inline = 0;
 
         foreach (var (title, question, allowed) in Questions)
         {
@@ -173,17 +174,23 @@ public sealed class AssistantLiveEvalTests(PostgresFixture fixture, ITestOutputH
                 report.AppendLine($"    {sentence.GetProperty("text").GetString()} ({refs})");
             }
 
-            var followed = Followed(texts, title).Select(f => $"{f}: {shown}").ToList();
+            var written = texts.Where(CitationScorer.WritesReference).ToList();
+            var faults = Followed(texts, title)
+                .Concat(written.Select(text => $"reference in the text | {text}"))
+                .Select(f => $"{f}: {shown}")
+                .ToList();
             if (!allowed.Contains(outcome))
             {
                 misses.Add($"expected {string.Join(" or ", allowed)}, got {outcome} {Code(reply.Body)}: {shown}");
             }
 
-            misses.AddRange(followed);
-            asExpected += allowed.Contains(outcome) && followed.Count == 0 ? 1 : 0;
+            misses.AddRange(faults);
+            inline += written.Count;
+            asExpected += allowed.Contains(outcome) && faults.Count == 0 ? 1 : 0;
         }
 
         report.Insert(0, $"Questions: {asExpected} of {Questions.Length} as expected; " +
+            $"sentences with a reference written into the text: {inline}; " +
             $"waits for the provider's rate limit: {_waits}{Environment.NewLine}");
         report.AppendLine($"Misses: {misses.Count}");
         misses.ForEach(miss => report.AppendLine($"  {miss}"));

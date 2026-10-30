@@ -84,6 +84,20 @@ public sealed class CitationScorerTests
         Assert.Equal("reference in the text | Watch the error rate after the rollback (T2).", Assert.Single(score.Findings));
     }
 
+    [Theory]
+    [InlineData("A similar card payment issue occurred in August (R1).")]
+    [InlineData("The provider recovered at 09:03 [I, T8].")]
+    [InlineData("The postmortem names a missing retry limit (P).")]
+    public void A_reference_written_into_an_answer_is_found(string sentence) =>
+        Assert.True(CitationScorer.WritesReference(sentence));
+
+    [Theory]
+    [InlineData("Every slow request reads from replica db-auth-c (the one replaying a migration).")]
+    [InlineData("Errors fell to 0.2% (from 4%).")]
+    [InlineData("Checkout fails in the EU (Ireland and Germany).")]
+    public void Ordinary_brackets_are_not_taken_for_a_reference(string sentence) =>
+        Assert.False(CitationScorer.WritesReference(sentence));
+
     private static BriefScore Score(JsonElement brief) => CitationScorer.Score(Incident, Timeline, brief);
 
     private static JsonElement Brief(object[]? whatHappened = null, object[]? suggestedChecks = null, int omitted = 0) =>
