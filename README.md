@@ -160,6 +160,9 @@ cd apps/web && npm test -- --coverage
 
 # Brand asset hashes and logo contrast (no install or build needed)
 cd apps/web && npm run brand:verify
+
+# Live evaluation of AI assistance against a real model (provider settings in docs/ai-assistance.md)
+OpsBoardTests__LiveEval=true dotnet test tests/OpsBoard.IntegrationTests --filter Category=LiveEval
 ```
 
 **Backend.** The integration tests create a uniquely named database per run, apply migrations, and drop it afterwards. They use `OpsBoardTests__AdminConnection` or `ConnectionStrings__OpsBoard` when either is set, and otherwise start `postgres:17-alpine` themselves for the run, so a clean checkout needs no manual step. With neither a connection nor a container runtime available they fail immediately and name both remedies.
@@ -168,7 +171,7 @@ cd apps/web && npm run brand:verify
 
 **Browser.** The tier lives in `apps/web/e2e` and needs a one-off `npx playwright install chromium`. Its setup brings up the database container, applies migrations and runs the demo seed, then starts the API and the dev server, reusing either if it is already running. The journeys create the records they change, so they can be run repeatedly. Any accepted accessibility violation is listed with its reason in `apps/web/e2e/a11y-accepted.json`, which is currently empty.
 
-**Automated run.** `.github/workflows/ci.yml` runs every tier above on each push and pull request, then builds the images, starts the container stack on an empty database and runs the stack check against it.
+**Automated run.** `.github/workflows/ci.yml` runs every tier above on each push and pull request, then builds the images, starts the container stack on an empty database and runs the stack check against it. It skips the live evaluation of AI assistance, which calls a real model.
 
 ## Docker commands
 
