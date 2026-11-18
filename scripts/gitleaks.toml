@@ -1,0 +1,17 @@
+# Rules for the secret scans in this folder, passed explicitly: Gitleaks' defaults, plus keys for providers the
+# defaults miss. A deliberate fake that a scan reports gets a narrow allowlist here, in a commit of its own;
+# .gitleaks.toml and inline gitleaks:allow comments are refused or ignored, so a change cannot relax its own scan.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key"
+regex = '''\bsk-or-v1-[0-9a-f]{64}\b'''
+keywords = ["sk-or-v1-"]
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API key"
+regex = '''\bgsk_[A-Za-z0-9]{52}\b'''
+keywords = ["gsk_"]

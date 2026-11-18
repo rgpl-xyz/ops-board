@@ -54,3 +54,27 @@ cypress/screenshots/
 
 # IDE / misc
 *.DotSettings.user
+
+# Secrets stay out of the repo: environment files, private keys, certificates and credential files.
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+*.age
+*.tfstate
+*.tfstate.*
+.netrc
+.pypirc
+.git-credentials
+id_rsa
+id_ecdsa
+id_ed25519
+# Personal agent settings and notes, and secret-scan reports.
+.claude/settings.local.json
+CLAUDE.local.md
+gitleaks-report*
